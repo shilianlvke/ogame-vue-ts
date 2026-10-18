@@ -7,7 +7,7 @@
 #   2. 基础镜像 node:22-alpine 能拉取到（国内建议配置镜像加速，见 doc/DEPLOY_DOCKER.md）
 
 services:
-  ogame:
+  noskyman:
     build:
       context: .
       dockerfile: Dockerfile

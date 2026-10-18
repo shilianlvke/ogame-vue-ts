@@ -254,6 +254,30 @@ cd /vol1/docker/ogame
 
 存档在 `./data/world.json`，重建容器不受影响。
 
+## 飞牛图形界面里点「启动」报拉取超时？
+
+现象：
+
+```
+✘ Image noskyman:latest Error Get "https://registry-1.docker.io/v2/": context deadline exceeded
+```
+
+原因：图形界面执行的是 `docker compose up`，会先按 `image:` 去 Docker Hub 拉镜像；
+本地还没有该镜像、国内又连不上 Hub，就卡 40 秒后报错。
+
+现在 `docker-compose.yml` 已带上 `build:`，所以：
+
+- **图形界面**：先点「构建」（会本地构建镜像），再点「启动」；
+  或者直接点启动，等拉取超时后它会自动转为本地构建（第一次会慢 40 秒左右）
+- **SSH 跑脚本（推荐，不会尝试拉取）**：
+
+```bash
+./deploy-fnos.sh          # 构建 + 启动
+./deploy-fnos.sh --update # 拉代码 + 重建 + 重启
+```
+
+脚本对 compose v2 会附加 `--pull never`，完全跳过联网拉取。
+
 ## 改名说明（ogame → noskyman）
 
 为避免与旧部署冲突，镜像名和容器名已统一改为 **noskyman**：

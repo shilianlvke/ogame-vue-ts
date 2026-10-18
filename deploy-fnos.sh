@@ -76,8 +76,11 @@ fi
 # ---------- Compose ----------
 if $DOCKER compose version >/dev/null 2>&1; then
   COMPOSE="$DOCKER compose"
+  # compose v2 支持 --pull never，避免联网拉取本地已构建的镜像
+  PULL_FLAGS="--pull never"
 elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE="${SUDO:+$SUDO }docker-compose"
+  PULL_FLAGS=""
 else
   echo "错误：缺少 docker compose（飞牛 Docker 应用一般自带）"
   exit 1
@@ -108,10 +111,10 @@ case "$ACTION" in
     echo "    npm 源：$REG"
     $DOCKER build --build-arg "NPM_REGISTRY=$REG" -t "$TAG" .
     echo "==> 启动容器"
-    $COMPOSE up -d
+    $COMPOSE up -d $PULL_FLAGS
     ;;
   start)
-    $COMPOSE up -d
+    $COMPOSE up -d $PULL_FLAGS
     ;;
   stop)
     $COMPOSE down

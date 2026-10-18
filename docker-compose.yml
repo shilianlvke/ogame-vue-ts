@@ -13,7 +13,12 @@
 #        docker compose -f docker-compose.build.yml up -d --build
 
 services:
-  ogame:
+  noskyman:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
     image: noskyman:latest
     container_name: noskyman
     restart: unless-stopped

@@ -6,7 +6,7 @@
 # 这个文件里**没有 build 段**，所以 docker 不会去 Docker Hub 拉取同名镜像。
 
 services:
-  ogame:
+  noskyman:
     image: noskyman:latest
     container_name: noskyman
     restart: unless-stopped
