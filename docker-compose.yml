@@ -28,7 +28,7 @@ services:
       - ./data:/app/data
     environment:
       PORT: "25122"
-      GAME_SPEED: "1"
+      GAME_SPEED: "10"
       NPC_COUNT: "200"
       VISIBILITY: "public"
       LOCALE: "zh-CN"
