@@ -7,8 +7,8 @@
 
 services:
   ogame:
-    image: ogame-vue-ts:latest
-    container_name: ogame
+    image: noskyman:latest
+    container_name: noskyman
     restart: unless-stopped
     ports:
       - "${OGAME_PORT:-25122}:25122"

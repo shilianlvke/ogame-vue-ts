@@ -10,7 +10,7 @@
 ### 报错 1：`context deadline exceeded`（拉取镜像超时）
 
 ```
-Image ogame-vue-ts:latest Pulling
+Image noskyman:latest Pulling
 Get "https://registry-1.docker.io/v2/": context deadline exceeded
 ```
 
@@ -49,21 +49,21 @@ failed to solve: failed to read dockerfile: open Dockerfile: no such file or dir
 # Windows 电脑，项目根目录
 .\docker-build.ps1
 # 等价于：
-#   docker build -t ogame-vue-ts:latest .
-#   docker save ogame-vue-ts:latest -o ogame-vue-ts.tar
+#   docker build -t noskyman:latest .
+#   docker save noskyman:latest -o noskyman.tar
 ```
 
 把这两个文件传到 NAS 的同一目录，例如 `/vol1/docker/ogame/`：
 
 ```
 /vol1/docker/ogame/
-├── ogame-vue-ts.tar
+├── noskyman.tar
 └── docker-compose.yml
 ```
 
 飞牛「Docker」应用里：
 
-1. **镜像** → 导入 → 选 `ogame-vue-ts.tar`
+1. **镜像** → 导入 → 选 `noskyman.tar`
 2. **项目** → 新建 → 选 `docker-compose.yml`
 3. 启动
 
@@ -71,7 +71,7 @@ failed to solve: failed to read dockerfile: open Dockerfile: no such file or dir
 
 ```bash
 cd /vol1/docker/ogame
-docker load -i ogame-vue-ts.tar
+docker load -i noskyman.tar
 docker compose up -d
 ```
 
@@ -191,8 +191,8 @@ chmod +x build-on-ubuntu.sh
 脚本会自动：
 
 1. 检测并安装 Docker（`get.docker.com`，已装则跳过）
-2. 构建镜像 `ogame-vue-ts:latest`
-3. `--save` 导出 `ogame-vue-ts.tar`
+2. 构建镜像 `noskyman:latest`
+3. `--save` 导出 `noskyman.tar`
 4. `--run` 用 `docker compose up -d` 启动
 
 ### Ubuntu 上还需要注意
@@ -253,3 +253,21 @@ cd /vol1/docker/ogame
 ```
 
 存档在 `./data/world.json`，重建容器不受影响。
+
+## 改名说明（ogame → noskyman）
+
+为避免与旧部署冲突，镜像名和容器名已统一改为 **noskyman**：
+
+| 项 | 旧 | 新 |
+|---|---|---|
+| 镜像 | `ogame-vue-ts:latest` | `noskyman:latest` |
+| 容器 | `ogame` | `noskyman` |
+| 导出文件 | `ogame-vue-ts.tar` | `noskyman.tar` |
+
+升级时旧容器会占用同名资源，`deploy-fnos.sh` 现在会自动清理名为 `ogame` / `ogame-vue-ts` 的历史容器（存档在 `./data`，不受影响）。
+
+如果旧容器挂载了别的数据目录，先确认再删：
+
+```bash
+docker inspect ogame --format '{{json .Mounts}}'
+```

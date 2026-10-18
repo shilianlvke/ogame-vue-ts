@@ -15,7 +15,7 @@
 set -euo pipefail
 
 ACTION="deploy"
-TAG="ogame-vue-ts:latest"
+TAG="noskyman:latest"
 REG="https://registry.npmjs.org"
 PORT="25122"
 
@@ -85,6 +85,14 @@ fi
 
 export OGAME_PORT="$PORT"
 mkdir -p data
+
+# 清理历史遗留容器（改名前的 ogame / ogame-vue-ts），存档在 ./data 不受影响
+for legacy in ogame ogame-vue-ts; do
+  if $DOCKER ps -a --format '{{.Names}}' | grep -qx "$legacy"; then
+    echo "==> 清理旧容器：$legacy"
+    $DOCKER rm -f "$legacy" >/dev/null
+  fi
+done
 
 case "$ACTION" in
   deploy|update)

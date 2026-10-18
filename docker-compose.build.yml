@@ -14,8 +14,8 @@ services:
       args:
         # 国内可改成 https://registry.npmmirror.com
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
-    image: ogame-vue-ts:latest
-    container_name: ogame
+    image: noskyman:latest
+    container_name: noskyman
     restart: unless-stopped
     ports:
       - "${OGAME_PORT:-25122}:25122"

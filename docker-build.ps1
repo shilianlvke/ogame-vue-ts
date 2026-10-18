@@ -4,8 +4,8 @@
 #   .\docker-build.ps1 -Tag ogame-vue-ts:1.0 -Out ogame-1.0.tar
 
 param(
-  [string]$Tag = 'ogame-vue-ts:latest',
-  [string]$Out = 'ogame-vue-ts.tar'
+  [string]$Tag = 'noskyman:latest',
+  [string]$Out = 'noskyman.tar'
 )
 
 $ErrorActionPreference = 'Stop'
