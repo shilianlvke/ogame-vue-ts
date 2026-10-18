@@ -127,6 +127,7 @@ export type GameCommand =
   | { type: 'signal.collect'; systemId: string }
   | { type: 'signal.warp'; systemId: string }
   | { type: 'planet.rename'; planetId: string; name: string }
+  | { type: 'queue.addWaiting'; kind: 'building' | 'research'; planetId?: string; itemType: string; targetLevel: number }
 
 /** 命令成功 */
 export interface CommandSuccess {
@@ -665,6 +666,30 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       return succeed({ galaxyScan: { systemId: target.id, scans, tier: scans >= 2 ? 2 : 1 } })
     }
 
+    case 'queue.addWaiting': {
+      if (command.kind === 'building') {
+        const target = player.planets.find(planet => planet.id === command.planetId)
+        if (!target) return fail('errors.requirementsNotMet')
+        const item = waitingQueueLogic.createBuildingWaitingItem(
+          command.itemType as BuildingType,
+          command.targetLevel,
+          target.id
+        )
+        const check = waitingQueueLogic.canAddToBuildWaitingQueue(target, item, player.officers)
+        if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
+        waitingQueueLogic.addToBuildWaitingQueue(target, item)
+        return succeed()
+      }
+
+      const item = waitingQueueLogic.createResearchWaitingItem(
+        command.itemType as TechnologyType,
+        command.targetLevel
+      )
+      const check = waitingQueueLogic.canAddToResearchWaitingQueue(player, item)
+      if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
+      waitingQueueLogic.addToResearchWaitingQueue(player, item)
+      return succeed()
+    }
     case 'planet.rename': {
       const target = player.planets.find(planet => planet.id === command.planetId)
       if (!target) return { ok: false, reason: 'errors.requirementsNotMet' }

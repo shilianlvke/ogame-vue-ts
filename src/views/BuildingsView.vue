@@ -570,6 +570,19 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     // 触发抛物线动画
     triggerQueueAnimation(event, 'building')
 
-    waitingQueueLogic.addToBuildWaitingQueue(planet.value, item)
+    // 走命令层：联机模式下直接改 store 会被服务端补丁覆盖
+    const dispatched = dispatchCommand({
+      type: 'queue.addWaiting',
+      kind: 'building',
+      planetId: planet.value.id,
+      itemType: buildingType,
+      targetLevel
+    })
+    if (!dispatched.ok) {
+      alertDialogTitle.value = t('queue.waitingQueueFull')
+      alertDialogMessage.value = dispatched.reason ? t(dispatched.reason) : ''
+      alertDialogShowRequirements.value = false
+      alertDialogOpen.value = true
+    }
   }
 </script>
