@@ -322,3 +322,36 @@ docker compose -f docker-compose.static.yml up -d --build
 ### 想要联机
 
 必须用默认镜像（含 Node 服务端），因为联机依赖 WebSocket + 服务端权威存档。
+
+## 构建提速
+
+### 1. 没变化就不构建
+
+`deploy-fnos.sh --update` 会比对 `.deploy-last-commit` 与当前 git commit：
+
+- 代码没变、工作区干净 → **跳过构建**，只重启容器
+- 有变化 → 正常构建
+- 想强制重建 → `./deploy-fnos.sh --update --force`
+
+### 2. pnpm 依赖缓存
+
+Dockerfile 里给 pnpm store 挂了缓存卷：
+
+```dockerfile
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm config set store-dir /root/.pnpm-store \
+ && pnpm install --frozen-lockfile
+```
+
+含义：
+
+- `package.json` / `pnpm-lock.yaml` 没变 → 整个 install 层直接命中缓存，不执行
+- 即使层失效，pnpm store 还在缓存里，只做链接，不重新下载
+
+### 3. 什么时候一定会重装
+
+- 改了 `package.json` 或 `pnpm-lock.yaml`
+- 执行了 `docker builder prune` 清掉缓存
+- 构建机换了 Docker 环境
+
+脚本已 `export DOCKER_BUILDKIT=1`，缓存挂载才会生效。

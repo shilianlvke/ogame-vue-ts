@@ -44,3 +44,4 @@ scripts/.smoke-out
 # 联机服务端产物与存档
 server-dist
 data
+.deploy-last-commit

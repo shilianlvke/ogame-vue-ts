@@ -16,7 +16,9 @@ RUN npm install -g pnpm@10 \
  && pnpm config set registry "$NPM_REGISTRY"
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm config set store-dir /root/.pnpm-store \
+ && pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm run build \
@@ -39,9 +41,9 @@ RUN apk add --no-cache tini \
 
 # production dependencies only (ws is external in the server bundle)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
- && pnpm store prune \
- && npm cache clean --force
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm config set store-dir /root/.pnpm-store \
+ && pnpm install --prod --frozen-lockfile --ignore-scripts
 
 COPY --from=build /app/server-dist ./server-dist
 COPY --from=build /app/docs ./docs

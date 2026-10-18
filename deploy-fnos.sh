@@ -14,7 +14,11 @@
 # ============================================================
 set -euo pipefail
 
+# 启用 BuildKit，才能使用 pnpm store 缓存挂载
+export DOCKER_BUILDKIT=1
+
 ACTION="deploy"
+FORCE_BUILD=0
 TAG="noskyman:latest"
 REG="https://registry.npmjs.org"
 PORT="25122"
@@ -32,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --restart)    ACTION="restart"; shift ;;
     --logs)       ACTION="logs"; shift ;;
     --status)     ACTION="status"; shift ;;
+    --force|-f)   FORCE_BUILD=1; shift ;;
     --tag)        TAG="${2:-}"; shift 2 ;;
     --registry)   REG="${2:-}"; shift 2 ;;
     --port)       PORT="${2:-}"; shift 2 ;;
@@ -107,9 +112,29 @@ case "$ACTION" in
         echo "提示：当前目录不是 git 仓库，跳过拉取"
       fi
     fi
-    echo "==> 构建镜像 $TAG"
-    echo "    npm 源：$REG"
-    $DOCKER build --build-arg "NPM_REGISTRY=$REG" -t "$TAG" .
+    STAMP_FILE=".deploy-last-commit"
+    CURRENT="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+    IMAGE_EXISTS=0
+    $DOCKER image inspect "$TAG" >/dev/null 2>&1 && IMAGE_EXISTS=1
+
+    NEED_BUILD=1
+    if [[ $FORCE_BUILD -eq 0 && $IMAGE_EXISTS -eq 1 && -f "$STAMP_FILE" ]]; then
+      STAMP="$(cat "$STAMP_FILE")"
+      DIRTY=0
+      git diff --quiet 2>/dev/null || DIRTY=1
+      git diff --cached --quiet 2>/dev/null || DIRTY=1
+      if [[ "$STAMP" == "$CURRENT" && $DIRTY -eq 0 ]]; then
+        NEED_BUILD=0
+        echo "==> 代码未变化（$CURRENT），跳过构建（加 --force 可强制重建）"
+      fi
+    fi
+
+    if [[ $NEED_BUILD -eq 1 ]]; then
+      echo "==> 构建镜像 $TAG"
+      echo "    npm 源：$REG"
+      $DOCKER build --build-arg "NPM_REGISTRY=$REG" -t "$TAG" .
+      echo "$CURRENT" > "$STAMP_FILE"
+    fi
     echo "==> 启动容器"
     $COMPOSE up -d $PULL_FLAGS
     ;;
