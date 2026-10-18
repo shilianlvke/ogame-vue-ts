@@ -1,40 +1,54 @@
-# 本地构建用的 Dockerfile
-# 支持完整的源代码构建流程
+# syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS builder
+# ============================================================
+#  一体化镜像：前端静态文件 + Node 游戏服务端（WebSocket）
+#  构建：docker build -t ogame-vue-ts .
+#  运行：docker run -p 25122:25122 -v ./data:/app/data ogame-vue-ts
+# ============================================================
 
-# 设置工作目录
+# ---------- 构建阶段 ----------
+FROM node:22-alpine AS build
 WORKDIR /app
 
-# 复制 package 文件
+RUN npm install -g pnpm@10
+
+# 先只拷依赖清单，命中缓存
 COPY package.json pnpm-lock.yaml ./
-
-# 安装 pnpm
-RUN npm install -g pnpm
-
-# 安装依赖
 RUN pnpm install --frozen-lockfile
 
-# 复制源代码
+# 再拷源码并构建：前端产物 docs/，服务端产物 server-dist/
 COPY . .
+RUN pnpm run build \
+ && pnpm run build:node-server
 
-# 构建项目
-RUN pnpm run build
+# ---------- 运行阶段 ----------
+FROM node:22-alpine AS runtime
+WORKDIR /app
 
-# 生产阶段
-FROM nginx:alpine
+ENV NODE_ENV=production \
+    PORT=25122 \
+    STATIC_DIR=/app/docs \
+    DATA_DIR=/app/data
 
-# 复制 nginx 配置文件
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN apk add --no-cache tini \
+ && npm install -g pnpm@10
 
-# 清理默认的 nginx 静态文件
-RUN rm -rf /usr/share/nginx/html/*
+# 服务端打包后仍依赖 ws 等外部包，这里只装生产依赖
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
+ && pnpm store prune \
+ && npm cache clean --force
 
-# 复制构建产物到 nginx 静态文件目录
-COPY --from=builder /app/docs /usr/share/nginx/html
+COPY --from=build /app/server-dist ./server-dist
+COPY --from=build /app/docs ./docs
 
-# 暴露端口
-EXPOSE 80
+RUN mkdir -p /app/data
+VOLUME ["/app/data"]
 
-# 启动 nginx
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 25122
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:25122/health || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "server-dist/main.js"]

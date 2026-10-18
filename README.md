@@ -137,3 +137,8 @@ pnpm preview
 - 当前进度总览：[doc/GALAXY_STATUS.md](doc/GALAXY_STATUS.md)
 - 设计文档：[GALAXY_REDESIGN](doc/GALAXY_REDESIGN.md)、[GALAXY_MAP_DESIGN](doc/GALAXY_MAP_DESIGN.md)、[GALAXY_CYCLES](doc/GALAXY_CYCLES.md)、[GALAXY_BALANCE](doc/GALAXY_BALANCE.md)
 - 3D 星图入口：`/#/starmap`（或星系页右上角「3D 星图」）
+
+## 部署
+
+- 本地一键启动：`start.cmd`（或 `./start.ps1`）
+- Docker / 飞牛 NAS：[doc/DEPLOY_DOCKER.md](doc/DEPLOY_DOCKER.md)
