@@ -11,6 +11,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # 国内可改成 https://registry.npmmirror.com
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
     image: ogame-vue-ts:latest
     container_name: ogame
     restart: unless-stopped

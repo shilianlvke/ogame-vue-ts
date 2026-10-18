@@ -1,29 +1,32 @@
 # syntax=docker/dockerfile:1
 
 # ============================================================
-#  一体化镜像：前端静态文件 + Node 游戏服务端（WebSocket）
-#  构建：docker build -t ogame-vue-ts .
-#  运行：docker run -p 25122:25122 -v ./data:/app/data ogame-vue-ts
+#  All-in-one image: static frontend + Node game server (WebSocket)
+#  Build: docker build -t ogame-vue-ts .
+#  Run:   docker run -p 25122:25122 -v ./data:/app/data ogame-vue-ts
 # ============================================================
 
-# ---------- 构建阶段 ----------
+# ---------- build stage ----------
 FROM node:22-alpine AS build
 WORKDIR /app
 
-RUN npm install -g pnpm@10
+# NPM_REGISTRY can be overridden: https://registry.npmmirror.com
+ARG NPM_REGISTRY=https://registry.npmjs.org
+RUN npm install -g pnpm@10 \
+ && pnpm config set registry "$NPM_REGISTRY"
 
-# 先只拷依赖清单，命中缓存
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# 再拷源码并构建：前端产物 docs/，服务端产物 server-dist/
 COPY . .
 RUN pnpm run build \
  && pnpm run build:node-server
 
-# ---------- 运行阶段 ----------
+# ---------- runtime stage ----------
 FROM node:22-alpine AS runtime
 WORKDIR /app
+
+ARG NPM_REGISTRY=https://registry.npmjs.org
 
 ENV NODE_ENV=production \
     PORT=25122 \
@@ -31,9 +34,10 @@ ENV NODE_ENV=production \
     DATA_DIR=/app/data
 
 RUN apk add --no-cache tini \
- && npm install -g pnpm@10
+ && npm install -g pnpm@10 \
+ && pnpm config set registry "$NPM_REGISTRY"
 
-# 服务端打包后仍依赖 ws 等外部包，这里只装生产依赖
+# production dependencies only (ws is external in the server bundle)
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
  && pnpm store prune \

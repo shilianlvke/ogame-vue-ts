@@ -167,3 +167,38 @@ http://<NAS IP>:25122
 | 页面能开、进不了游戏 | WebSocket 未转发 / 端口映射不对 |
 | 打开是旧版本 | 访问 `/reset-sw` |
 | 存档丢失 | 检查 `./data` 挂载路径是否变化 |
+
+## Ubuntu 一键构建
+
+全新 Ubuntu（22.04/24.04）用仓库根目录的 `build-on-ubuntu.sh`：
+
+```bash
+chmod +x build-on-ubuntu.sh
+
+# 只构建
+./build-on-ubuntu.sh
+
+# 构建并导出 tar（拿到 NAS 导入）
+./build-on-ubuntu.sh --save
+
+# 构建并直接启动
+./build-on-ubuntu.sh --run
+
+# 国内加速（npm 源）
+./build-on-ubuntu.sh --save --registry https://registry.npmmirror.com
+```
+
+脚本会自动：
+
+1. 检测并安装 Docker（`get.docker.com`，已装则跳过）
+2. 构建镜像 `ogame-vue-ts:latest`
+3. `--save` 导出 `ogame-vue-ts.tar`
+4. `--run` 用 `docker compose up -d` 启动
+
+### Ubuntu 上还需要注意
+
+- **基础镜像拉取**：`node:22-alpine` 来自 Docker Hub，国内需要先配镜像加速
+  （`/etc/docker/daemon.json` 的 `registry-mirrors`，然后 `sudo systemctl restart docker`）
+- **npm 源**：用 `--registry https://registry.npmmirror.com`，否则 `pnpm install` 可能很慢
+- 脚本使用 LF 换行；如果从 Windows 拷贝后报 `$'\r': command not found`，执行：
+  `sed -i 's/\r$//' build-on-ubuntu.sh`
