@@ -48,6 +48,7 @@ import * as officerLogic from '@/logic/officerLogic'
 import * as planetLogic from '@/logic/planetLogic'
 import * as resourceLogic from '@/logic/resourceLogic'
 import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
+import * as campaignLogic from '@/logic/campaignLogic'
 import * as gameLogic from '@/logic/gameLogic'
 import { EXPEDITION_ZONES } from '@/config/gameConfig'
 
@@ -128,6 +129,8 @@ export type GameCommand =
   | { type: 'signal.warp'; systemId: string }
   | { type: 'planet.rename'; planetId: string; name: string }
   | { type: 'queue.addWaiting'; kind: 'building' | 'research'; planetId?: string; itemType: string; targetLevel: number }
+  | { type: 'campaign.start'; questId: string }
+  | { type: 'campaign.claim'; questId: string }
 
 /** 命令成功 */
 export interface CommandSuccess {
@@ -666,6 +669,16 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       return succeed({ galaxyScan: { systemId: target.id, scans, tier: scans >= 2 ? 2 : 1 } })
     }
 
+    case 'campaign.start': {
+      const result = campaignLogic.startQuest(player, command.questId)
+      if (!result.success) return fail(result.error ?? 'errors.requirementsNotMet')
+      return succeed()
+    }
+    case 'campaign.claim': {
+      const result = campaignLogic.claimQuestRewards(player, command.questId)
+      if (!result.success) return fail(result.error ?? 'errors.requirementsNotMet')
+      return succeed()
+    }
     case 'queue.addWaiting': {
       if (command.kind === 'building') {
         const target = player.planets.find(planet => planet.id === command.planetId)

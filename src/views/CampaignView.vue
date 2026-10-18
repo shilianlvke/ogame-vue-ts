@@ -168,6 +168,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from '@/composables/useI18n'
   import { useGameStore } from '@/stores/gameStore'
+import { dispatchCommand } from '@/core/runtime'
   import { useNPCStore } from '@/stores/npcStore'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -326,13 +327,12 @@
 
   // 执行开始任务
   const executeStartQuest = (questId: string) => {
-    const result = campaignLogic.startQuest(gameStore.player, questId)
-    if (result.success) {
+    const result = dispatchCommand({ type: 'campaign.start', questId })
+    if (result.ok) {
       toast.success(t('campaign.notifications.questStarted'))
-      // 立即检查进度
       campaignLogic.checkAllActiveQuestsProgress(gameStore.player, npcStore.npcs)
-    } else if (result.error) {
-      toast.error(t(result.error))
+    } else if (result.reason) {
+      toast.error(t(result.reason))
     }
   }
 
@@ -354,11 +354,11 @@
 
   // 执行领取奖励
   const executeClaimRewards = (questId: string) => {
-    const result = campaignLogic.claimQuestRewards(gameStore.player, questId)
-    if (result.success) {
+    const result = dispatchCommand({ type: 'campaign.claim', questId })
+    if (result.ok) {
       toast.success(t('campaign.notifications.rewardsClaimed'))
-    } else if (result.error) {
-      toast.error(t(result.error))
+    } else if (result.reason) {
+      toast.error(t(result.reason))
     }
   }
 
