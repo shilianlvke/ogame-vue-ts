@@ -11,6 +11,8 @@
 #  可选参数：
 #    --port 8080                      改宿主机端口（默认 25122）
 #    --registry https://registry.npmmirror.com   国内 npm 加速
+#    --base-image docker.m.daocloud.io/library/node:22-alpine   基础镜像换源
+#    --china                      一键切国内源（npm + 基础镜像）
 # ============================================================
 set -euo pipefail
 
@@ -21,6 +23,7 @@ ACTION="deploy"
 FORCE_BUILD=0
 TAG="noskyman:latest"
 REG="https://registry.npmjs.org"
+BASE_IMAGE="node:22-alpine"
 PORT="25122"
 
 usage() {
@@ -39,6 +42,8 @@ while [[ $# -gt 0 ]]; do
     --force|-f)   FORCE_BUILD=1; shift ;;
     --tag)        TAG="${2:-}"; shift 2 ;;
     --registry)   REG="${2:-}"; shift 2 ;;
+    --base-image) BASE_IMAGE="${2:-}"; shift 2 ;;
+    --china)      REG="https://registry.npmmirror.com"; BASE_IMAGE="docker.m.daocloud.io/library/node:22-alpine"; shift ;;
     --port)       PORT="${2:-}"; shift 2 ;;
     -h|--help)    usage ;;
     *) echo "未知参数：$1"; exit 1 ;;
@@ -132,7 +137,11 @@ case "$ACTION" in
     if [[ $NEED_BUILD -eq 1 ]]; then
       echo "==> 构建镜像 $TAG"
       echo "    npm 源：$REG"
-      $DOCKER build --build-arg "NPM_REGISTRY=$REG" -t "$TAG" .
+      echo "    基础镜像：$BASE_IMAGE"
+      $DOCKER build \
+        --build-arg "NPM_REGISTRY=$REG" \
+        --build-arg "BASE_IMAGE=$BASE_IMAGE" \
+        -t "$TAG" .
       echo "$CURRENT" > "$STAMP_FILE"
     fi
     echo "==> 启动容器"
