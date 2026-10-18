@@ -680,6 +680,42 @@ const main = async () => {
   assert.equal(snapshot.caravans?.[0]?.toSystemId, '1:1:2', '快照应包含商队终点')
   console.log('[gate] 快照：商队已暴露给客户端')
 
+  // 28) NPC 排行榜积分：公开视图下也必须非 0
+  const fakeNpc = {
+    id: 'npc_test_1',
+    name: 'Test NPC',
+    planets: [
+      {
+        id: 'npc_planet_1',
+        name: 'N',
+        ownerId: 'npc_test_1',
+        position: { galaxy: 1, system: 2, position: 1 },
+        buildings: { metalMine: 20, crystalMine: 20, solarPlant: 20 },
+        fleet: { cruiser: 100 },
+        defense: { rocketLauncher: 50 },
+        technologies: {}
+      }
+    ],
+    technologies: { energyTechnology: 5, combustionDrive: 5 },
+    difficulty: 'easy'
+  } as never
+
+  const npcWorld = createWorld({
+    player,
+    players: [player],
+    planets: {},
+    npcs: [fakeNpc],
+    debrisFields: {},
+    locale: 'zh-CN',
+    cycle: 1,
+    layoutSeed: layout.seed
+  })
+  const npcSnap = buildSnapshot(npcWorld, player)
+  const npcEntry = npcSnap.npcs[0] as { scores?: { total: number }; planets: Array<{ buildings?: Record<string, number> }> }
+  assert.ok((npcEntry.scores?.total ?? 0) > 0, 'NPC 排行榜积分应大于 0')
+  assert.equal(npcEntry.planets[0]?.buildings?.metalMine ?? 0, 0, '公开视图仍应清空建筑')
+  console.log(`[ranking] NPC 积分：${npcEntry.scores?.total}（公开视图建筑已清空）`)
+
   console.log('✅ 星图冒烟通过：规模 / 确定性 / 布局 / 连通 / 属性 / 路径 / 性能 / 经济 / 跳数 / 扫描命名 / 3D / 飞行 全部正常')
 }
 

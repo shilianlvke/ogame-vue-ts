@@ -1108,6 +1108,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: 'En modo en línea lo controla el servidor',
     cycleJumpTitle: 'Salto de ciclo',
     cycleJumpDesc: 'Salta a la siguiente galaxia: conserva tecnología y logros, reconstruye y recibe suministros.',
     cycleJumpButton: 'Saltar',

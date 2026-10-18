@@ -129,6 +129,8 @@ export const calculatePlayerScores = (player: Player): RankingEntry['scores'] =>
  * 计算NPC的所有积分
  */
 export const calculateNPCScores = (npc: NPC): RankingEntry['scores'] => {
+  // 联机模式下客户端拿到的是公开视图（建筑/舰队被清空），直接用服务端算好的分数
+  if (npc.scores) return npc.scores
   const building = calculateBuildingScore(npc.planets)
   const research = calculateResearchScore(npc.technologies)
   const fleet = calculateFleetScore(npc.planets)

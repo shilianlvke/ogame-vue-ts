@@ -1077,6 +1077,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: '온라인 모드에서는 서버가 제어합니다',
     cycleJumpTitle: '주기 점프',
     cycleJumpDesc: '다음 은하로 이동합니다. 기술과 업적은 유지되고 식민지가 재건됩니다.',
     cycleJumpButton: '점프',

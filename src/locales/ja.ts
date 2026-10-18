@@ -1121,6 +1121,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: 'オンラインモードではサーバーが制御します',
     cycleJumpTitle: 'サイクルジャンプ',
     cycleJumpDesc: '次の銀河へ移動します。技術と実績は保持され、コロニーは再建されます。',
     cycleJumpButton: 'ジャンプ',

@@ -1116,6 +1116,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: 'Controlled by the server in online mode',
     cycleJumpTitle: 'Cycle Jump',
     cycleJumpDesc: 'Jump to the next galaxy: keep tech and achievements, rebuild and receive supplies.',
     cycleJumpButton: 'Jump',

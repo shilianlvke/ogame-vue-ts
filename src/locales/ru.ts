@@ -1100,6 +1100,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: 'В онлайн-режиме управляется сервером',
     cycleJumpTitle: 'Прыжок цикла',
     cycleJumpDesc: 'Перейти в следующую галактику: технологии и достижения сохраняются, колонии строятся заново.',
     cycleJumpButton: 'Прыгнуть',

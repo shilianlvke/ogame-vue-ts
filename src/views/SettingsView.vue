@@ -128,9 +128,10 @@
           </div>
           <div class="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <div class="flex items-center gap-2 flex-1 sm:flex-initial">
-              <Button @click="decreaseSpeed" variant="outline" size="sm" :disabled="gameStore.gameSpeed <= 0.5">-</Button>
+              <Button @click="decreaseSpeed" variant="outline" size="sm" :disabled="netStore.isOnline || gameStore.gameSpeed <= 0.5">-</Button>
               <span class="min-w-[60px] text-center font-medium">{{ gameStore.gameSpeed }}x</span>
-              <Button @click="increaseSpeed" variant="outline" size="sm" :disabled="gameStore.gameSpeed >= 10">+</Button>
+              <span v-if="netStore.isOnline" class="text-xs text-muted-foreground">{{ t('settings.onlineControlled') }}</span>
+              <Button @click="increaseSpeed" variant="outline" size="sm" :disabled="netStore.isOnline || gameStore.gameSpeed >= 10">+</Button>
             </div>
             <Button @click="resetSpeed" variant="ghost" size="sm">{{ t('settings.reset') }}</Button>
           </div>
@@ -142,7 +143,7 @@
             <h3 class="font-medium">{{ t('settings.gamePause') }}</h3>
             <p class="text-sm text-muted-foreground">{{ t('settings.gamePauseDesc') }}</p>
           </div>
-          <Button @click="togglePause" :variant="gameStore.isPaused ? 'default' : 'outline'">
+          <Button @click="togglePause" :disabled="netStore.isOnline" :variant="gameStore.isPaused ? 'default' : 'outline'">
             <component :is="gameStore.isPaused ? Play : Pause" class="mr-2 h-4 w-4" />
             {{ gameStore.isPaused ? t('settings.resume') : t('settings.pause') }}
           </Button>

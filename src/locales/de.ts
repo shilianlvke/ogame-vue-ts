@@ -1099,6 +1099,7 @@ export default {
     swarm: 'Swarm',
   },
   settings: {
+    onlineControlled: 'Im Online-Modus vom Server gesteuert',
     cycleJumpTitle: 'Zyklus-Sprung',
     cycleJumpDesc: 'Springe in die nächste Galaxie: Technik und Erfolge bleiben, Kolonien werden neu aufgebaut.',
     cycleJumpButton: 'Springen',

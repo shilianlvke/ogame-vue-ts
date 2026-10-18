@@ -25,7 +25,7 @@ import type { Locale } from '@/locales'
 import type { EngineEvent, World } from './types'
 import type { GameCommand } from './commands'
 import { allPlayers, inCurrentCycle, positionKey } from './world'
-import { calculatePlayerScores } from '@/logic/rankingLogic'
+import { calculateNPCScores, calculatePlayerScores } from '@/logic/rankingLogic'
 
 /** 协议版本：客户端与服务端不一致时拒绝连接 */
 export const PROTOCOL_VERSION = 3
@@ -246,6 +246,8 @@ export const buildPublicNpcs = (world: World, visibility: VisibilityMode = 'publ
   if (visibility === 'full') return npcs
   return npcs.map(npc => ({
     ...toPublicNpc(npc),
+    // 公开视图会清空建筑/舰队/科技，积分必须在服务端算好再下发
+    scores: calculateNPCScores(npc),
     planets: npc.planets.map(toPublicPlanet)
   }))
 }

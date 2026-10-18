@@ -914,6 +914,8 @@ export type NPCAIType = (typeof NPCAIType)[keyof typeof NPCAIType]
 export interface NPC {
   id: string
   name: string
+  /** 排行榜积分（公开视图下由服务端算好下发） */
+  scores?: { total: number; building: number; research: number; fleet: number; defense: number }
   note?: string // 玩家添加的备注
   planets: Planet[]
   technologies: Record<TechnologyType, number>

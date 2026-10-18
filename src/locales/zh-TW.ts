@@ -1089,6 +1089,7 @@ export default {
     swarm: '蟲群',
   },
   settings: {
+    onlineControlled: '連線模式由伺服器控制',
     cycleJumpTitle: '周目躍遷',
     cycleJumpDesc: '躍遷到下一座銀河：保留科技與成就，重建殖民地並領取補給。',
     cycleJumpButton: '躍遷',

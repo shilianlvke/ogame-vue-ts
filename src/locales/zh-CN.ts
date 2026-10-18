@@ -1086,6 +1086,7 @@ export default {
     swarm: '虫群',
   },
   settings: {
+    onlineControlled: '联机模式由服务端控制',
     cycleJumpTitle: '周目跃迁',
     cycleJumpDesc: '跃迁到下一个银河：保留科技与成就，重建殖民地并领取补给。',
     cycleJumpButton: '跃迁',
