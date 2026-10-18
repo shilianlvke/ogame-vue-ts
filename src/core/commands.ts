@@ -670,11 +670,14 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
     }
 
     case 'campaign.start': {
+      // 老存档没有战役进度，懒初始化，避免报"战役未初始化"
+      if (!player.campaignProgress) campaignLogic.initializeCampaignProgress(player)
       const result = campaignLogic.startQuest(player, command.questId)
       if (!result.success) return fail(result.error ?? 'errors.requirementsNotMet')
       return succeed()
     }
     case 'campaign.claim': {
+      if (!player.campaignProgress) campaignLogic.initializeCampaignProgress(player)
       const result = campaignLogic.claimQuestRewards(player, command.questId)
       if (!result.success) return fail(result.error ?? 'errors.requirementsNotMet')
       return succeed()
