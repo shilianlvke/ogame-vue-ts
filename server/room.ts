@@ -32,7 +32,7 @@ import { generatePlanetName } from '@/logic/nameGenerator'
 import * as oreDepositLogic from '@/logic/oreDepositLogic'
 import { createToken, hashPassword, verifyPassword } from './auth'
 import { applyMaxAccount } from '@/logic/devAccount'
-import { initializeCampaignProgress } from '@/logic/campaignLogic'
+import { checkAllActiveQuestsProgress, initializeCampaignProgress } from '@/logic/campaignLogic'
 import type { Account, ServerState } from './state'
 
 /** 与具体 WebSocket 实现解耦的连接抽象 */
@@ -635,6 +635,9 @@ export class Room {
         for (const player of cyclePlayers) {
           this.world.player = player
           await tickPlayerPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), now)
+          if (this.world.player.campaignProgress) {
+            checkAllActiveQuestsProgress(this.world.player, this.world.npcs, this.world)
+          }
         }
 
         // 阶段 2：NPC 世界（轮转「当前玩家」视角）

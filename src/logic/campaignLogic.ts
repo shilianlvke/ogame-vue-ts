@@ -594,7 +594,11 @@ export const getUnreadQuestNotificationCount = (player: Player): number => {
 /**
  * 检查并更新所有激活任务的进度
  */
-export const checkAllActiveQuestsProgress = (player: Player, npcs: NPC[]): QuestNotification[] => {
+export const checkAllActiveQuestsProgress = (
+  player: Player,
+  npcs: NPC[],
+  world?: { gates?: Record<string, { owner: string }> }
+): QuestNotification[] => {
   const notifications: QuestNotification[] = []
   const progress = player.campaignProgress
 
@@ -604,7 +608,7 @@ export const checkAllActiveQuestsProgress = (player: Player, npcs: NPC[]): Quest
   Object.entries(progress.questProgress).forEach(([questId, questProgress]) => {
     if (questProgress.status !== QuestStatus.Active) return
 
-    const result = updateQuestProgress(player, questId, npcs)
+    const result = updateQuestProgress(player, questId, npcs, world)
 
     // 为完成的目标创建通知
     result.completedObjectives.forEach(objId => {

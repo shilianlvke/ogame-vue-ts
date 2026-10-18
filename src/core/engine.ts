@@ -176,7 +176,7 @@ export const tickPlayerPostPhase = (
 
   // 2. 战役任务进度
   if (world.player.campaignProgress) {
-    campaignLogic.checkAllActiveQuestsProgress(world.player, world.npcs)
+    campaignLogic.checkAllActiveQuestsProgress(world.player, world.npcs, world)
   }
 
   // 3. 清理被消灭的 NPC
