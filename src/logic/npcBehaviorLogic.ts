@@ -205,6 +205,46 @@ export const applyAIModifierToConfig = (config: DynamicBehaviorConfig, modifier:
 }
 
 /**
+ * 为某个 NPC 选出本次行为的目标玩家
+ *
+ * 单机时玩家只有一个；服务端多人时，NPC 需要面对多个玩家。
+ * 规则：优先选择「与自己敌对且最近」的玩家；没有敌对关系时选择最近的玩家
+ * （贸易、援助、情报等中立/友好行为也会落到最近的邻居身上）。
+ *
+ * 这样 NPC 的注意力会自然按星系距离分布，而不是只盯着某一个玩家。
+ */
+export const selectNPCBehaviorTarget = (npc: NPC, players: Player[]): Player | undefined => {
+  const first = players[0]
+  if (!first) return undefined
+  if (players.length === 1) return first
+
+  const origin = npc.planets[0]?.position
+
+  const distanceTo = (player: Player): number => {
+    const home = player.planets.find(planet => !planet.isMoon) ?? player.planets[0]
+    if (!origin || !home) return Number.MAX_SAFE_INTEGER
+    const target = home.position
+    // 跨星系距离权重最高，其次是星系内坐标
+    if (target.galaxy !== origin.galaxy) return Math.abs(target.galaxy - origin.galaxy) * 100_000
+    return Math.abs(target.system - origin.system) * 1_000 + Math.abs(target.position - origin.position)
+  }
+
+  const hostile = players.filter(player => npc.relations?.[player.id]?.status === RelationStatus.Hostile)
+  const pool = hostile.length > 0 ? hostile : players
+
+  let best = pool[0] ?? first
+  let bestDistance = distanceTo(best)
+  for (const player of pool.slice(1)) {
+    const distance = distanceTo(player)
+    if (distance < bestDistance) {
+      best = player
+      bestDistance = distance
+    }
+  }
+  return best
+}
+
+/**
  * NPC行为决策系统
  *
  * 流程：
@@ -1243,7 +1283,9 @@ export const updateNPCBehaviorWithLimit = (
     activeSpyMissions: number
     activeAttackMissions: number
     config: DynamicBehaviorConfig
-  }
+  },
+  /** 多人服务器：用于把「反击」警报投递给真正的被攻击玩家 */
+  allPlayers: Player[] = [player]
 ): { spyCreated: boolean; attackCreated: boolean } => {
   const { activeSpyMissions, activeAttackMissions, config } = limits
   let spyCreated = false
@@ -1271,10 +1313,12 @@ export const updateNPCBehaviorWithLimit = (
       const targetPlanet = allPlanets.find(p => p.id === revengeMission.targetPlanetId)
       if (targetPlanet) {
         const alert = createIncomingFleetAlert(revengeMission, npc, targetPlanet)
-        if (!player.incomingFleetAlerts) {
-          player.incomingFleetAlerts = []
+        // 反击目标可能是另一个玩家，警报要投递给该星球真正的主人
+        const owner = allPlayers.find(candidate => candidate.id === targetPlanet.ownerId) ?? player
+        if (!owner.incomingFleetAlerts) {
+          owner.incomingFleetAlerts = []
         }
-        player.incomingFleetAlerts.push(alert)
+        owner.incomingFleetAlerts.push(alert)
         attackCreated = true
       }
       return { spyCreated, attackCreated }
@@ -1303,7 +1347,11 @@ export const updateNPCBehaviorWithLimit = (
   // 4. 检查是否应该攻击玩家（受攻击并发限制）
   if (activeAttackMissions < config.maxConcurrentAttackMissions && shouldNPCAttackPlayer(npc, player, currentTime, config)) {
     if (npc.playerSpyReports && Object.keys(npc.playerSpyReports).length > 0) {
-      const spyReports = Object.values(npc.playerSpyReports)
+      // 只攻击「当前目标玩家」的星球（多人服务器里 NPC 会分别针对不同玩家行动）
+      const spyReports = Object.values(npc.playerSpyReports).filter(report => {
+        const planet = allPlanets.find(candidate => candidate.id === report.targetPlanetId)
+        return planet?.ownerId === player.id
+      })
       const recentReport = spyReports[Math.floor(Math.random() * spyReports.length)]
 
       if (recentReport) {

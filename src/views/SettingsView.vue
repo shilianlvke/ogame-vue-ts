@@ -80,6 +80,9 @@
       </CardContent>
     </Card>
 
+    <!-- 联机模式 -->
+    <OnlinePanel />
+
     <!-- 游戏设置 -->
     <Card>
       <CardHeader>
@@ -398,6 +401,7 @@
   import PrivacyDialog from '@/components/dialogs/PrivacyDialog.vue'
   import WebDAVConfigDialog from '@/components/settings/WebDAVConfigDialog.vue'
   import WebDAVFileListDialog from '@/components/settings/WebDAVFileListDialog.vue'
+  import OnlinePanel from '@/components/settings/OnlinePanel.vue'
   import { useHints } from '@/composables/useHints'
   import { uploadToWebDAV, downloadFromWebDAV } from '@/services/webdavService'
 

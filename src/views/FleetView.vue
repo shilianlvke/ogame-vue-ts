@@ -634,15 +634,14 @@
     Crosshair
   } from 'lucide-vue-next'
   import { formatNumber, formatTime } from '@/utils/format'
-  import * as shipValidation from '@/logic/shipValidation'
   import * as fleetLogic from '@/logic/fleetLogic'
   import * as shipLogic from '@/logic/shipLogic'
   import * as officerLogic from '@/logic/officerLogic'
   import * as publicLogic from '@/logic/publicLogic'
   import * as diplomaticLogic from '@/logic/diplomaticLogic'
-  import * as gameLogic from '@/logic/gameLogic'
   import * as moonLogic from '@/logic/moonLogic'
   import { generateId } from '@/utils/id'
+  import { dispatchCommand } from '@/core/runtime'
 
   const route = useRoute()
   const gameStore = useGameStore()
@@ -1266,64 +1265,20 @@
     isMoonTarget: boolean = false
   ): boolean => {
     if (!gameStore.currentPlanet) return false
-    const currentMissions = gameStore.player.fleetMissions.length
-    const validation = shipValidation.validateFleetDispatch(
-      gameStore.currentPlanet,
-      fleet,
-      cargo,
-      gameStore.player.officers,
-      currentMissions,
-      gameStore.player.technologies
-    )
-    if (!validation.valid) return false
-
-    // 追踪燃料消耗（同时计入资源消耗和燃料统计）
-    if (validation.fuelNeeded && validation.fuelNeeded > 0) {
-      gameLogic.trackResourceConsumption(gameStore.player, { deuterium: validation.fuelNeeded })
-      gameLogic.trackFuelConsumption(gameStore.player, validation.fuelNeeded)
-    }
-
-    const shouldDeductCargo = missionType === MissionType.Transport
-    shipValidation.executeFleetDispatch(gameStore.currentPlanet, fleet, validation.fuelNeeded!, shouldDeductCargo, cargo)
-    const distance = fleetLogic.calculateDistance(gameStore.currentPlanet.position, targetPosition)
-    const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
-    const minSpeed = shipLogic.calculateFleetMinSpeed(fleet, bonuses.fleetSpeedBonus)
-    let flightTime = fleetLogic.calculateFlightTime(distance, minSpeed)
-
-    // 探险任务应用区域飞行时间倍率
-    if (missionType === MissionType.Expedition) {
-      const zoneConfig = EXPEDITION_ZONES[selectedExpeditionZone.value]
-      flightTime = Math.floor(flightTime * zoneConfig.flightTimeMultiplier)
-    }
-
-    const mission = fleetLogic.createFleetMission(
-      gameStore.player.id,
-      gameStore.currentPlanet.id,
+    // 统一走命令层：校验、扣舰队/燃料/货物、生成任务都在 core 中完成
+    const result = dispatchCommand({
+      type: 'fleet.send',
+      originPlanetId: gameStore.currentPlanet.id,
       targetPosition,
       missionType,
       fleet,
       cargo,
-      flightTime
-    )
-
-    // 如果目标是月球，设置标记
-    if (isMoonTarget) {
-      mission.targetIsMoon = true
-    }
-
-    // 如果是赠送模式，标记任务
-    if (missionType === MissionType.Transport && isGiftMode.value && targetNpc.value) {
-      mission.isGift = true
-      mission.giftTargetNpcId = targetNpc.value.id
-    }
-
-    // 如果是探险任务，设置探险区域
-    if (missionType === MissionType.Expedition) {
-      mission.expeditionZone = selectedExpeditionZone.value
-    }
-
-    gameStore.player.fleetMissions.push(mission)
-    return true
+      isMoonTarget,
+      isGift: missionType === MissionType.Transport && isGiftMode.value && !!targetNpc.value,
+      giftTargetNpcId: targetNpc.value?.id,
+      expeditionZone: missionType === MissionType.Expedition ? selectedExpeditionZone.value : undefined
+    })
+    return result.ok
   }
 
   // 派遣舰队
@@ -1371,9 +1326,8 @@
   }
 
   const recallFleet = (missionId: string): boolean => {
-    const mission = gameStore.player.fleetMissions.find(m => m.id === missionId)
-    if (!mission) return false
-    return fleetLogic.recallFleetMission(mission, Date.now())
+    if (!gameStore.player.fleetMissions.some(mission => mission.id === missionId)) return false
+    return dispatchCommand({ type: 'fleet.recall', missionId }).ok
   }
 
   // 召回舰队

@@ -1,5 +1,16 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useGameStore } from '@/stores/gameStore'
+import pkg from '../../package.json'
+
+/** 是否处于联机模式（读取独立的联机配置键，避免依赖 store 初始化顺序） */
+const isOnlineMode = (): boolean => {
+  try {
+    const raw = localStorage.getItem(`${pkg.name}-online`)
+    return raw ? JSON.parse(raw).enabled === true : false
+  } catch {
+    return false
+  }
+}
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -27,6 +38,12 @@ const router = createRouter({
 
 // 路由守卫：检查隐私协议同意状态
 router.beforeEach((to, _from, next) => {
+  // 联机模式下禁用 GM 面板（调试后门不能出现在线上环境）
+  if (to.path === '/gm' && isOnlineMode()) {
+    next('/overview')
+    return
+  }
+
   const gameStore = useGameStore()
 
   // 已同意隐私协议

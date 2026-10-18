@@ -389,6 +389,9 @@
 
       <!-- 敌方警报 -->
       <EnemyAlertNotifications ref="enemyAlertNotificationsRef" />
+
+      <!-- 银河频道（仅联机模式） -->
+      <ChatPanel v-if="netStore.enabled" />
     </div>
 
     <!-- 确认对话框 -->
@@ -473,6 +476,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import { useUniverseStore } from '@/stores/universeStore'
   import { useNPCStore } from '@/stores/npcStore'
+  import { useNetStore } from '@/stores/netStore'
   import { useTheme } from '@/composables/useTheme'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
@@ -517,10 +521,9 @@
   import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
   import HintToast from '@/components/notifications/HintToast.vue'
   import BackToTop from '@/components/common/BackToTop.vue'
+  import ChatPanel from '@/components/chat/ChatPanel.vue'
   import Sonner from '@/components/ui/sonner/Sonner.vue'
-  import { MissionType, BuildingType, TechnologyType, DiplomaticEventType, ShipType, DefenseType } from '@/types/game'
-  import type { FleetMission, NPC, MissileAttack } from '@/types/game'
-  import { DIPLOMATIC_CONFIG } from '@/config/gameConfig'
+  import { BuildingType, TechnologyType, ShipType, DefenseType } from '@/types/game'
   import type { VersionInfo } from '@/utils/versionCheck'
   import { formatNumber, getResourceColor } from '@/utils/format'
   import { scaleNumber, scaleResources } from '@/utils/speed'
@@ -553,18 +556,19 @@
   import * as gameLogic from '@/logic/gameLogic'
   import * as planetLogic from '@/logic/planetLogic'
   import * as officerLogic from '@/logic/officerLogic'
-  import * as buildingValidation from '@/logic/buildingValidation'
   import * as resourceLogic from '@/logic/resourceLogic'
-  import * as researchValidation from '@/logic/researchValidation'
-  import * as fleetLogic from '@/logic/fleetLogic'
-  import * as shipLogic from '@/logic/shipLogic'
-  import * as npcGrowthLogic from '@/logic/npcGrowthLogic'
-  import * as npcBehaviorLogic from '@/logic/npcBehaviorLogic'
-  import * as diplomaticLogic from '@/logic/diplomaticLogic'
   import * as publicLogic from '@/logic/publicLogic'
   import * as oreDepositLogic from '@/logic/oreDepositLogic'
-  import * as campaignLogic from '@/logic/campaignLogic'
-  import { generateNPCName, countOldFormatNPCs, updateNPCName } from '@/logic/npcNameGenerator'
+  import { countOldFormatNPCs, updateNPCName } from '@/logic/npcNameGenerator'
+  // 无头核心：游戏推进逻辑（可同时在浏览器与 Node 服务端运行）
+  import { createWorld as createGameWorld } from '@/core/world'
+  import { tick } from '@/core/engine'
+  import { generateNpcPlanets } from '@/core/generate'
+  import { createEngineContext } from '@/core/types'
+  import type { EngineEvent } from '@/core/types'
+  import { setBattleRunner } from '@/core/battleRunner'
+  import { workerBattleRunner } from '@/workers/workerBattleRunner'
+  import { dispatchCommand, setGameRuntime } from '@/core/runtime'
   import pkg from '../package.json'
   import { toast } from 'vue-sonner'
   import { migrateGameData } from '@/utils/migration'
@@ -581,6 +585,7 @@
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
   const npcStore = useNPCStore()
+  const netStore = useNetStore()
   const { isDark } = useTheme()
   const { t } = useI18n()
   const { BUILDINGS, TECHNOLOGIES } = useGameConfig()
@@ -601,11 +606,6 @@
   const sidebarOpen = ref(window.innerWidth >= 1024)
   // 移动端资源栏展开状态
   const resourceBarExpanded = ref(false)
-  const npcUpdateCounter = ref(0) // 累计秒数
-  const NPC_UPDATE_INTERVAL = 5 // 每1秒更新一次NPC，确保发育速度与玩家相当
-  // NPC行为系统更新函数（侦查和攻击决策）
-  const npcBehaviorCounter = ref(0)
-  const NPC_BEHAVIOR_INTERVAL = 5 // 每5秒检查一次NPC行为
 
   // 游戏循环定时器
   const gameLoop = ref<ReturnType<typeof setInterval> | null>(null)
@@ -818,6 +818,8 @@
   }
 
   const initGame = async () => {
+    // 联机模式下世界由服务器下发，本地不做任何初始化/迁移
+    if (netStore.enabled) return
     const shouldInit = gameLogic.shouldInitializeGame(gameStore.player.planets)
     if (!shouldInit) {
       const now = Date.now()
@@ -891,1315 +893,103 @@
     gameStore.player.points = publicLogic.calculatePlayerPoints(gameStore.player)
   }
 
-  const generateNPCPlanets = () => {
-    const npcCount = 200
-    for (let i = 0; i < npcCount; i++) {
-      const position = gameLogic.generateRandomPosition()
-      const key = gameLogic.generatePositionKey(position.galaxy, position.system, position.position)
-      if (universeStore.planets[key]) continue
-      const npcPlanet = planetLogic.createNPCPlanet(i, position, t('planet.planetPrefix'))
-      universeStore.planets[key] = npcPlanet
+  // ============================================================
+  // 无头世界 + 引擎驱动
+  // ------------------------------------------------------------
+  // 游戏推进逻辑已抽取到 src/core 下，浏览器与服务端共用同一套代码。
+  // 这里把 Pinia 中的对象引用交给引擎，引擎的就地修改会直接触发响应式更新。
+  // ============================================================
+  // 浏览器端：战斗计算继续交给 Web Worker，避免阻塞主线程
+  setBattleRunner(workerBattleRunner)
+
+  const world = createGameWorld({
+    player: gameStore.player,
+    planets: universeStore.planets,
+    npcs: npcStore.npcs,
+    debrisFields: universeStore.debrisFields,
+    locale: gameStore.locale,
+    gameSpeed: gameStore.gameSpeed,
+    battleToFinish: gameStore.battleToFinish
+  })
+
+  // 把 store 侧可能变化的字段同步进 World（引擎不直接读取 store）
+  const syncWorldFromStores = () => {
+    world.player = gameStore.player
+    world.locale = gameStore.locale
+    world.gameSpeed = gameStore.gameSpeed
+    world.battleToFinish = gameStore.battleToFinish
+  }
+
+  // 引擎事件 → UI 呈现（浏览器通知 / 应用内 toast）
+  const handleEngineEvent = (event: EngineEvent) => {
+    switch (event.kind) {
+      case 'queueComplete':
+        handleNotification(event.category, event.itemType, event.level)
+        break
+      case 'unlocks':
+        handleUnlockNotification(event.items)
+        break
+      case 'toast': {
+        const message = t(event.messageKey, event.messageParams)
+        const description = event.descriptionKey ? t(event.descriptionKey, event.descriptionParams) : undefined
+        const options = description ? { description } : undefined
+        if (event.variant === 'success') toast.success(message, options)
+        else if (event.variant === 'error') toast.error(message, options)
+        else if (event.variant === 'warning') toast.warning(message, options)
+        else toast.info(message, options)
+        break
+      }
+      case 'achievement': {
+        const tierName = t(`achievements.tiers.${event.tier}`)
+        const achievementName = t(`achievements.names.${event.id}`)
+        toast.success(t('achievements.unlocked'), { description: `${achievementName} (${tierName})` })
+        break
+      }
     }
   }
+
+  const engineContext = createEngineContext({ t, emit: handleEngineEvent })
+
+  // 注册运行时：视图层通过 dispatchCommand 发起操作，不再直接改 store
+  setGameRuntime({ world, ctx: engineContext, sync: syncWorldFromStores })
+
+  // 联机模式：引擎事件与命令拒绝都从这里回到 UI
+  netStore.setHandlers({
+    onEvent: handleEngineEvent,
+    onReject: reason => toast.error(t(reason ?? 'errors.unknown')),
+    onError: message => toast.error(message)
+  })
+
+  const generateNPCPlanets = () => {
+    syncWorldFromStores()
+    generateNpcPlanets(world, t('planet.planetPrefix'))
+  }
+
+  // 防止一次 tick 未结束时重入（战斗结算为异步）
+  let isTicking = false
 
   const updateGame = async () => {
-    const now = Date.now()
-    if (gameStore.isPaused) return
-    gameStore.gameTime = now
-    // 检查军官过期
-    gameLogic.checkOfficersExpiration(gameStore.player.officers, now)
-    // 处理游戏更新（建造队列、研究队列等）
-    const result = gameLogic.processGameUpdate(gameStore.player, now, gameStore.gameSpeed, handleNotification, handleUnlockNotification)
-    gameStore.player.researchQueue = result.updatedResearchQueue
-    // 处理舰队任务
-    gameStore.player.fleetMissions.forEach(mission => {
-      if (mission.status === 'outbound' && now >= mission.arrivalTime) {
-        processMissionArrival(mission)
-      } else if (mission.status === 'returning' && mission.returnTime && now >= mission.returnTime) {
-        processMissionReturn(mission)
-      }
-    })
-
-    // 处理导弹攻击任务（使用反向循环以便安全删除）
-    for (let i = gameStore.player.missileAttacks.length - 1; i >= 0; i--) {
-      const missileAttack = gameStore.player.missileAttacks[i]
-      if (missileAttack && missileAttack.status === 'flying' && now >= missileAttack.arrivalTime) {
-        await processMissileAttackArrival(missileAttack)
-        // 导弹攻击是单程的，到达后直接从数组中移除
-        gameStore.player.missileAttacks.splice(i, 1)
-      }
+    // 联机模式下世界由服务器推进：本地只更新时间戳供 UI 倒计时使用
+    if (netStore.enabled) {
+      gameStore.gameTime = Date.now()
+      return
     }
-
-    // 处理NPC舰队任务
-    npcStore.npcs.forEach(npc => {
-      if (npc.fleetMissions) {
-        npc.fleetMissions.forEach(mission => {
-          if (mission.status === 'outbound' && now >= mission.arrivalTime) {
-            processNPCMissionArrival(npc, mission)
-          } else if (mission.status === 'returning' && mission.returnTime && now >= mission.returnTime) {
-            processNPCMissionReturn(npc, mission)
-          }
-        })
-      }
-    })
-
-    // NPC成长系统更新
-    updateNPCGrowth(1)
-
-    // NPC行为系统更新（侦查和攻击决策）
-    updateNPCBehavior(1)
-
-    // 检查成就解锁
-    checkAchievementUnlocks()
-
-    // 检查战役任务进度
-    if (gameStore.player.campaignProgress) {
-      campaignLogic.checkAllActiveQuestsProgress(gameStore.player, npcStore.npcs)
-    }
-
-    // 检查并处理被消灭的NPC（所有星球都被摧毁的NPC）
-    const eliminatedNpcIds = diplomaticLogic.checkAndHandleEliminatedNPCs(npcStore.npcs, gameStore.player, gameStore.locale)
-    if (eliminatedNpcIds.length > 0) {
-      // 从universeStore中移除被消灭NPC的星球数据，并收集需要清理的任务ID
-      const missionIdsToRemove: string[] = []
-      eliminatedNpcIds.forEach(npcId => {
-        const npc = npcStore.npcs.find(n => n.id === npcId)
-        if (npc) {
-          // 遍历NPC的所有星球，从universeStore中删除
-          if (npc.planets) {
-            npc.planets.forEach(planet => {
-              const planetKey = gameLogic.generatePositionKey(planet.position.galaxy, planet.position.system, planet.position.position)
-              if (universeStore.planets[planetKey]) {
-                delete universeStore.planets[planetKey]
-              }
-            })
-          }
-          // 收集该NPC所有任务的ID（用于清理玩家的警报）
-          if (npc.fleetMissions) {
-            npc.fleetMissions.forEach(m => missionIdsToRemove.push(m.id))
-          }
-        }
-      })
-
-      // 清理玩家的即将到来舰队警报（移除已消灭NPC的任务警报）
-      if (gameStore.player.incomingFleetAlerts && missionIdsToRemove.length > 0) {
-        gameStore.player.incomingFleetAlerts = gameStore.player.incomingFleetAlerts.filter(alert => !missionIdsToRemove.includes(alert.id))
-      }
-
-      // 从NPC列表中移除被消灭的NPC
-      npcStore.npcs = npcStore.npcs.filter(npc => !eliminatedNpcIds.includes(npc.id))
-    }
-  }
-
-  const processMissionArrival = async (mission: FleetMission) => {
-    // 从宇宙星球地图中查找目标星球
-    const targetKey = gameLogic.generatePositionKey(
-      mission.targetPosition.galaxy,
-      mission.targetPosition.system,
-      mission.targetPosition.position
-    )
-    // 先从玩家星球中查找，再从宇宙地图中查找
-    // 如果任务指定了targetIsMoon，需要精确匹配行星或月球
-    const targetPlanet =
-      gameStore.player.planets.find(p => {
-        const positionMatch =
-          p.position.galaxy === mission.targetPosition.galaxy &&
-          p.position.system === mission.targetPosition.system &&
-          p.position.position === mission.targetPosition.position
-        // 如果任务明确指定目标类型，按类型匹配
-        if (mission.targetIsMoon !== undefined) {
-          return positionMatch && p.isMoon === mission.targetIsMoon
-        }
-        // 兼容旧任务：默认优先匹配行星（非月球）
-        return positionMatch && !p.isMoon
-      }) ||
-      // 如果没有匹配到指定类型，尝试匹配同位置的任何星球
-      gameStore.player.planets.find(
-        p =>
-          p.position.galaxy === mission.targetPosition.galaxy &&
-          p.position.system === mission.targetPosition.system &&
-          p.position.position === mission.targetPosition.position
-      ) ||
-      universeStore.planets[targetKey]
-
-    // 获取起始星球名称（用于报告）
-    const originPlanet = gameStore.player.planets.find(p => p.id === mission.originPlanetId)
-    const originPlanetName = originPlanet?.name || t('fleetView.unknownPlanet')
-
-    if (mission.missionType === MissionType.Transport) {
-      // 在处理任务之前保存货物信息（因为processTransportArrival会清空cargo）
-      const transportedResources = { ...mission.cargo }
-      const isGiftMission = mission.isGift && mission.giftTargetNpcId
-      const result = fleetLogic.processTransportArrival(mission, targetPlanet, gameStore.player, npcStore.npcs)
-
-      // 更新成就统计（仅在成功时追踪）
-      if (result.success) {
-        const totalTransported =
-          transportedResources.metal + transportedResources.crystal + transportedResources.deuterium + transportedResources.darkMatter
-        if (isGiftMission) {
-          // 送礼成功
-          gameLogic.trackDiplomacyStats(gameStore.player, 'gift', { resourcesAmount: totalTransported })
-        } else {
-          // 普通运输任务成功
-          gameLogic.trackMissionStats(gameStore.player, 'transport', { resourcesAmount: totalTransported })
-        }
-      }
-
-      // 生成失败原因消息
-      let transportFailMessage = t('missionReports.transportFailed')
-      if (!result.success && result.failReason) {
-        if (result.failReason === 'targetNotFound') {
-          transportFailMessage = t('missionReports.transportFailedTargetNotFound')
-        } else if (result.failReason === 'giftRejected') {
-          transportFailMessage = t('missionReports.transportFailedGiftRejected')
-        }
-      }
-
-      // 生成运输任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Transport,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        targetPlanetId: targetPlanet?.id,
-        targetPlanetName:
-          targetPlanet?.name || `[${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}]`,
-        success: result.success,
-        message: result.success ? t('missionReports.transportSuccess') : transportFailMessage,
-        details: {
-          transportedResources,
-          failReason: result.failReason
-        },
-        read: false
-      })
-    } else if (mission.missionType === MissionType.Attack) {
-      const attackResult = await fleetLogic.processAttackArrival(mission, targetPlanet, gameStore.player, null, gameStore.player.planets)
-      if (attackResult) {
-        gameStore.player.battleReports.push(attackResult.battleResult)
-
-        // 更新成就统计 - 攻击
-        const debrisValue = attackResult.debrisField
-          ? attackResult.debrisField.resources.metal + attackResult.debrisField.resources.crystal
-          : 0
-        const won = attackResult.battleResult.winner === 'attacker'
-        gameLogic.trackAttackStats(gameStore.player, attackResult.battleResult, won, debrisValue)
-
-        // 检查是否攻击了NPC星球，更新外交关系
-        if (targetPlanet) {
-          const targetNpc = npcStore.npcs.find(npc => npc.planets.some(p => p.id === targetPlanet.id))
-          if (targetNpc) {
-            diplomaticLogic.handleAttackReputation(gameStore.player, targetNpc, attackResult.battleResult, npcStore.npcs, gameStore.locale)
-
-            // 同步战斗损失到NPC的实际星球数据
-            const npcPlanet = targetNpc.planets.find(p => p.id === targetPlanet.id)
-            if (npcPlanet) {
-              // 同步舰队损失
-              Object.entries(attackResult.battleResult.defenderLosses.fleet).forEach(([shipType, lost]) => {
-                npcPlanet.fleet[shipType as ShipType] = Math.max(0, (npcPlanet.fleet[shipType as ShipType] || 0) - lost)
-              })
-              // 同步防御损失（修复后的数据已在targetPlanet中）
-              npcPlanet.defense = { ...targetPlanet.defense }
-              // 同步资源（被掠夺后的）
-              npcPlanet.resources = { ...targetPlanet.resources }
-            }
-          }
-        }
-
-        if (attackResult.moon) {
-          gameStore.player.planets.push(attackResult.moon)
-        }
-        if (attackResult.debrisField) {
-          // 将残骸场添加到游戏状态
-          universeStore.debrisFields[attackResult.debrisField.id] = attackResult.debrisField
-        }
-      }
-    } else if (mission.missionType === MissionType.Colonize) {
-      const colonizeResult = fleetLogic.processColonizeArrival(mission, targetPlanet, gameStore.player, t('planet.colonyPrefix'))
-      const newPlanet = colonizeResult.planet
-
-      // 更新成就统计 - 殖民
-      if (colonizeResult.success && newPlanet) {
-        gameLogic.trackMissionStats(gameStore.player, 'colonize')
-      }
-
-      // 生成失败原因消息
-      let failMessage = t('missionReports.colonizeFailed')
-      if (!colonizeResult.success && colonizeResult.failReason) {
-        if (colonizeResult.failReason === 'positionOccupied') {
-          failMessage = t('missionReports.colonizeFailedOccupied')
-        } else if (colonizeResult.failReason === 'maxColoniesReached') {
-          failMessage = t('missionReports.colonizeFailedMaxColonies')
-        }
-      }
-
-      // 生成殖民任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Colonize,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        targetPlanetId: newPlanet?.id,
-        targetPlanetName: newPlanet?.name,
-        success: colonizeResult.success,
-        message: colonizeResult.success ? t('missionReports.colonizeSuccess') : failMessage,
-        details: newPlanet
-          ? {
-              newPlanetId: newPlanet.id,
-              newPlanetName: newPlanet.name
-            }
-          : { failReason: colonizeResult.failReason },
-        read: false
-      })
-      if (newPlanet) {
-        gameStore.player.planets.push(newPlanet)
-      }
-    } else if (mission.missionType === MissionType.Spy) {
-      const spyResult = fleetLogic.processSpyArrival(mission, targetPlanet, gameStore.player, null, npcStore.npcs)
-      if (spyResult.success && spyResult.report) {
-        gameStore.player.spyReports.push(spyResult.report)
-        // 更新成就统计 - 侦查
-        gameLogic.trackMissionStats(gameStore.player, 'spy')
-      }
-
-      // 生成侦查任务报告（即使失败也生成）
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-
-      let spyFailMessage = t('missionReports.spyFailed')
-      if (!spyResult.success && spyResult.failReason) {
-        if (spyResult.failReason === 'targetNotFound') {
-          spyFailMessage = t('missionReports.spyFailedTargetNotFound')
-        }
-      }
-
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Spy,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        targetPlanetId: targetPlanet?.id,
-        targetPlanetName:
-          targetPlanet?.name || `[${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}]`,
-        success: spyResult.success,
-        message: spyResult.success ? t('missionReports.spySuccess') : spyFailMessage,
-        details: spyResult.success ? { spyReportId: spyResult.report?.id } : { failReason: spyResult.failReason },
-        read: false
-      })
-    } else if (mission.missionType === MissionType.Deploy) {
-      const deployed = fleetLogic.processDeployArrival(mission, targetPlanet, gameStore.player.id, gameStore.player.technologies)
-
-      // 更新成就统计 - 部署
-      if (deployed.success) {
-        gameLogic.trackMissionStats(gameStore.player, 'deploy')
-      }
-
-      // 生成失败原因消息
-      let deployFailMessage = t('missionReports.deployFailed')
-      if (!deployed.success && deployed.failReason) {
-        if (deployed.failReason === 'targetNotFound') {
-          deployFailMessage = t('missionReports.deployFailedTargetNotFound')
-        } else if (deployed.failReason === 'notOwnPlanet') {
-          deployFailMessage = t('missionReports.deployFailedNotOwnPlanet')
-        }
-      }
-
-      // 生成部署任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Deploy,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        targetPlanetId: targetPlanet?.id,
-        targetPlanetName:
-          targetPlanet?.name || `[${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}]`,
-        success: deployed.success,
-        message: deployed.success ? t('missionReports.deploySuccess') : deployFailMessage,
-        details: {
-          deployedFleet: mission.fleet,
-          failReason: deployed.failReason
-        },
-        read: false
-      })
-      if (deployed.success && !deployed.overflow) {
-        const missionIndex = gameStore.player.fleetMissions.indexOf(mission)
-        if (missionIndex > -1) gameStore.player.fleetMissions.splice(missionIndex, 1)
-        return
-      }
-    } else if (mission.missionType === MissionType.Recycle) {
-      // 处理回收任务
-      const debrisId = `debris_${mission.targetPosition.galaxy}_${mission.targetPosition.system}_${mission.targetPosition.position}`
-      const debrisField = universeStore.debrisFields[debrisId]
-      const recycleResult = fleetLogic.processRecycleArrival(mission, debrisField)
-
-      // 更新成就统计 - 回收（无论是否有残骸都算飞行任务，但只有成功回收才计入回收资源量）
-      const totalRecycled =
-        recycleResult.success && recycleResult.collectedResources
-          ? recycleResult.collectedResources.metal + recycleResult.collectedResources.crystal
-          : 0
-      gameLogic.trackMissionStats(gameStore.player, 'recycle', { resourcesAmount: totalRecycled })
-
-      // 生成失败原因消息
-      let recycleFailMessage = t('missionReports.recycleFailed')
-      if (!recycleResult.success && recycleResult.failReason) {
-        if (recycleResult.failReason === 'noDebrisField') {
-          recycleFailMessage = t('missionReports.recycleFailedNoDebris')
-        } else if (recycleResult.failReason === 'debrisEmpty') {
-          recycleFailMessage = t('missionReports.recycleFailedDebrisEmpty')
-        }
-      }
-
-      // 生成回收任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Recycle,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        success: recycleResult.success,
-        message: recycleResult.success ? t('missionReports.recycleSuccess') : recycleFailMessage,
-        details: recycleResult.success
-          ? {
-              recycledResources: recycleResult.collectedResources,
-              remainingDebris: recycleResult.remainingDebris || undefined
-            }
-          : { failReason: recycleResult.failReason },
-        read: false
-      })
-
-      if (recycleResult.success && recycleResult.collectedResources && debrisField) {
-        if (recycleResult.remainingDebris && (recycleResult.remainingDebris.metal > 0 || recycleResult.remainingDebris.crystal > 0)) {
-          // 更新残骸场
-          universeStore.debrisFields[debrisId] = {
-            id: debrisField.id,
-            position: debrisField.position,
-            resources: recycleResult.remainingDebris,
-            createdAt: debrisField.createdAt,
-            expiresAt: debrisField.expiresAt
-          }
-        } else {
-          // 残骸场已被完全收集，删除
-          delete universeStore.debrisFields[debrisId]
-        }
-      }
-    } else if (mission.missionType === MissionType.Destroy) {
-      // 处理行星毁灭任务（需要先战斗，再计算毁灭概率）
-      const destroyResult = await fleetLogic.processDestroyArrival(mission, targetPlanet, gameStore.player, null, gameStore.player.planets)
-
-      // 处理战斗报告（如果发生了战斗）
-      if (destroyResult.battleResult) {
-        gameStore.player.battleReports.push(destroyResult.battleResult)
-
-        // 处理战斗对NPC的影响
-        if (targetPlanet) {
-          const targetNpc = npcStore.npcs.find(npc => npc.planets.some(p => p.id === targetPlanet.id))
-          if (targetNpc) {
-            diplomaticLogic.handleAttackReputation(gameStore.player, targetNpc, destroyResult.battleResult, npcStore.npcs, gameStore.locale)
-
-            // 同步战斗损失到NPC的实际星球数据
-            const npcPlanet = targetNpc.planets.find(p => p.id === targetPlanet.id)
-            if (npcPlanet) {
-              Object.entries(destroyResult.battleResult.defenderLosses.fleet).forEach(([shipType, lost]) => {
-                npcPlanet.fleet[shipType as ShipType] = Math.max(0, (npcPlanet.fleet[shipType as ShipType] || 0) - lost)
-              })
-              npcPlanet.defense = { ...targetPlanet.defense }
-              npcPlanet.resources = { ...targetPlanet.resources }
-            }
-          }
-        }
-      }
-
-      // 处理新生成的月球
-      if (destroyResult.moon) {
-        gameStore.player.planets.push(destroyResult.moon)
-      }
-
-      // 处理残骸场
-      if (destroyResult.debrisField) {
-        universeStore.debrisFields[destroyResult.debrisField.id] = destroyResult.debrisField
-      }
-
-      // 更新成就统计 - 行星毁灭
-      if (destroyResult.success) {
-        gameLogic.trackMissionStats(gameStore.player, 'destroy')
-      }
-
-      // 生成失败原因消息
-      let destroyFailMessage = t('missionReports.destroyFailed')
-      if (!destroyResult.success && destroyResult.failReason) {
-        if (destroyResult.failReason === 'targetNotFound') {
-          destroyFailMessage = t('missionReports.destroyFailedTargetNotFound')
-        } else if (destroyResult.failReason === 'ownPlanet') {
-          destroyFailMessage = t('missionReports.destroyFailedOwnPlanet')
-        } else if (destroyResult.failReason === 'noDeathstar') {
-          destroyFailMessage = t('missionReports.destroyFailedNoDeathstar')
-        } else if (destroyResult.failReason === 'chanceFailed') {
-          destroyFailMessage = t('missionReports.destroyFailedChance', { chance: destroyResult.destructionChance.toFixed(1) })
-        }
-      }
-
-      // 生成毁灭任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Destroy,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        targetPlanetId: targetPlanet?.id,
-        targetPlanetName: targetPlanet?.name,
-        success: destroyResult.success,
-        message: destroyResult.success ? t('missionReports.destroySuccess') : destroyFailMessage,
-        details: destroyResult.success
-          ? {
-              destroyedPlanetName:
-                targetPlanet?.name ||
-                `[${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}]`,
-              hadBattle: !!destroyResult.battleResult
-            }
-          : {
-              failReason: destroyResult.failReason,
-              destructionChance: destroyResult.destructionChance,
-              deathstarsLost: destroyResult.deathstarsLost,
-              hadBattle: !!destroyResult.battleResult
-            },
-        read: false
-      })
-
-      if (destroyResult.success && destroyResult.planetId) {
-        // 星球被摧毁
-
-        // 处理外交关系（如果目标是NPC星球）
-        if (targetPlanet && targetPlanet.ownerId) {
-          const planetOwner = npcStore.npcs.find(npc => npc.id === targetPlanet.ownerId)
-          if (planetOwner) {
-            diplomaticLogic.handlePlanetDestructionReputation(gameStore.player, targetPlanet, planetOwner, npcStore.npcs, gameStore.locale)
-
-            // 从NPC的星球列表中移除被摧毁的星球
-            const npcPlanetIndex = planetOwner.planets.findIndex(p => p.id === destroyResult.planetId)
-            if (npcPlanetIndex > -1) {
-              planetOwner.planets.splice(npcPlanetIndex, 1)
-            }
-
-            // 检查并处理被消灭的NPC（所有星球都被摧毁的NPC）
-            const eliminatedNpcIds = diplomaticLogic.checkAndHandleEliminatedNPCs(npcStore.npcs, gameStore.player, gameStore.locale)
-
-            // 从npcStore中移除被消灭的NPC
-            if (eliminatedNpcIds.length > 0) {
-              npcStore.npcs = npcStore.npcs.filter(npc => !eliminatedNpcIds.includes(npc.id))
-            }
-          }
-        }
-
-        // 从玩家星球列表中移除（如果是玩家的星球）
-        const planetIndex = gameStore.player.planets.findIndex(p => p.id === destroyResult.planetId)
-        if (planetIndex > -1) {
-          gameStore.player.planets.splice(planetIndex, 1)
-        } else {
-          // 不是玩家星球，从宇宙地图中移除
-          delete universeStore.planets[targetKey]
-        }
-
-        // 取消所有前往该位置的NPC任务（回收、攻击、侦查等）
-        const destroyedDebrisId = `debris_${mission.targetPosition.galaxy}_${mission.targetPosition.system}_${mission.targetPosition.position}`
-        npcStore.npcs.forEach(npc => {
-          if (npc.fleetMissions) {
-            // 找到需要取消的任务（前往已摧毁星球位置的outbound任务）
-            const missionsToCancel = npc.fleetMissions.filter(m => {
-              if (m.status !== 'outbound') return false
-              // 检查回收任务的残骸场ID
-              if (m.missionType === MissionType.Recycle && m.debrisFieldId === destroyedDebrisId) {
-                return true
-              }
-              // 检查其他任务的目标星球ID
-              if (m.targetPlanetId === destroyResult.planetId) {
-                return true
-              }
-              return false
-            })
-
-            // 将这些任务的舰队返回给NPC
-            missionsToCancel.forEach(m => {
-              const npcOriginPlanet = npc.planets.find(p => p.id === m.originPlanetId)
-              if (npcOriginPlanet) {
-                shipLogic.addFleet(npcOriginPlanet.fleet, m.fleet)
-              }
-            })
-
-            // 从任务列表中移除这些任务
-            npc.fleetMissions = npc.fleetMissions.filter(m => !missionsToCancel.includes(m))
-          }
-
-          // 清理关于被摧毁星球的侦查报告
-          if (npc.playerSpyReports && destroyResult.planetId && destroyResult.planetId in npc.playerSpyReports) {
-            delete npc.playerSpyReports[destroyResult.planetId]
-          }
-        })
-
-        // 同时删除该位置的残骸场（星球被摧毁后残骸场也消失）
-        delete universeStore.debrisFields[destroyedDebrisId]
-      }
-    } else if (mission.missionType === MissionType.Expedition) {
-      // 处理探险任务
-      const expeditionResult = fleetLogic.processExpeditionArrival(mission)
-
-      // 确保返回时间正确设置（兼容旧版本任务数据）
-      // 如果 returnTime 不存在或已过期，重新计算
+    if (gameStore.isPaused || isTicking) return
+    isTicking = true
+    try {
       const now = Date.now()
-      if (!mission.returnTime || mission.returnTime <= now) {
-        // 返回时间应该等于当前时间加上单程飞行时间
-        const flightDuration = mission.arrivalTime - mission.departureTime
-        mission.returnTime = now + flightDuration
-      }
-
-      // 更新成就统计 - 探险
-      const isSuccessful =
-        expeditionResult.eventType === 'resources' || expeditionResult.eventType === 'darkMatter' || expeditionResult.eventType === 'fleet'
-      gameLogic.trackMissionStats(gameStore.player, 'expedition', { successful: isSuccessful })
-
-      // 生成探险任务报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-
-      // 根据事件类型生成不同的报告消息
-      let reportMessage = ''
-      let reportDetails: Record<string, unknown> = {
-        // 保存探险区域信息
-        expeditionZone: mission.expeditionZone
-      }
-
-      switch (expeditionResult.eventType) {
-        case 'resources':
-          reportMessage = t('missionReports.expeditionResources')
-          reportDetails.foundResources = expeditionResult.resources
-          break
-        case 'darkMatter':
-          reportMessage = t('missionReports.expeditionDarkMatter')
-          reportDetails.foundResources = expeditionResult.resources
-          break
-        case 'fleet':
-          reportMessage = t('missionReports.expeditionFleet')
-          reportDetails.foundFleet = expeditionResult.fleet
-          break
-        case 'pirates':
-          reportMessage = expeditionResult.fleetLost
-            ? t('missionReports.expeditionPiratesAttack')
-            : t('missionReports.expeditionPiratesEscaped')
-          if (expeditionResult.fleetLost) reportDetails.fleetLost = expeditionResult.fleetLost
-          break
-        case 'aliens':
-          reportMessage = expeditionResult.fleetLost
-            ? t('missionReports.expeditionAliensAttack')
-            : t('missionReports.expeditionAliensEscaped')
-          if (expeditionResult.fleetLost) reportDetails.fleetLost = expeditionResult.fleetLost
-          break
-        default:
-          reportMessage = t('missionReports.expeditionNothing')
-      }
-
-      gameStore.player.missionReports.push({
-        id: `mission-report-${mission.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.Expedition,
-        originPlanetId: mission.originPlanetId,
-        originPlanetName,
-        targetPosition: mission.targetPosition,
-        success: expeditionResult.eventType !== 'nothing',
-        message: reportMessage,
-        details: reportDetails,
-        read: false
-      })
-    }
-
-    // 更新任务状态为返回中
-    // Deploy任务不需要返回（舰队已经留在目标星球）
-    if (mission.missionType !== MissionType.Deploy) {
-      mission.status = 'returning'
-      // 确保returnTime已设置（如果还没设置的话）
-      if (!mission.returnTime) {
-        const flightTime = mission.arrivalTime - mission.departureTime
-        mission.returnTime = Date.now() + flightTime
-      }
+      gameStore.gameTime = now
+      syncWorldFromStores()
+      await tick(world, engineContext, now, 1)
+    } finally {
+      isTicking = false
     }
   }
 
-  const processMissionReturn = (mission: FleetMission) => {
-    const originPlanet = gameStore.player.planets.find(p => p.id === mission.originPlanetId)
-    if (!originPlanet) return
-    shipLogic.addFleet(originPlanet.fleet, mission.fleet)
-    resourceLogic.addResources(originPlanet.resources, mission.cargo)
-    const missionIndex = gameStore.player.fleetMissions.indexOf(mission)
-    if (missionIndex > -1) gameStore.player.fleetMissions.splice(missionIndex, 1)
-  }
-
-  // NPC任务处理
-  const processNPCMissionArrival = (npc: NPC, mission: FleetMission) => {
-    if (mission.missionType === MissionType.Recycle) {
-      // NPC回收任务到达
-      const debrisId = mission.debrisFieldId
-      if (!debrisId) {
-        console.warn('[NPC Mission] Recycle mission missing debrisFieldId')
-        mission.status = 'returning'
-        mission.returnTime = Date.now() + (mission.arrivalTime - mission.departureTime)
-        return
-      }
-
-      const debrisField = universeStore.debrisFields[debrisId]
-      const recycleResult = fleetLogic.processRecycleArrival(mission, debrisField)
-
-      if (recycleResult && debrisField && recycleResult.collectedResources) {
-        // 更新成就统计 - 被NPC回收残骸（如果残骸是玩家战斗产生的）
-        const totalRecycled = recycleResult.collectedResources.metal + recycleResult.collectedResources.crystal
-        if (totalRecycled > 0) {
-          gameLogic.trackDiplomacyStats(gameStore.player, 'debrisRecycledByNPC', { resourcesAmount: totalRecycled })
-        }
-
-        if (recycleResult.remainingDebris && (recycleResult.remainingDebris.metal > 0 || recycleResult.remainingDebris.crystal > 0)) {
-          // 更新残骸场
-          universeStore.debrisFields[debrisId] = {
-            id: debrisField.id,
-            position: debrisField.position,
-            resources: recycleResult.remainingDebris,
-            createdAt: debrisField.createdAt
-          }
-        } else {
-          // 残骸已被完全回收，从宇宙中删除
-          delete universeStore.debrisFields[debrisId]
-        }
-      }
-
-      // 移除即将到来的警告（回收任务已到达）
-      removeIncomingFleetAlertById(mission.id)
-
-      // 设置返回时间
-      mission.returnTime = Date.now() + (mission.arrivalTime - mission.departureTime)
-      return
-    }
-
-    // 找到目标星球
-    const targetKey = gameLogic.generatePositionKey(
-      mission.targetPosition.galaxy,
-      mission.targetPosition.system,
-      mission.targetPosition.position
-    )
-    const targetPlanet =
-      gameStore.player.planets.find(
-        p =>
-          p.position.galaxy === mission.targetPosition.galaxy &&
-          p.position.system === mission.targetPosition.system &&
-          p.position.position === mission.targetPosition.position
-      ) || universeStore.planets[targetKey]
-
-    if (!targetPlanet) {
-      console.warn('[NPC Mission] Target planet not found')
-      return
-    }
-
-    if (mission.missionType === MissionType.Spy) {
-      // NPC侦查到达
-      const { spiedNotification, spyReport } = npcBehaviorLogic.processNPCSpyArrival(npc, mission, targetPlanet, gameStore.player)
-
-      // 更新成就统计 - 被NPC侦查
-      gameLogic.trackDiplomacyStats(gameStore.player, 'spiedByNPC')
-
-      // 保存侦查报告到NPC（用于后续攻击决策）
-      if (!npc.playerSpyReports) {
-        npc.playerSpyReports = {}
-      }
-      npc.playerSpyReports[targetPlanet.id] = spyReport
-
-      // 添加被侦查通知给玩家
-      if (!gameStore.player.spiedNotifications) {
-        gameStore.player.spiedNotifications = []
-      }
-      gameStore.player.spiedNotifications.push(spiedNotification)
-
-      // 移除即将到来的警告（侦查已到达）
-      removeIncomingFleetAlertById(mission.id)
-    } else if (mission.missionType === MissionType.Attack) {
-      // NPC攻击到达 - 使用专门的NPC攻击处理逻辑
-      fleetLogic.processNPCAttackArrival(npc, mission, targetPlanet, gameStore.player, gameStore.player.planets).then(attackResult => {
-        if (attackResult) {
-          // 更新成就统计 - 被NPC攻击 + 防御统计
-          gameLogic.trackDiplomacyStats(gameStore.player, 'attackedByNPC')
-          const debrisValue = attackResult.debrisField
-            ? attackResult.debrisField.resources.metal + attackResult.debrisField.resources.crystal
-            : 0
-          const won = attackResult.battleResult.winner === 'defender'
-          gameLogic.trackDefenseStats(gameStore.player, attackResult.battleResult, won, debrisValue)
-
-          // 添加战斗报告给玩家
-          gameStore.player.battleReports.push(attackResult.battleResult)
-
-          // 如果生成月球，添加到玩家星球列表
-          if (attackResult.moon) {
-            gameStore.player.planets.push(attackResult.moon)
-          }
-
-          // 如果生成残骸场，添加到宇宙残骸场列表
-          if (attackResult.debrisField) {
-            const existingDebris = universeStore.debrisFields[attackResult.debrisField.id]
-            if (existingDebris) {
-              // 累加残骸资源
-              universeStore.debrisFields[attackResult.debrisField.id] = {
-                ...existingDebris,
-                resources: {
-                  metal: existingDebris.resources.metal + attackResult.debrisField.resources.metal,
-                  crystal: existingDebris.resources.crystal + attackResult.debrisField.resources.crystal
-                }
-              }
-            } else {
-              // 新残骸场
-              universeStore.debrisFields[attackResult.debrisField.id] = attackResult.debrisField
-            }
-          }
-        }
-
-        // 移除即将到来的警告（攻击已到达）
-        removeIncomingFleetAlertById(mission.id)
-      })
-    }
-  }
-
-  const processNPCMissionReturn = (npc: NPC, mission: FleetMission) => {
-    // 找到NPC的起始星球
-    const originPlanet = npc.planets.find(p => p.id === mission.originPlanetId)
-    if (!originPlanet) return
-
-    // 返还舰队
-    shipLogic.addFleet(originPlanet.fleet, mission.fleet)
-
-    // 如果携带掠夺资源，给NPC添加资源
-    if (mission.cargo) {
-      originPlanet.resources.metal += mission.cargo.metal
-      originPlanet.resources.crystal += mission.cargo.crystal
-      originPlanet.resources.deuterium += mission.cargo.deuterium
-    }
-
-    // 从NPC任务列表中移除
-    if (npc.fleetMissions) {
-      const missionIndex = npc.fleetMissions.indexOf(mission)
-      if (missionIndex > -1) {
-        npc.fleetMissions.splice(missionIndex, 1)
-      }
-    }
-  }
-
-  // 处理导弹攻击到达
-  const processMissileAttackArrival = async (missileAttack: MissileAttack) => {
-    // 动态导入导弹逻辑
-    const missileLogic = await import('@/logic/missileLogic')
-
-    // 找到目标星球
-    const targetKey = gameLogic.generatePositionKey(
-      missileAttack.targetPosition.galaxy,
-      missileAttack.targetPosition.system,
-      missileAttack.targetPosition.position
-    )
-    const targetPlanet =
-      gameStore.player.planets.find(
-        p =>
-          p.position.galaxy === missileAttack.targetPosition.galaxy &&
-          p.position.system === missileAttack.targetPosition.system &&
-          p.position.position === missileAttack.targetPosition.position
-      ) || universeStore.planets[targetKey]
-
-    // 如果目标星球不存在，导弹失败
-    if (!targetPlanet) {
-      missileAttack.status = 'arrived'
-      // 生成失败报告
-      if (!gameStore.player.missionReports) {
-        gameStore.player.missionReports = []
-      }
-      gameStore.player.missionReports.push({
-        id: `missile-report-${missileAttack.id}`,
-        timestamp: Date.now(),
-        missionType: MissionType.MissileAttack,
-        originPlanetId: missileAttack.originPlanetId,
-        originPlanetName: gameStore.player.planets.find(p => p.id === missileAttack.originPlanetId)?.name || t('fleetView.unknownPlanet'),
-        targetPosition: missileAttack.targetPosition,
-        targetPlanetId: undefined,
-        targetPlanetName: `[${missileAttack.targetPosition.galaxy}:${missileAttack.targetPosition.system}:${missileAttack.targetPosition.position}]`,
-        success: false,
-        message: t('missionReports.missileAttackFailed'),
-        details: {
-          missileCount: missileAttack.missileCount,
-          missileHits: 0,
-          missileIntercepted: 0,
-          defenseLosses: {}
-        },
-        read: false
-      })
-      return
-    }
-
-    // 计算导弹攻击结果
-    const impactResult = missileLogic.calculateMissileImpact(missileAttack.missileCount, targetPlanet)
-
-    // 应用损失到目标星球
-    missileLogic.applyMissileAttackResult(targetPlanet, impactResult.defenseLosses)
-
-    // 如果目标是NPC的星球，同步损失到NPC实际数据并扣除外交好感度
-    if (targetPlanet.ownerId && targetPlanet.ownerId !== gameStore.player.id) {
-      const targetNpc = npcStore.npcs.find(npc => npc.id === targetPlanet.ownerId)
-      if (targetNpc) {
-        // 同步防御损失到NPC的实际星球数据
-        const npcPlanet = targetNpc.planets.find(p => p.id === targetPlanet.id)
-        if (npcPlanet) {
-          missileLogic.applyMissileAttackResult(npcPlanet, impactResult.defenseLosses)
-        }
-
-        // 导弹攻击扣除好感度
-        const { REPUTATION_CHANGES } = DIPLOMATIC_CONFIG
-        const reputationLoss = REPUTATION_CHANGES.ATTACK / 2 // 导弹攻击的好感度惩罚是普通攻击的一半
-
-        // 更新NPC对玩家的关系（统一使用 npc.relations 作为唯一数据源）
-        if (!targetNpc.relations) {
-          targetNpc.relations = {}
-        }
-        const npcRelation = diplomaticLogic.getOrCreateRelation(targetNpc.relations, targetNpc.id, gameStore.player.id)
-        targetNpc.relations[gameStore.player.id] = diplomaticLogic.updateReputation(
-          npcRelation,
-          reputationLoss,
-          DiplomaticEventType.Attack,
-          t('diplomacy.reports.wasAttackedByMissile')
-        )
-      }
-    }
-
-    // 标记导弹攻击为已到达
-    missileAttack.status = 'arrived'
-
-    // 生成导弹攻击报告
-    if (!gameStore.player.missionReports) {
-      gameStore.player.missionReports = []
-    }
-    const reportMessage =
-      impactResult.missileHits > 0
-        ? `${t('missionReports.missileAttackSuccess')}: ${impactResult.missileHits} ${t('missionReports.hits')}`
-        : t('missionReports.missileAttackIntercepted')
-
-    gameStore.player.missionReports.push({
-      id: `missile-report-${missileAttack.id}`,
-      timestamp: Date.now(),
-      missionType: MissionType.MissileAttack,
-      originPlanetId: missileAttack.originPlanetId,
-      originPlanetName: gameStore.player.planets.find(p => p.id === missileAttack.originPlanetId)?.name || t('fleetView.unknownPlanet'),
-      targetPosition: missileAttack.targetPosition,
-      targetPlanetId: targetPlanet.id,
-      targetPlanetName: targetPlanet.name,
-      success: true,
-      message: reportMessage,
-      details: {
-        missileCount: missileAttack.missileCount,
-        missileHits: impactResult.missileHits,
-        missileIntercepted: impactResult.missileIntercepted,
-        defenseLosses: impactResult.defenseLosses
-      },
-      read: false
-    })
-  }
 
   // 打开敌方警报面板
   const openEnemyAlertPanel = () => {
     enemyAlertNotificationsRef.value?.open()
-  }
-
-  const removeIncomingFleetAlertById = (missionId: string) => {
-    if (!gameStore.player.incomingFleetAlerts) return
-    const index = gameStore.player.incomingFleetAlerts.findIndex(a => a.id === missionId)
-    if (index > -1) {
-      gameStore.player.incomingFleetAlerts.splice(index, 1)
-    }
-  }
-
-  /**
-   * 同步NPC星球数据到universeStore
-   * 解决npcStore和universeStore数据不同步的问题
-   */
-  const syncNPCPlanetToUniverse = (npc: any) => {
-    npc.planets.forEach((npcPlanet: any) => {
-      const planetKey = gameLogic.generatePositionKey(npcPlanet.position.galaxy, npcPlanet.position.system, npcPlanet.position.position)
-      const universePlanet = universeStore.planets[planetKey]
-      if (universePlanet) {
-        // 同步所有关键数据
-        universePlanet.resources = { ...npcPlanet.resources }
-        universePlanet.buildings = { ...npcPlanet.buildings }
-        universePlanet.fleet = { ...npcPlanet.fleet }
-        universePlanet.defense = { ...npcPlanet.defense }
-      }
-    })
-  }
-
-  const updateNPCGrowth = (deltaSeconds: number) => {
-    // 累积时间
-    npcUpdateCounter.value += deltaSeconds
-
-    // 只在达到更新间隔时才执行
-    if (npcUpdateCounter.value < NPC_UPDATE_INTERVAL) {
-      return
-    }
-
-    // 获取所有星球
-    const allPlanets = Object.values(universeStore.planets)
-
-    // 如果NPC store为空，从星球数据中初始化NPC
-    if (npcStore.npcs.length === 0) {
-      const npcMap = new Map<string, any>()
-
-      allPlanets.forEach(planet => {
-        // 跳过玩家的星球
-        if (planet.ownerId === gameStore.player.id || !planet.ownerId) return
-
-        // 这是NPC的星球
-        if (!npcMap.has(planet.ownerId)) {
-          // 为每个NPC设置随机的初始冷却时间，避免所有NPC同时行动
-          const now = Date.now()
-          const randomSpyOffset = Math.random() * 240 * 1000 // 0-4分钟的随机延迟
-          const randomAttackOffset = Math.random() * 480 * 1000 // 0-8分钟的随机延迟
-
-          // 初始化NPC与玩家的中立关系
-          const initialRelations: Record<string, any> = {}
-          initialRelations[gameStore.player.id] = {
-            fromId: planet.ownerId,
-            toId: gameStore.player.id,
-            reputation: 0,
-            status: 'neutral' as const,
-            lastUpdated: now,
-            history: []
-          }
-
-          npcMap.set(planet.ownerId, {
-            id: planet.ownerId,
-            name: generateNPCName(planet.ownerId, gameStore.locale),
-            planets: [],
-            technologies: {}, // 初始化空科技树
-            difficulty: 'medium' as const, // 默认中等难度
-            relations: initialRelations, // 外交关系（默认与玩家中立）
-            allies: [], // 盟友列表
-            enemies: [], // 敌人列表
-            lastSpyTime: now - randomSpyOffset, // 设置随机的上次侦查时间
-            lastAttackTime: now - randomAttackOffset, // 设置随机的上次攻击时间
-            fleetMissions: [], // 舰队任务
-            playerSpyReports: {} // 对玩家的侦查报告
-          })
-        }
-
-        npcMap.get(planet.ownerId)!.planets.push(planet)
-      })
-
-      // 保存到store
-      npcStore.npcs = Array.from(npcMap.values())
-
-      // 如果有NPC，基于距离初始化NPC实力
-      if (npcStore.npcs.length > 0) {
-        // 获取玩家母星（第一个非月球星球）
-        const homeworld = gameStore.player.planets.find(p => !p.isMoon)
-
-        if (homeworld) {
-          npcStore.npcs.forEach(npc => {
-            // 基于距离初始化NPC实力
-            npcGrowthLogic.initializeNPCByDistance(npc, homeworld.position)
-            // 同步NPC星球数据到universeStore
-            syncNPCPlanetToUniverse(npc)
-          })
-        }
-
-        // 初始化NPC之间的外交关系（盟友/敌人）
-        npcGrowthLogic.initializeNPCDiplomacy(npcStore.npcs)
-      }
-    }
-
-    // 确保所有NPC都有间谍探测器（修复旧版本保存的数据）
-    if (npcStore.npcs.length > 0) {
-      npcGrowthLogic.ensureNPCSpyProbes(npcStore.npcs)
-    }
-
-    // 确保所有NPC都有AI类型（修复旧版本保存的数据）
-    if (npcStore.npcs.length > 0) {
-      npcGrowthLogic.ensureAllNPCsAIType(npcStore.npcs)
-    }
-
-    // 确保所有NPC都与玩家建立了关系（修复旧版本保存的数据）
-    if (npcStore.npcs.length > 0) {
-      const now = Date.now()
-      // 获取玩家母星（用于计算距离）
-      const homeworld = gameStore.player.planets.find(p => !p.isMoon)
-
-      npcStore.npcs.forEach(npc => {
-        if (!npc.relations) {
-          npc.relations = {}
-        }
-        // 如果NPC没有与玩家的关系，建立中立关系
-        if (!npc.relations[gameStore.player.id]) {
-          npc.relations[gameStore.player.id] = {
-            fromId: npc.id,
-            toId: gameStore.player.id,
-            reputation: 0,
-            status: 'neutral' as const,
-            lastUpdated: now,
-            history: []
-          }
-        }
-
-        // 迁移旧存档：如果NPC没有距离数据，计算并设置
-        if (homeworld && npc.distanceToHomeworld === undefined) {
-          const npcPlanet = npc.planets[0]
-          if (npcPlanet) {
-            npc.distanceToHomeworld = npcGrowthLogic.calculateDistanceToHomeworld(npcPlanet.position, homeworld.position)
-            npc.difficultyLevel = npcGrowthLogic.calculateDifficultyLevel(npc.distanceToHomeworld)
-            // 重新初始化NPC实力以匹配新的距离难度系统
-            npcGrowthLogic.initializeNPCByDistance(npc, homeworld.position)
-            // 同步NPC星球数据到universeStore
-            syncNPCPlanetToUniverse(npc)
-          }
-        }
-      })
-    }
-
-    // 如果没有NPC，直接返回
-    if (npcStore.npcs.length === 0) {
-      npcUpdateCounter.value = 0
-      return
-    }
-
-    // 获取玩家母星用于距离计算
-    const homeworldForGrowth = gameStore.player.planets.find(p => !p.isMoon)
-
-    // 使用累积的时间更新每个NPC（基于距离的成长系统）
-    npcStore.npcs.forEach(npc => {
-      if (homeworldForGrowth) {
-        npcGrowthLogic.updateNPCGrowthByDistance(npc, homeworldForGrowth.position, npcUpdateCounter.value, gameStore.gameSpeed)
-        // 同步NPC星球数据到universeStore（确保侦查报告显示正确数据）
-        syncNPCPlanetToUniverse(npc)
-      }
-    })
-
-    // 重置计数器
-    npcUpdateCounter.value = 0
-  }
-
-  const updateNPCBehavior = (deltaSeconds: number) => {
-    // 累积时间
-    npcBehaviorCounter.value += deltaSeconds
-
-    // 只在达到更新间隔时才执行
-    if (npcBehaviorCounter.value < NPC_BEHAVIOR_INTERVAL) {
-      return
-    }
-
-    // 如果没有NPC，直接返回
-    if (npcStore.npcs.length === 0) {
-      npcBehaviorCounter.value = 0
-      return
-    }
-
-    const now = Date.now()
-    // 合并玩家星球和NPC星球到allPlanets（NPC需要能够侦查和攻击玩家星球）
-    const allPlanets = [...gameStore.player.planets, ...Object.values(universeStore.planets)]
-
-    // 计算当前所有正在进行的侦查和攻击任务数量
-    let activeSpyMissions = 0
-    let activeAttackMissions = 0
-    npcStore.npcs.forEach(npc => {
-      if (npc.fleetMissions) {
-        npc.fleetMissions.forEach(mission => {
-          if (mission.status === 'outbound') {
-            if (mission.missionType === 'spy') {
-              activeSpyMissions++
-            } else if (mission.missionType === 'attack') {
-              activeAttackMissions++
-            }
-          }
-        })
-      }
-    })
-
-    // 获取并发限制配置
-    const config = npcBehaviorLogic.calculateDynamicBehavior(gameStore.player.points)
-
-    // 更新每个NPC的行为（随机顺序，避免总是优先处理同一批NPC）
-    const shuffledNpcs = [...npcStore.npcs].sort(() => Math.random() - 0.5)
-    shuffledNpcs.forEach(npc => {
-      // 在更新前检查当前并发数，如果已达上限则跳过该NPC
-      npcBehaviorLogic.updateNPCBehaviorWithLimit(npc, gameStore.player, allPlanets, universeStore.debrisFields, now, {
-        activeSpyMissions,
-        activeAttackMissions,
-        config
-      })
-
-      // 重新计算当前并发数（因为可能新增了任务）
-      activeSpyMissions = 0
-      activeAttackMissions = 0
-      npcStore.npcs.forEach(n => {
-        if (n.fleetMissions) {
-          n.fleetMissions.forEach(mission => {
-            if (mission.status === 'outbound') {
-              if (mission.missionType === 'spy') activeSpyMissions++
-              else if (mission.missionType === 'attack') activeAttackMissions++
-            }
-          })
-        }
-      })
-
-      // 处理增强NPC行为（中立和友好NPC的特殊行为）
-      const relation = npc.relations?.[gameStore.player.id]
-      if (relation?.status === 'neutral') {
-        const neutralResult = npcBehaviorLogic.updateNeutralNPCBehavior(npc, npcStore.npcs, gameStore.player, now)
-
-        // 处理贸易提议
-        if (neutralResult.tradeOffer) {
-          if (!gameStore.player.tradeOffers) {
-            gameStore.player.tradeOffers = []
-          }
-          gameStore.player.tradeOffers.push(neutralResult.tradeOffer)
-          toast.info(t('npcBehavior.tradeOfferReceived'), {
-            description: t('npcBehavior.tradeOfferDesc', { npcName: neutralResult.tradeOffer.npcName })
-          })
-        }
-
-        // 处理态度摇摆
-        if (neutralResult.swingDirection) {
-          if (!gameStore.player.attitudeChangeNotifications) {
-            gameStore.player.attitudeChangeNotifications = []
-          }
-          gameStore.player.attitudeChangeNotifications.push({
-            id: `attitude_${Date.now()}_${npc.id}`,
-            timestamp: now,
-            npcId: npc.id,
-            npcName: npc.name,
-            previousStatus: 'neutral',
-            newStatus: neutralResult.swingDirection,
-            reason: 'attitude_swing',
-            read: false
-          })
-          const statusKey = neutralResult.swingDirection === 'friendly' ? 'npcBehavior.becameFriendly' : 'npcBehavior.becameHostile'
-          toast.info(t('npcBehavior.attitudeChanged'), {
-            description: t(statusKey, { npcName: npc.name })
-          })
-        }
-      } else if (relation?.status === 'friendly') {
-        const friendlyResult = npcBehaviorLogic.updateFriendlyNPCBehavior(npc, npcStore.npcs, gameStore.player, now)
-
-        // 处理情报报告
-        if (friendlyResult.intelReport) {
-          if (!gameStore.player.intelReports) {
-            gameStore.player.intelReports = []
-          }
-          gameStore.player.intelReports.push(friendlyResult.intelReport)
-          toast.info(t('npcBehavior.intelReceived'), {
-            description: t('npcBehavior.intelReceivedDesc', { npcName: friendlyResult.intelReport.fromNpcName })
-          })
-        }
-
-        // 处理联合攻击邀请
-        if (friendlyResult.jointAttackInvite) {
-          if (!gameStore.player.jointAttackInvites) {
-            gameStore.player.jointAttackInvites = []
-          }
-          gameStore.player.jointAttackInvites.push(friendlyResult.jointAttackInvite)
-          toast.info(t('npcBehavior.jointAttackInvite'), {
-            description: t('npcBehavior.jointAttackInviteDesc', { npcName: friendlyResult.jointAttackInvite.fromNpcName })
-          })
-        }
-
-        // 处理资源援助
-        if (friendlyResult.aidProvided) {
-          if (!gameStore.player.aidNotifications) {
-            gameStore.player.aidNotifications = []
-          }
-          gameStore.player.aidNotifications.push({
-            id: `aid_${Date.now()}_${npc.id}`,
-            timestamp: now,
-            npcId: npc.id,
-            npcName: npc.name,
-            aidResources: friendlyResult.aidProvided,
-            read: false
-          })
-          const totalAid = friendlyResult.aidProvided.metal + friendlyResult.aidProvided.crystal + friendlyResult.aidProvided.deuterium
-          toast.success(t('npcBehavior.aidReceived'), {
-            description: t('npcBehavior.aidReceivedDesc', { npcName: npc.name, amount: totalAid.toLocaleString() })
-          })
-        }
-      }
-    })
-
-    npcBehaviorCounter.value = 0
-  }
-
-  // 更新NPC关系统计（友好/敌对数量）
-  const updateNPCRelationStats = () => {
-    let friendlyCount = 0
-    let hostileCount = 0
-    const playerId = gameStore.player.id
-    npcStore.npcs.forEach(npc => {
-      const relation = npc.relations?.[playerId]
-      if (relation) {
-        const status = diplomaticLogic.calculateRelationStatus(relation.reputation)
-        if (status === 'friendly') {
-          friendlyCount++
-        } else if (status === 'hostile') {
-          hostileCount++
-        }
-      }
-    })
-    gameLogic.trackDiplomacyStats(gameStore.player, 'updateRelations', { friendlyCount, hostileCount })
-  }
-
-  // 检查成就解锁
-  const achievementCheckCounter = ref(0)
-  const ACHIEVEMENT_CHECK_INTERVAL = 5 // 每5秒检查一次成就
-
-  const checkAchievementUnlocks = () => {
-    achievementCheckCounter.value += 1
-
-    // 只在达到更新间隔时才执行
-    if (achievementCheckCounter.value < ACHIEVEMENT_CHECK_INTERVAL) {
-      return
-    }
-
-    // 更新NPC关系统计
-    updateNPCRelationStats()
-
-    // 检查并解锁成就
-    const unlocks = gameLogic.checkAndUnlockAchievements(gameStore.player)
-
-    // 显示成就解锁通知（奖励已在 checkAndUnlockAchievements 中应用）
-    unlocks.forEach(unlock => {
-      // 显示 toast 通知
-      const tierName = t(`achievements.tiers.${unlock.tier}`)
-      const achievementName = t(`achievements.names.${unlock.id}`)
-      toast.success(t('achievements.unlocked'), {
-        description: `${achievementName} (${tierName})`
-      })
-    })
-
-    achievementCheckCounter.value = 0
   }
 
   // 启动游戏循环
@@ -2232,7 +1022,8 @@
       clearInterval(pointsUpdateInterval.value)
     }
     pointsUpdateInterval.value = setInterval(() => {
-      if (!gameStore.isPaused) {
+      // 联机模式的积分由服务端计算并随补丁下发
+      if (!gameStore.isPaused && !netStore.enabled) {
         gameStore.player.points = publicLogic.calculatePlayerPoints(gameStore.player)
       }
     }, 10000) // 10秒更新一次
@@ -2255,6 +1046,8 @@
     const handleKeyDown = (event: KeyboardEvent) => {
       // 如果已经激活GM模式，直接返回
       if (gameStore.player.isGMEnabled) return
+      // 联机模式下禁用秘籍（调试后门不能出现在线上环境）
+      if (netStore.enabled) return
 
       const key = event.key.toLowerCase()
       // 检查是否匹配当前秘籍序列
@@ -2348,14 +1141,11 @@
     confirmDialogMessage.value = t('queue.confirmCancel')
     confirmDialogAction.value = () => {
       if (!gameStore.currentPlanet) return false
-      const { item, index } = buildingValidation.findQueueItem(gameStore.currentPlanet.buildQueue, queueId)
-      if (!item) return false
-      if (item.type === 'building') {
-        const refund = buildingValidation.cancelBuildingUpgrade(gameStore.currentPlanet, item)
-        resourceLogic.addResources(gameStore.currentPlanet.resources, refund)
-      }
-      gameStore.currentPlanet.buildQueue.splice(index, 1)
-      return true
+      return dispatchCommand({
+        type: 'building.cancel',
+        planetId: gameStore.currentPlanet.id,
+        queueId
+      }).ok
     }
     confirmDialogOpen.value = true
   }
@@ -2366,14 +1156,11 @@
     confirmDialogMessage.value = t('queue.confirmCancel')
     confirmDialogAction.value = () => {
       if (!gameStore.currentPlanet) return false
-      const { item, index } = buildingValidation.findQueueItem(gameStore.player.researchQueue, queueId)
-      if (!item) return false
-      if (item.type === 'technology') {
-        const refund = researchValidation.cancelTechnologyResearch(item)
-        resourceLogic.addResources(gameStore.currentPlanet.resources, refund)
-      }
-      gameStore.player.researchQueue.splice(index, 1)
-      return true
+      return dispatchCommand({
+        type: 'research.cancel',
+        planetId: gameStore.currentPlanet.id,
+        queueId
+      }).ok
     }
     confirmDialogOpen.value = true
   }
@@ -2398,11 +1185,19 @@
       if (isFirstVisit) {
         gameStore.locale = detectBrowserLocale()
       }
-      await initGame()
-      // 启动游戏循环
+
+      // 联机模式：由服务器下发世界状态，跳过单机初始化（避免覆盖服务器数据）
+      const online = netStore.init()
+      if (!online) {
+        await initGame()
+      }
+
+      // 启动游戏循环（联机模式下只更新时间戳，不推进世界）
       startGameLoop()
-      // 启动积分更新定时器
-      startPointsUpdate()
+      // 启动积分更新定时器（联机模式积分由服务端计算）
+      if (!online) {
+        startPointsUpdate()
+      }
       // 启动科乐美秘籍监听
       konamiCleanup.value = setupKonamiCode()
 

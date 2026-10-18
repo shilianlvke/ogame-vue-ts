@@ -188,12 +188,10 @@
   import CardUnlockOverlay from '@/components/common/CardUnlockOverlay.vue'
   import { formatNumber, getResourceCostColor } from '@/utils/format'
   import * as publicLogic from '@/logic/publicLogic'
-  import * as shipValidation from '@/logic/shipValidation'
-  import * as shipLogic from '@/logic/shipLogic'
   import * as missileLogic from '@/logic/missileLogic'
-  import * as gameLogic from '@/logic/gameLogic'
   import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
   import * as officerLogic from '@/logic/officerLogic'
+  import { dispatchCommand } from '@/core/runtime'
   import { triggerQueueAnimation } from '@/composables/useQueueAnimation'
 
   const gameStore = useGameStore()
@@ -253,16 +251,14 @@
   const buildDefense = (defenseType: DefenseType, quantity: number): { success: boolean; reason?: string } => {
     const currentPlanet = gameStore.currentPlanet
     if (!currentPlanet) return { success: false }
-    const validation = shipValidation.validateDefenseBuild(currentPlanet, defenseType, quantity, gameStore.player.technologies)
-    if (!validation.valid) return { success: false, reason: validation.reason }
-
-    // 追踪资源消耗（在扣除前计算成本）
-    const totalCost = shipLogic.calculateDefenseCost(defenseType, quantity)
-    gameLogic.trackResourceConsumption(gameStore.player, totalCost)
-
-    const queueItem = shipValidation.executeDefenseBuild(currentPlanet, defenseType, quantity, gameStore.player.officers)
-    currentPlanet.buildQueue.push(queueItem)
-    return { success: true }
+    // 统一走命令层：校验、扣资源、入队都在 core 中完成
+    const result = dispatchCommand({
+      type: 'defense.build',
+      planetId: currentPlanet.id,
+      defenseType,
+      quantity
+    })
+    return result.ok ? { success: true } : { success: false, reason: result.reason }
   }
 
   // 建造防御设施

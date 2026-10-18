@@ -92,12 +92,14 @@
   import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
   import { FixedPagination } from '@/components/ui/pagination'
   import { RankingCategory, type RankingEntry } from '@/types/game'
-  import { getRanking } from '@/logic/rankingLogic'
+  import { createRankingEntry, getRanking } from '@/logic/rankingLogic'
+  import { useNetStore } from '@/stores/netStore'
   import { Crown, Users, Globe, Trophy, Building2, FlaskConical, Rocket, Shield } from 'lucide-vue-next'
 
   const { t } = useI18n()
   const gameStore = useGameStore()
   const npcStore = useNPCStore()
+  const netStore = useNetStore()
 
   const activeCategory = ref<RankingCategory>(RankingCategory.Total)
 
@@ -115,7 +117,15 @@
 
   // 获取排行榜数据
   const rankingData = computed<RankingEntry[]>(() => {
-    return getRanking(gameStore.player, npcStore.npcs, activeCategory.value)
+    const entries = getRanking(gameStore.player, npcStore.npcs, activeCategory.value)
+
+    // 联机模式：并入其他真人玩家（积分由服务端计算后随档案下发）
+    for (const profile of netStore.players) {
+      if (profile.id === gameStore.player.id) continue
+      entries.push(createRankingEntry(profile.id, profile.name, false, profile.scores, profile.planetCount))
+    }
+
+    return entries
   })
 
   // 按当前类别排序的排行榜

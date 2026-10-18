@@ -258,6 +258,7 @@
   import * as publicLogic from '@/logic/publicLogic'
   import * as resourceLogic from '@/logic/resourceLogic'
   import * as planetLogic from '@/logic/planetLogic'
+  import { dispatchCommand } from '@/core/runtime'
 
   const gameStore = useGameStore()
   const { t } = useI18n()
@@ -375,8 +376,14 @@
     // 记录当前星球ID用于后续切换
     const abandonedPlanetId = planet.value.id
 
-    // 执行放弃
-    gameStore.player.planets = planetLogic.abandonColony(gameStore.player.planets, abandonedPlanetId)
+    // 执行放弃（走命令层）
+    const result = dispatchCommand({ type: 'planet.abandon', planetId: abandonedPlanetId })
+    if (!result.ok) {
+      showAbandonDialog.value = false
+      errorMessage.value = result.reason ? t(result.reason) : t('planet.abandonFailed')
+      showErrorDialog.value = true
+      return
+    }
 
     // 切换到主星
     const mainPlanet = gameStore.player.planets.find(p => !p.isMoon)

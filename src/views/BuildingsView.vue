@@ -214,8 +214,8 @@
   import * as buildingValidation from '@/logic/buildingValidation'
   import * as publicLogic from '@/logic/publicLogic'
   import * as officerLogic from '@/logic/officerLogic'
-  import * as gameLogic from '@/logic/gameLogic'
   import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
+  import { dispatchCommand } from '@/core/runtime'
   import { triggerQueueAnimation } from '@/composables/useQueueAnimation'
 
   const gameStore = useGameStore()
@@ -266,22 +266,9 @@
 
   const upgradeBuilding = (buildingType: BuildingType): { success: boolean; reason?: string } => {
     if (!gameStore.currentPlanet) return { success: false }
-    const validation = buildingValidation.validateBuildingUpgrade(
-      gameStore.currentPlanet,
-      buildingType,
-      gameStore.player.technologies,
-      gameStore.player.officers
-    )
-    if (!validation.valid) return { success: false, reason: validation.reason }
-
-    // 追踪资源消耗（在扣除前计算成本）
-    const currentLevel = gameStore.currentPlanet.buildings[buildingType] || 0
-    const cost = buildingLogic.calculateBuildingCost(buildingType, currentLevel + 1)
-    gameLogic.trackResourceConsumption(gameStore.player, cost)
-
-    const queueItem = buildingValidation.executeBuildingUpgrade(gameStore.currentPlanet, buildingType, gameStore.player.officers)
-    gameStore.currentPlanet.buildQueue.push(queueItem)
-    return { success: true }
+    // 统一走命令层：校验、扣资源、入队都在 core 中完成
+    const result = dispatchCommand({ type: 'building.upgrade', planetId: gameStore.currentPlanet.id, buildingType })
+    return result.ok ? { success: true } : { success: false, reason: result.reason }
   }
 
   const getUsedSpace = (planet: Planet): number => {
@@ -460,11 +447,7 @@
   // 拆除建筑
   const demolishBuilding = (buildingType: BuildingType): boolean => {
     if (!gameStore.currentPlanet) return false
-    const validation = buildingValidation.validateBuildingDemolish(gameStore.currentPlanet, buildingType, gameStore.player.officers)
-    if (!validation.valid) return false
-    const queueItem = buildingValidation.executeBuildingDemolish(gameStore.currentPlanet, buildingType, gameStore.player.officers)
-    gameStore.currentPlanet.buildQueue.push(queueItem)
-    return true
+    return dispatchCommand({ type: 'building.demolish', planetId: gameStore.currentPlanet.id, buildingType }).ok
   }
 
   const handleDemolish = (buildingType: BuildingType) => {

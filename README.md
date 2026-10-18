@@ -100,6 +100,7 @@ pnpm preview
 
 - [Docker 部署指南](doc/DOCKER.md)
 - [游戏参考手册](doc/ogame-reference.md) - 建筑、科技、舰船、防御、军官等完整数据
+- [联机改造说明](doc/MULTIPLAYER.md) - 无头核心架构、命令层、联机服务端与部署方式
 
 ## 许可证
 

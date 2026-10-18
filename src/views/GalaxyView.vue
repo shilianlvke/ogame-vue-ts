@@ -946,6 +946,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import { useUniverseStore } from '@/stores/universeStore'
   import { useNPCStore } from '@/stores/npcStore'
+  import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { ref, onMounted, computed } from 'vue'
   import type { Planet, DebrisField } from '@/types/game'
@@ -997,10 +998,13 @@
   import { formatNumber, formatTime } from '@/utils/format'
   import { BuildingType, MissionType } from '@/types/game'
   import type { FleetMission, OreDeposits } from '@/types/game'
+  import { dispatchCommand } from '@/core/runtime'
+  import { PHALANX_SCAN_COST } from '@/core/commands'
 
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
   const npcStore = useNPCStore()
+  const netStore = useNetStore()
   const router = useRouter()
   const route = useRoute()
   const { t } = useI18n()
@@ -1337,47 +1341,30 @@
 
   // 执行导弹攻击
   const launchMissileAttack = () => {
-    if (!missileTargetPlanet.value || !gameStore.currentPlanet) return
+    const target = missileTargetPlanet.value
+    if (!target || !gameStore.currentPlanet) return
 
-    // 导入missileLogic进行验证和执行
-    import('@/logic/missileLogic').then(missileLogic => {
-      const validation = missileLogic.validateMissileLaunch(
-        gameStore.currentPlanet!,
-        missileTargetPlanet.value!.position,
-        missileCount.value,
-        gameStore.player.technologies
-      )
-
-      if (!validation.valid) {
-        alertDialogTitle.value = t('errors.launchFailed')
-        alertDialogMessage.value = t(validation.reason || 'errors.unknown')
-        alertDialogOpen.value = true
-        return
-      }
-
-      // 创建导弹攻击任务
-      const missileAttack = missileLogic.createMissileAttack(
-        gameStore.player.id,
-        gameStore.currentPlanet!,
-        missileTargetPlanet.value!.position,
-        missileTargetPlanet.value!.id,
-        missileCount.value
-      )
-
-      // 扣除导弹
-      missileLogic.executeMissileLaunch(gameStore.currentPlanet!, missileCount.value)
-
-      // 添加到玩家的导弹攻击列表
-      gameStore.player.missileAttacks.push(missileAttack)
-
-      // 关闭对话框
-      missileDialogOpen.value = false
-
-      // 显示成功提示
-      alertDialogTitle.value = t('common.success')
-      alertDialogMessage.value = t('galaxyView.missileLaunched')
-      alertDialogOpen.value = true
+    // 统一走命令层：校验、扣除导弹、创建任务都在 core 中完成
+    const result = dispatchCommand({
+      type: 'missile.launch',
+      planetId: gameStore.currentPlanet.id,
+      targetPosition: target.position,
+      targetPlanetId: target.id,
+      missileCount: missileCount.value
     })
+
+    if (!result.ok) {
+      alertDialogTitle.value = t('errors.launchFailed')
+      alertDialogMessage.value = t(result.reason || 'errors.unknown')
+      alertDialogOpen.value = true
+      return
+    }
+
+    // 关闭对话框并提示成功
+    missileDialogOpen.value = false
+    alertDialogTitle.value = t('common.success')
+    alertDialogMessage.value = t('galaxyView.missileLaunched')
+    alertDialogOpen.value = true
   }
 
   // 计算导弹射程
@@ -1445,7 +1432,7 @@
   }
 
   // 计算扫描消耗的氘（每次扫描消耗5000氘）
-  const PHALANX_SCAN_COST = 5000
+  // 传感器阵列扫描消耗的重氢（常量定义在 core/commands，模板直接使用导入值）
 
   // 显示传感器阵列扫描对话框
   const showPhalanxScanDialog = (planet: Planet) => {
@@ -1477,10 +1464,12 @@
   }
 
   // 执行传感器阵列扫描
-  const executePhalanxScan = () => {
-    if (!phalanxTargetPlanet.value) return
+  const executePhalanxScan = async () => {
+    const target = phalanxTargetPlanet.value
+    if (!target) return
+    const targetPosition = { ...target.position }
 
-    const scanMoon = getMoonForScan(phalanxTargetPlanet.value)
+    const scanMoon = getMoonForScan(target)
     if (!scanMoon) {
       alertDialogTitle.value = t('errors.scanFailed')
       alertDialogMessage.value = t('galaxyView.phalanxNoMoon')
@@ -1488,23 +1477,40 @@
       return
     }
 
-    // 检查氘是否足够
-    if (scanMoon.resources.deuterium < PHALANX_SCAN_COST) {
+    // 记录发起前的扫描序号，用于等待服务端返回本次结果
+    const tokenBefore = netStore.scanToken
+
+    // 扣除氘（走命令层，服务端会重新校验余额）
+    const scanResult = dispatchCommand({ type: 'phalanx.scan', moonId: scanMoon.id, targetPosition })
+    if (!scanResult.ok) {
       alertDialogTitle.value = t('errors.scanFailed')
-      alertDialogMessage.value = t('galaxyView.phalanxInsufficientDeuterium')
+      alertDialogMessage.value = t(scanResult.reason || 'galaxyView.phalanxInsufficientDeuterium')
       alertDialogOpen.value = true
       return
     }
 
-    // 扣除氘
-    scanMoon.resources.deuterium -= PHALANX_SCAN_COST
-
     phalanxScanning.value = true
 
-    // 模拟扫描延迟
+    // 联机模式：NPC 的舰队任务不下发客户端，结果由服务端扫描后单独推送
+    if (netStore.enabled) {
+      const fleets = await netStore.waitForScan(tokenBefore)
+      phalanxScanning.value = false
+
+      if (!fleets) {
+        alertDialogTitle.value = t('errors.scanFailed')
+        alertDialogMessage.value = gameStore.locale.startsWith('zh') ? '扫描结果超时，请重试' : 'Scan timed out, please retry'
+        alertDialogOpen.value = true
+        return
+      }
+
+      phalanxScanResults.value = fleets
+      return
+    }
+
+    // 单机：本地就能读到 NPC 的任务列表
     setTimeout(() => {
       // 扫描NPC的舰队任务
-      const targetPos = phalanxTargetPlanet.value!.position
+      const targetPos = targetPosition
       const npc = getPlanetNPC(phalanxTargetPlanet.value)
 
       // 收集相关的舰队任务

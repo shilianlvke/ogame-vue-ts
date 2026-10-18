@@ -2,7 +2,6 @@ import type { FleetMission, Planet, Resources, Fleet, BattleResult, SpyReport, P
 import type { Locale } from '@/locales'
 import { ShipType, DefenseType, MissionType, BuildingType, OfficerType, TechnologyType, ExpeditionZone } from '@/types/game'
 import { FLEET_STORAGE_CONFIG, EXPEDITION_ZONES } from '@/config/gameConfig'
-import { useGameStore } from '@/stores/gameStore'
 import { generateId } from '@/utils/id'
 import * as battleLogic from './battleLogic'
 import * as moonLogic from './moonLogic'
@@ -150,15 +149,15 @@ export const processAttackArrival = async (
   targetPlanet: Planet | undefined,
   attacker: Player,
   defender: Player | null,
-  allPlanets: Planet[]
+  allPlanets: Planet[],
+  battleToFinish: boolean = false
 ): Promise<{ battleResult: BattleResult; moon: Planet | null; debrisField: DebrisField | null } | null> => {
   if (!targetPlanet || targetPlanet.ownerId === attacker.id) {
     mission.status = 'returning'
     return null
   }
 
-  // 执行战斗（使用 Worker 进行异步计算）
-  const gameStore = useGameStore()
+  // 执行战斗（通过可注入的 BattleRunner 计算，浏览器端默认走 Worker）
   const battleResult = await battleLogic.simulateBattle(
     mission.fleet,
     targetPlanet.fleet,
@@ -168,7 +167,7 @@ export const processAttackArrival = async (
     defender?.officers || ({} as Record<OfficerType, Officer>),
     attacker.technologies,
     defender?.technologies || ({} as Record<TechnologyType, number>),
-    gameStore.battleToFinish
+    battleToFinish
   )
 
   // 更新战斗报告ID
@@ -251,10 +250,10 @@ export const processNPCAttackArrival = async (
   mission: FleetMission,
   targetPlanet: Planet,
   defender: Player,
-  allPlanets: Planet[]
+  allPlanets: Planet[],
+  battleToFinish: boolean = false
 ): Promise<{ battleResult: BattleResult; moon: Planet | null; debrisField: DebrisField | null } | null> => {
-  // 执行战斗（使用 Worker 进行异步计算）
-  const gameStore = useGameStore()
+  // 执行战斗（通过可注入的 BattleRunner 计算，浏览器端默认走 Worker）
   const battleResult = await battleLogic.simulateBattle(
     mission.fleet, // NPC舰队
     targetPlanet.fleet, // 玩家舰队
@@ -264,7 +263,7 @@ export const processNPCAttackArrival = async (
     defender.officers || ({} as Record<OfficerType, Officer>), // 玩家军官
     npc.technologies, // NPC科技等级
     defender.technologies, // 玩家科技等级
-    gameStore.battleToFinish
+    battleToFinish
   )
 
   // 更新战斗报告ID和参与者信息
@@ -984,7 +983,8 @@ export const processDestroyArrival = async (
   targetPlanet: Planet | undefined,
   attacker: Player,
   defender: Player | null,
-  allPlanets: Planet[]
+  allPlanets: Planet[],
+  battleToFinish: boolean = false
 ): Promise<DestroyResult> => {
   if (!targetPlanet) {
     mission.status = 'returning'
@@ -1035,8 +1035,6 @@ export const processDestroyArrival = async (
 
   // 如果目标有防御力量，先进行战斗
   if (needsBattle) {
-    const gameStore = useGameStore()
-
     // 执行战斗
     battleResult = await battleLogic.simulateBattle(
       mission.fleet,
@@ -1047,7 +1045,7 @@ export const processDestroyArrival = async (
       defender?.officers || ({} as Record<OfficerType, Officer>),
       attacker.technologies,
       defender?.technologies || ({} as Record<TechnologyType, number>),
-      gameStore.battleToFinish
+      battleToFinish
     )
 
     // 更新战斗报告

@@ -39,6 +39,8 @@ export default {
     requirementsNotMet: '不满足前置条件',
     insufficientResources: '资源不足',
     insufficientFleetStorage: '舰队仓储空间不足',
+    targetProtected: '目标处于新手保护期，暂时无法攻击',
+    attackerProtected: '你正处于新手保护期，暂时无法攻击其他玩家',
     shieldDomeLimit: '护盾罩数量限制',
     missileSiloLimit: '导弹发射井容量不足',
     insufficientMissiles: '星际导弹数量不足',

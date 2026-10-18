@@ -123,10 +123,9 @@
   import { formatNumber, formatTime, getResourceCostColor } from '@/utils/format'
   import * as publicLogic from '@/logic/publicLogic'
   import * as researchLogic from '@/logic/researchLogic'
-  import * as researchValidation from '@/logic/researchValidation'
-  import * as gameLogic from '@/logic/gameLogic'
   import * as officerLogic from '@/logic/officerLogic'
   import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
+  import { dispatchCommand } from '@/core/runtime'
   import { triggerQueueAnimation } from '@/composables/useQueueAnimation'
 
   const gameStore = useGameStore()
@@ -157,29 +156,9 @@
 
   const researchTechnology = (techType: TechnologyType): boolean => {
     if (!gameStore.currentPlanet) return false
-    const validation = researchValidation.validateTechnologyResearch(
-      gameStore.currentPlanet,
-      techType,
-      gameStore.player.technologies,
-      gameStore.player.researchQueue
-    )
-    if (!validation.valid) return false
-    const currentLevel = gameStore.player.technologies[techType] || 0
-
-    // 追踪资源消耗（在扣除前计算成本）
-    const cost = researchLogic.calculateTechnologyCost(techType, currentLevel + 1)
-    gameLogic.trackResourceConsumption(gameStore.player, cost)
-
-    const { queueItem } = researchValidation.executeTechnologyResearch(
-      gameStore.currentPlanet,
-      techType,
-      currentLevel,
-      gameStore.player.officers,
-      gameStore.player.technologies,
-      gameStore.player.planets
-    )
-    gameStore.player.researchQueue.push(queueItem)
-    return true
+    // 统一走命令层：校验、扣资源、入队都在 core 中完成
+    const result = dispatchCommand({ type: 'research.start', planetId: gameStore.currentPlanet.id, techType })
+    return result.ok
   }
 
   // 检查升级前置条件是否满足

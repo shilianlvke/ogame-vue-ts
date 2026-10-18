@@ -224,13 +224,12 @@
   import UnlockRequirement from '@/components/common/UnlockRequirement.vue'
   import CardUnlockOverlay from '@/components/common/CardUnlockOverlay.vue'
   import { formatNumber, getResourceCostColor } from '@/utils/format'
-  import * as shipValidation from '@/logic/shipValidation'
   import * as publicLogic from '@/logic/publicLogic'
   import * as fleetStorageLogic from '@/logic/fleetStorageLogic'
   import * as shipLogic from '@/logic/shipLogic'
-  import * as gameLogic from '@/logic/gameLogic'
   import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
   import * as officerLogic from '@/logic/officerLogic'
+  import { dispatchCommand } from '@/core/runtime'
   import { triggerQueueAnimation } from '@/composables/useQueueAnimation'
 
   const gameStore = useGameStore()
@@ -308,16 +307,14 @@
 
   const buildShip = (shipType: ShipType, quantity: number): { success: boolean; reason?: string } => {
     if (!gameStore.currentPlanet) return { success: false }
-    const validation = shipValidation.validateShipBuild(gameStore.currentPlanet, shipType, quantity, gameStore.player.technologies)
-    if (!validation.valid) return { success: false, reason: validation.reason }
-
-    // 追踪资源消耗（在扣除前计算成本）
-    const totalCost = shipLogic.calculateShipCost(shipType, quantity)
-    gameLogic.trackResourceConsumption(gameStore.player, totalCost)
-
-    const queueItem = shipValidation.executeShipBuild(gameStore.currentPlanet, shipType, quantity, gameStore.player.officers)
-    gameStore.currentPlanet.buildQueue.push(queueItem)
-    return { success: true }
+    // 统一走命令层：校验、扣资源、入队都在 core 中完成
+    const result = dispatchCommand({
+      type: 'ship.build',
+      planetId: gameStore.currentPlanet.id,
+      shipType,
+      quantity
+    })
+    return result.ok ? { success: true } : { success: false, reason: result.reason }
   }
 
   // 建造舰船
@@ -480,17 +477,20 @@
 
     if (!gameStore.currentPlanet) return
 
-    const validation = shipValidation.validateShipScrap(gameStore.currentPlanet, shipType, quantity)
-    if (!validation.valid) {
+    // 统一走命令层
+    const result = dispatchCommand({
+      type: 'ship.scrap',
+      planetId: gameStore.currentPlanet.id,
+      shipType,
+      quantity
+    })
+    if (!result.ok) {
       alertDialogTitle.value = t('shipyardView.scrapFailed')
-      alertDialogMessage.value = validation.reason ? t(validation.reason) : t('shipyardView.scrapFailedMessage')
+      alertDialogMessage.value = result.reason ? t(result.reason) : t('shipyardView.scrapFailedMessage')
       alertDialogOpen.value = true
       return
     }
 
-    // 执行拆除
-    const queueItem = shipValidation.executeShipScrap(gameStore.currentPlanet, shipType, quantity, gameStore.player.officers)
-    gameStore.currentPlanet.buildQueue.push(queueItem)
     scrapQuantities.value[shipType] = 0
   }
 </script>

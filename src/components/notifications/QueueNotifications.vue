@@ -150,6 +150,7 @@
   import type { BuildQueueItem, WaitingQueueItem, BuildingType, ShipType, DefenseType, TechnologyType, Resources } from '@/types/game'
   import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
   import * as resourceLogic from '@/logic/resourceLogic'
+  import { dispatchCommand } from '@/core/runtime'
 
   const { t } = useI18n()
   const gameStore = useGameStore()
@@ -297,13 +298,12 @@
     const planet = gameStore.currentPlanet
     if (!planet) return
 
-    if (item.type === 'technology') {
-      // 从研究等待队列移除
-      waitingQueueLogic.removeFromResearchWaitingQueue(gameStore.player, item.id)
-    } else {
-      // 从建筑等待队列移除
-      waitingQueueLogic.removeFromBuildWaitingQueue(planet, item.id)
-    }
+    dispatchCommand({
+      type: 'queue.removeWaiting',
+      itemId: item.id,
+      isResearch: item.type === 'technology',
+      planetId: planet.id
+    })
   }
 
   // 获取状态指示点颜色

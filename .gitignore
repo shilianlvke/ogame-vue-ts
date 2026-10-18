@@ -37,3 +37,10 @@ android/local.properties
 android/.idea
 android/*.iml
 android/app/*.iml
+
+# 无头引擎冒烟测试产物
+scripts/.smoke-out
+
+# 联机服务端产物与存档
+server-dist
+data

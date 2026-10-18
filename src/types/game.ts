@@ -570,6 +570,18 @@ export interface TradeOffer {
   read?: boolean
 }
 
+// 聊天消息（联机模式）
+export interface ChatMessage {
+  id: string
+  timestamp: number
+  fromId: string
+  fromName: string
+  /** 私聊目标（为空表示银河公共频道） */
+  toId?: string
+  text: string
+  read?: boolean
+}
+
 // NPC情报类型
 export type IntelType = 'enemyFleet' | 'enemyResources' | 'enemyMovement'
 
@@ -822,6 +834,10 @@ export interface Player {
   // 战役系统
   campaignProgress?: PlayerCampaignProgress // 战役进度
   questNotifications?: QuestNotification[] // 任务通知
+  /** 新手保护期截止时间戳（仅联机模式使用；此期间不能攻击其他玩家，也不能被攻击） */
+  protectionUntil?: number
+  /** 聊天记录（联机模式；仅保留最近若干条） */
+  chatMessages?: ChatMessage[]
 }
 
 export interface NotificationSettings {

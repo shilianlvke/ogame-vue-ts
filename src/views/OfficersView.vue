@@ -174,9 +174,7 @@
     AlertDialogTitle
   } from '@/components/ui/alert-dialog'
   import { formatNumber, formatTime, formatDate, getResourceCostColor } from '@/utils/format'
-  import * as officerLogic from '@/logic/officerLogic'
-  import * as resourceLogic from '@/logic/resourceLogic'
-  import * as gameLogic from '@/logic/gameLogic'
+  import { dispatchCommand } from '@/core/runtime'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
 
@@ -247,15 +245,12 @@
 
   const hireOfficer = (officerType: OfficerType, duration: number = 7): boolean => {
     if (!gameStore.currentPlanet) return false
-    const cost = officerLogic.getOfficerCost(officerType)
-    if (!resourceLogic.checkResourcesAvailable(gameStore.currentPlanet.resources, cost)) {
-      return false
-    }
-    // 追踪资源消耗（在扣除前）
-    gameLogic.trackResourceConsumption(gameStore.player, cost)
-    resourceLogic.deductResources(gameStore.currentPlanet.resources, cost)
-    gameStore.player.officers[officerType] = officerLogic.createActiveOfficer(officerType, duration)
-    return true
+    return dispatchCommand({
+      type: 'officer.hire',
+      planetId: gameStore.currentPlanet.id,
+      officerType,
+      duration
+    }).ok
   }
 
   // 招募军官
@@ -275,16 +270,12 @@
 
   const renewOfficer = (officerType: OfficerType, duration: number = 7): boolean => {
     if (!gameStore.currentPlanet) return false
-    const cost = officerLogic.getOfficerCost(officerType)
-    if (!resourceLogic.checkResourcesAvailable(gameStore.currentPlanet.resources, cost)) {
-      return false
-    }
-    // 追踪资源消耗（在扣除前）
-    gameLogic.trackResourceConsumption(gameStore.player, cost)
-    resourceLogic.deductResources(gameStore.currentPlanet.resources, cost)
-    const now = Date.now()
-    gameStore.player.officers[officerType] = officerLogic.renewOfficerExpiration(gameStore.player.officers[officerType], duration, now)
-    return true
+    return dispatchCommand({
+      type: 'officer.renew',
+      planetId: gameStore.currentPlanet.id,
+      officerType,
+      duration
+    }).ok
   }
 
   // 续约军官
@@ -307,7 +298,7 @@
     confirmDialogTitle.value = t('officersView.dismissTitle')
     confirmDialogMessage.value = t('officersView.dismissMessage').replace('{name}', OFFICERS.value[officerType].name)
     confirmDialogAction.value = () => {
-      gameStore.player.officers[officerType] = officerLogic.createInactiveOfficer(officerType)
+      dispatchCommand({ type: 'officer.dismiss', officerType })
     }
     confirmDialogOpen.value = true
   }

@@ -1,12 +1,13 @@
 import type { Fleet, Resources, BattleResult, Officer, TechnologyType } from '@/types/game'
 import { DefenseType, OfficerType } from '@/types/game'
-import { workerManager } from '@/workers/workerManager'
+import { getBattleRunner } from '@/core/battleRunner'
 import { MOON_CONFIG } from '@/config/gameConfig'
 import { generateId } from '@/utils/id'
 
 /**
  * 执行战斗模拟
- * 使用 Web Worker 在后台线程中执行计算密集型的战斗模拟
+ * 通过可注入的 BattleRunner 执行计算密集型战斗模拟：
+ * 浏览器端默认走 Web Worker，服务端走同步直算。
  */
 export const simulateBattle = async (
   attackerFleet: Partial<Fleet>,
@@ -28,8 +29,9 @@ export const simulateBattle = async (
   const defenderShieldTech = defenderTechnologies['shieldingTechnology'] || 0
   const defenderArmorTech = defenderTechnologies['armourTechnology'] || 0
 
-  // 使用 Worker 执行战斗模拟
-  const simulationResult = await workerManager.simulateBattle({
+  // 通过 BattleRunner 执行战斗模拟
+  const battleRunner = getBattleRunner()
+  const simulationResult = await battleRunner.simulateBattle({
     attacker: {
       ships: attackerFleet,
       weaponTech: attackerWeaponTech,
@@ -49,14 +51,14 @@ export const simulateBattle = async (
   // 计算掠夺（仅攻击方胜利时）
   const plunder =
     simulationResult.winner === 'attacker'
-      ? await workerManager.calculatePlunder({
+      ? await battleRunner.calculatePlunder({
           defenderResources,
           attackerFleet: simulationResult.attackerRemaining
         })
       : { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
 
   // 计算残骸场
-  const debrisField = await workerManager.calculateDebris({
+  const debrisField = await battleRunner.calculateDebris({
     attackerLosses: simulationResult.attackerLosses,
     defenderLosses: simulationResult.defenderLosses
   })

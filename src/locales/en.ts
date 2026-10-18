@@ -38,6 +38,8 @@ export default {
     requirementsNotMet: 'Requirements not met',
     insufficientResources: 'Insufficient resources',
     insufficientFleetStorage: 'Insufficient fleet storage',
+    targetProtected: 'Target is under newbie protection',
+    attackerProtected: 'You are under newbie protection and cannot attack other players',
     shieldDomeLimit: 'Shield dome limit reached',
     missileSiloLimit: 'Missile silo capacity exceeded',
     insufficientMissiles: 'Insufficient interplanetary missiles',

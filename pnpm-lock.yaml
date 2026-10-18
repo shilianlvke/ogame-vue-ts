@@ -80,6 +80,9 @@ importers:
       vue-sonner:
         specifier: ^2.0.9
         version: 2.0.9
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
     devDependencies:
       '@csstools/postcss-cascade-layers':
         specifier: ^5.0.2
@@ -93,6 +96,9 @@ importers:
       '@types/node':
         specifier: ^24.10.2
         version: 24.10.2
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
       '@vitejs/plugin-vue':
         specifier: ^6.0.1
         version: 6.0.2(rolldown-vite@7.2.5(@types/node@24.10.2)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1))(vue@3.5.25(typescript@5.9.3))
@@ -712,7 +718,7 @@ packages:
     engines: {node: '>=12'}
 
   '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -1471,6 +1477,9 @@ packages:
 
   '@types/web-bluetooth@0.0.21':
     resolution: {integrity: sha512-oIQLCGWtcFZy2JW77j9k8nHzAOpqMHLQejDA48XXMWH6tjCQHz5RCFz1bzsmROyL6PUm+LLnUiI4BCn221inxA==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -3924,6 +3933,18 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xml2js@0.6.2:
     resolution: {integrity: sha512-T4rieHaC1EXcES0Kxxj4JWgaUQHDk+qwHcYOCFHfiwKz7tOVPLq7Hjq9dM1WCMhylqMEfP7hMcOIChvotiZegA==}
     engines: {node: '>=4.0.0'}
@@ -5414,6 +5435,10 @@ snapshots:
     optional: true
 
   '@types/web-bluetooth@0.0.21': {}
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 24.10.2
 
   '@types/yauzl@2.10.3':
     dependencies:
@@ -8256,6 +8281,8 @@ snapshots:
       strip-ansi: 7.1.2
 
   wrappy@1.0.2: {}
+
+  ws@8.22.0: {}
 
   xml2js@0.6.2:
     dependencies:
