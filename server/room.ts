@@ -363,7 +363,7 @@ export class Room {
     const player = gameLogic.initializePlayer(account.id, account.name)
     player.planets = [this.createHomePlanet(account)]
     // 服务端创建玩家时初始化战役进度，否则 campaign.start 会报 notInitialized
-    initializeCampaignProgress(player)
+    player.campaignProgress = initializeCampaignProgress(player)
     player.points = 0
     player.bonusPoints = 0
     if (this.options.protectionHours > 0) {
