@@ -22,6 +22,11 @@ export interface OreDeposits {
   // 存储星球位置，用于动态计算初始储量上限
   // 这样修改配置后，所有星球的上限都会自动更新
   position: { galaxy: number; system: number; position: number }
+  /**
+   * 生成时的星系修正（经济类型 / 繁荣度 / 资源偏向）。
+   * 计算衰减效率时需要用它还原"初始储量"，否则会和生成值不一致。
+   */
+  modifiers?: { metal: number; crystal: number; deuterium: number }
 }
 
 // 建筑类型
@@ -341,6 +346,10 @@ export interface FleetPreset {
 
 // 舰队任务
 export interface FleetMission {
+  /** 多段航行：逐段经停的恒星系与到达时间（P4） */
+  route?: Array<{ systemId: string; arriveAt: number; distance: number }>
+  /** 当前处在第几段（0 起） */
+  routeIndex?: number
   id: string
   playerId: string // 玩家ID，如果是NPC任务则为NPC ID
   npcId?: string // NPC ID（如果是NPC发起的任务）
@@ -836,6 +845,27 @@ export interface Player {
   questNotifications?: QuestNotification[] // 任务通知
   /** 新手保护期截止时间戳（仅联机模式使用；此期间不能攻击其他玩家，也不能被攻击） */
   protectionUntil?: number
+  /** 所在周目（1 起；旧存档视为第 1 周目） */
+  cycle?: number
+  /** 已排定的周目跃迁时间（到时由 tick 执行） */
+  cycleJumpAt?: number
+  /**
+   * 已发现的恒星系（key = `cycle:region:index`）
+   * scans 达到 2 视为解锁行星明细；`at` 是最近一次扫描时间（用于冷却）。
+   * `name` / `namedBy` 记录玩家赋予的星系名（会同步给所有已发现它的玩家）。
+   */
+  discoveredSystems?: Record<
+    string,
+    {
+      at: number
+      scans: number
+      named?: boolean
+      name?: string
+      namedBy?: string
+      signalClaimed?: boolean
+      wormholeUsed?: boolean
+    }
+  >
   /** 聊天记录（联机模式；仅保留最近若干条） */
   chatMessages?: ChatMessage[]
 }
@@ -1122,6 +1152,12 @@ export const ObjectiveType = {
 
   // 探索目标
   Colonize: 'colonize', // 殖民新星球
+  // 星图目标（P0-P7 新玩法）
+  ScanSystem: 'scanSystem', // 扫描恒星系数量
+  NameSystem: 'nameSystem', // 命名恒星系数量
+  CollectSignal: 'collectSignal', // 回收未知信号数量
+  CaptureGate: 'captureGate', // 占领星门数量
+  CycleJump: 'cycleJump', // 完成周目跃迁次数
   Expedition: 'expedition', // 完成探险任务
   DiscoverLocation: 'discoverLocation', // 发现特定位置
   SpyTarget: 'spyTarget' // 侦查特定目标

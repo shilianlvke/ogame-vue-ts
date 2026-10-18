@@ -780,15 +780,19 @@ export const ensureAllNPCsAIType = (npcs: NPC[]): void => {
  * - 小型运输: 10, 大型运输: 20, 殖民船: 40, 回收船: 30
  * - 间谍探测器: 2, 太阳能卫星: 1, 暗物质收集船: 50, 死星: 100
  */
-export const initializeNPCByDistance = (npc: NPC, homeworldPosition: { galaxy: number; system: number; position: number }): void => {
+export const initializeNPCByDistance = (
+  npc: NPC,
+  homeworldPosition: { galaxy: number; system: number; position: number },
+  dangerBonus: number = 0
+): void => {
   const planet = npc.planets[0]
   if (!planet) return
 
   const distance = calculateDistanceToHomeworld(planet.position, homeworldPosition)
 
-  // 保存距离和难度等级到NPC
+  // 保存距离和难度等级到NPC（危险度作为额外加成：danger-1）
   npc.distanceToHomeworld = distance
-  npc.difficultyLevel = calculateDifficultyLevel(distance)
+  npc.difficultyLevel = Math.max(1, calculateDifficultyLevel(distance) + dangerBonus)
 
   // 分配随机 AI 类型（如果还没有）
   ensureNPCAIType(npc)

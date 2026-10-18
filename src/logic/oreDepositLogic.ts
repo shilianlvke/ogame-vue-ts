@@ -102,15 +102,21 @@ export const calculateEnhancedDeposits = (
 
 /**
  * 根据星球位置生成初始矿脉储量
+ *
+ * @param modifiers 星系修正（经济类型 / 繁荣度 / 资源偏向），缺省为中性
  */
-export const generateOreDeposits = (position: { galaxy: number; system: number; position: number }): OreDeposits => {
+export const generateOreDeposits = (
+  position: { galaxy: number; system: number; position: number },
+  modifiers: { metal: number; crystal: number; deuterium: number } = { metal: 1, crystal: 1, deuterium: 1 }
+): OreDeposits => {
   const initialDeposits = calculateInitialDeposits(position)
 
   return {
-    metal: initialDeposits.metal,
-    crystal: initialDeposits.crystal,
-    deuterium: initialDeposits.deuterium,
-    position: { ...position }
+    metal: Math.round(initialDeposits.metal * modifiers.metal),
+    crystal: Math.round(initialDeposits.crystal * modifiers.crystal),
+    deuterium: Math.round(initialDeposits.deuterium * modifiers.deuterium),
+    position: { ...position },
+    modifiers: { ...modifiers }
   }
 }
 
@@ -126,8 +132,10 @@ export const calculateDepositEfficiency = (deposits: OreDeposits | undefined, re
   const { DECAY_START_THRESHOLD, MIN_PRODUCTION_EFFICIENCY } = ORE_DEPOSIT_CONFIG
 
   const currentDeposit = deposits[resourceType]
-  const initialDeposits = calculateInitialDeposits(deposits.position)
-  const initialDeposit = initialDeposits[resourceType]
+  const baseDeposits = calculateInitialDeposits(deposits.position)
+  // 生成时可能带星系修正（经济/繁荣度/偏向），乘回去才能得到真实初始值
+  const modifierSet = deposits.modifiers ?? { metal: 1, crystal: 1, deuterium: 1 }
+  const initialDeposit = baseDeposits[resourceType] * modifierSet[resourceType]
 
   // 如果初始储量为0，返回最低效率（避免除以0）
   if (initialDeposit <= 0) return MIN_PRODUCTION_EFFICIENCY
@@ -173,8 +181,9 @@ export const getDepositPercentage = (deposits: OreDeposits | undefined, resource
   if (!deposits.position) return 100
 
   const currentDeposit = deposits[resourceType]
-  const initialDeposits = calculateInitialDeposits(deposits.position)
-  const initialDeposit = initialDeposits[resourceType]
+  const baseDeposits = calculateInitialDeposits(deposits.position)
+  const modifierSet = deposits.modifiers ?? { metal: 1, crystal: 1, deuterium: 1 }
+  const initialDeposit = baseDeposits[resourceType] * modifierSet[resourceType]
 
   if (initialDeposit <= 0) return 0
 

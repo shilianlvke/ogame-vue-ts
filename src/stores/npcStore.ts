@@ -1,11 +1,12 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import type { NPC } from '@/types/game'
 import pkg from '../../package.json'
 import { encryptData, decryptData } from '@/utils/crypto'
+import { saveStorage } from '@/services/saveStorage'
 
 /**
  * NPC Store
- * 存储和管理所有NPC数据
+ * 瀛樺偍鍜岀鐞嗘墍鏈塏PC鏁版嵁
  */
 export const useNPCStore = defineStore('npc', {
   state: () => ({
@@ -14,7 +15,7 @@ export const useNPCStore = defineStore('npc', {
   }),
   persist: {
     key: `${pkg.name}-npcs`,
-    storage: localStorage,
+    storage: saveStorage,
     serializer: {
       serialize: state => encryptData(state),
       deserialize: value => decryptData(value)

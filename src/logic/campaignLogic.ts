@@ -138,7 +138,12 @@ export const startQuest = (player: Player, questId: string): { success: boolean;
 /**
  * 检查单个目标的进度
  */
-export const checkObjectiveProgress = (player: Player, objective: QuestObjective, npcs: NPC[]): number => {
+export const checkObjectiveProgress = (
+  player: Player,
+  objective: QuestObjective,
+  npcs: NPC[],
+  world?: { gates?: Record<string, { owner: string }> }
+): number => {
   switch (objective.type) {
     case ObjectiveType.BuildBuilding: {
       // 检查玩家所有星球上该建筑的最高等级
@@ -175,6 +180,31 @@ export const checkObjectiveProgress = (player: Player, objective: QuestObjective
         totalResources += planet.resources.metal + planet.resources.crystal + planet.resources.deuterium
       })
       return Math.min(totalResources, objective.required)
+    }
+
+    case ObjectiveType.ScanSystem: {
+      return Math.min(Object.keys(player.discoveredSystems ?? {}).length, objective.required)
+    }
+
+    case ObjectiveType.NameSystem: {
+      const named = Object.values(player.discoveredSystems ?? {}).filter(record => record.named).length
+      return Math.min(named, objective.required)
+    }
+
+    case ObjectiveType.CollectSignal: {
+      const claimed = Object.values(player.discoveredSystems ?? {}).filter(
+        record => record.signalClaimed || record.wormholeUsed
+      ).length
+      return Math.min(claimed, objective.required)
+    }
+
+    case ObjectiveType.CaptureGate: {
+      const owned = Object.values(world?.gates ?? {}).filter(gate => gate.owner === player.id).length
+      return Math.min(owned, objective.required)
+    }
+
+    case ObjectiveType.CycleJump: {
+      return Math.min(Math.max(0, (player.cycle ?? 1) - 1), objective.required)
     }
 
     case ObjectiveType.Colonize: {
@@ -267,7 +297,8 @@ export const checkObjectiveProgress = (player: Player, objective: QuestObjective
 export const updateQuestProgress = (
   player: Player,
   questId: string,
-  npcs: NPC[]
+  npcs: NPC[],
+  world?: { gates?: Record<string, { owner: string }> }
 ): {
   updated: boolean
   completedObjectives: string[]
@@ -293,7 +324,7 @@ export const updateQuestProgress = (
     const objProgress = questProgress.objectives[objective.id]
     if (!objProgress || objProgress.completed) return
 
-    const newProgress = checkObjectiveProgress(player, objective, npcs)
+    const newProgress = checkObjectiveProgress(player, objective, npcs, world)
     if (newProgress !== objProgress.current) {
       objProgress.current = newProgress
       result.updated = true

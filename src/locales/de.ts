@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: 'Einzelspieler',
+    modeSingleDesc: 'Das gesamte Universum liegt in diesem Browser – kein Netzwerk nötig.',
+    modeSingleExisting: 'Ein lokaler Spielstand wurde gefunden – setze dein Imperium fort.',
+    modeSingleNew: 'Beim ersten Start wird eine neue Galaxie erstellt.',
+    modeSingleLocked: 'Einzelspieler ist im Online-Modus nicht verfügbar – bitte zuerst trennen.',
+    modeContinue: 'Einzelspieler fortsetzen',
+    modeOnline: 'Online',
+    modeOnlineDesc: 'Tritt einem Server bei und teile das Universum mit anderen Kommandanten.',
     subtitle: 'Erobere die Sterne',
     startGame: 'Spiel starten',
     privacyAgreement: 'Datenschutzvereinbarung',
@@ -36,6 +44,14 @@ export default {
     retry: 'Wiederholen'
   },
   errors: {
+    scanOutOfRange: 'Außerhalb der Scanreichweite',
+    scanNoProbe: 'Keine Spionagesonden verfügbar',
+    scanInsufficientDeuterium: 'Nicht genug Deuterium',
+    scanCooldown: 'Scan kühlt ab',
+    renameTooShort: 'Name zu kurz (mind. 2 Zeichen)',
+    renameAlreadyNamed: 'Dieses System wurde bereits benannt',
+    targetProtected: 'Ziel ist im Schutzstatus',
+    attackerProtected: 'Angreifer ist im Schutzstatus',
     requirementsNotMet: 'Anforderungen nicht erfüllt',
     insufficientResources: 'Unzureichende Ressourcen',
     insufficientFleetStorage: 'Unzureichender Flottenspeicher',
@@ -505,6 +521,7 @@ export default {
       'Bitte überprüfen Sie, ob Sie genügend Ressourcen haben oder die Voraussetzungen erfüllt sind. Schildkuppeln können nur einmal gebaut werden.'
   },
   fleetView: {
+    routeProgress: 'Etappe',
     title: 'Flottenverwaltung',
     fleetOverview: 'Flottenübersicht',
     sendFleet: 'Flotte senden',
@@ -672,6 +689,7 @@ export default {
     insufficientResources: 'Nicht genug Ressourcen!'
   },
   galaxyView: {
+    phalanxOutOfRange: 'Außerhalb der Sensorphalanx-Reichweite',
     title: 'Galaxie',
     selectCoordinates: 'Koordinaten auswählen',
     galaxy: 'Galaxie',
@@ -951,7 +969,140 @@ export default {
     selectSpyReport: 'Spionagebericht auswählen',
     noSpyReports: 'Keine Spionageberichte verfügbar'
   },
+  online: {
+    status: {
+      idle: 'Offline',
+      connecting: 'Verbinde',
+      online: 'Verbunden',
+      reconnecting: 'Verbinde neu',
+      error: 'Fehlgeschlagen',
+    },
+    server: 'Server-URL',
+    name: 'Kommandantenname',
+    password: 'Passwort',
+    passwordHint: 'Mindestens 4 Zeichen',
+    connect: 'Verbinden',
+    connecting: 'Verbinde…',
+    enterGame: 'Spiel betreten',
+    disconnect: 'Trennen',
+    mainMenu: 'Hauptmenü',
+    loginHint: 'Beim ersten Verbinden wird ein Konto registriert; Fenster desselben Browsers teilen den Anmeldezustand.',
+    backupHint: 'Dein lokaler Spielstand wird beim ersten Verbinden gesichert und kann jederzeit wiederhergestellt werden.',
+    player: 'Aktueller Spieler',
+    players: 'Spieler online',
+    onlineHint: 'Verbunden – der Server treibt das Spiel voran; Flotten fliegen weiter, auch wenn du die Seite schließt.',
+    reconnectHint: 'Verbinde erneut mit dem Server…',
+    restoreLocal: 'Lokalen Spielstand wiederherstellen',
+    restoreConfirm: 'Dadurch geht der Serverfortschritt verloren, der lokale Spielstand wird wiederhergestellt und die Seite neu geladen. Fortfahren?',
+    confirm: 'Wiederherstellen',
+    cancel: 'Abbrechen',
+    passwordNew: 'Beim ersten Verbinden wird ein Konto registriert. Merke dir das Passwort.',
+    passwordKeep: 'Auf diesem Gerät ist bereits ein Token gespeichert; das Passwort kann leer bleiben.',
+    multiWindowHint: 'Fenster desselben Browsers teilen den Anmeldezustand. Für zwei Konten nutze verschiedene Browser (oder ein normales + ein Inkognito-Fenster); zum Kontowechsel zuerst den lokalen Spielstand wiederherstellen.',
+    error: {
+      wrongPassword: 'Falsches Passwort',
+      nameTaken: 'Dieser Name ist bereits vergeben',
+      passwordRequired: 'Passwort erforderlich (mindestens 4 Zeichen)',
+      replaced: 'Dieses Konto wurde anderswo angemeldet; dieses Fenster wurde getrennt',
+      invalidUrl: 'Die Server-URL muss mit ws:// oder wss:// beginnen',
+    },
+  },
+  chat: {
+    title: 'Galaxie-Chat',
+    channel: 'Öffentlich',
+    placeholder: 'Sag etwas…',
+    empty: 'Noch hat niemand gesprochen – sag Hallo!',
+  },
+  // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: 'Üppig',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: 'Zyklus-Sprung',
+    cycleJumpDesc: 'Springe in die nächste Galaxie: Technik und Erfolge bleiben, Kolonien werden neu aufgebaut.',
+    cycleJumpButton: 'Springen',
+    cycleJumpConfirm: 'In den nächsten Zyklus springen? Alte Planeten werden abgebaut.',
     dataManagement: 'Datenverwaltung',
     dataManagementDesc: 'Spieldaten exportieren, importieren oder löschen',
     exportData: 'Daten exportieren',
@@ -1956,6 +2107,7 @@ export default {
       choiceEffect: 'Dialogauswahl-Effekt'
     },
     chapters: {
+      '6': { title: 'Sternennavigation', description: 'Sternenkarte, Scan, Benennung und Sprung', backgroundStory: 'Die Sternenkarte entfaltet sich; neue Routen warten auf Namen.' },
       '1': {
         title: 'Ursprung',
         description: 'Baue deine Heimat auf und mache den ersten Schritt ins All',
@@ -1988,6 +2140,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: 'Kurs auf die Sterne', description: '3D-Sternenkarte öffnen und ein System scannen' },
+      '6_2': { title: 'Das Recht zu benennen', description: 'Deiner Entdeckung einen Namen geben' },
+      '6_3': { title: 'Echos der Ruinen', description: 'Ein unbekanntes Signal bergen' },
+      '6_4': { title: 'Kampf um die Tore', description: 'Ein Sternentor einnehmen' },
+      '6_5': { title: 'Der Sprung', description: 'Einen Zyklus-Sprung abschließen' },
       '1_1': { title: 'Heimataufbau', description: 'Baue Infrastruktur auf, um die Grundlage für deinen Planeten zu legen' },
       '1_2': { title: 'Technische Erleuchtung', description: 'Erforsche Basistechnologie, um deine technische Reise zu beginnen' },
       '1_3': { title: 'Erstes Schiff', description: 'Baue dein erstes Kriegsschiff' },
@@ -2050,6 +2207,11 @@ export default {
       ancientGuardian: 'Antiker Wächter'
     },
     objectiveDescriptions: {
+      scanSystem: '1 System scannen',
+      nameSystem: '1 System benennen',
+      collectSignal: '1 Signal bergen',
+      captureGate: '1 Tor einnehmen',
+      cycleJump: '1 Sprung abschließen',
       buildMetalMine: 'Baue Metallmine auf Stufe 2',
       buildCrystalMine: 'Baue Kristallmine auf Stufe 2',
       buildSolarPlant: 'Baue Solarkraftwerk auf Stufe 2',
@@ -2102,6 +2264,11 @@ export default {
       continueDevelopment: 'Setze Entwicklung fort'
     },
     dialogues: {
+      '6_1': { prologue_1: 'Öffne die 3D-Sternenkarte und scanne ein System.' },
+      '6_2': { prologue_1: 'Hinterlasse deinen Namen an diesem Himmel.' },
+      '6_3': { prologue_1: 'Die Signale bergen Relikte einer gefallenen Ära.' },
+      '6_4': { prologue_1: 'Tore sind die Engpässe der Routen. Stationiere eine Flotte.' },
+      '6_5': { prologue_1: 'Mit einem Tor kannst du in die nächste Galaxie springen.' },
       '1_1': {
         prologue_1:
           'Willkommen in der Galaxie, junger Kommandant. Dieses weite Universum wartet auf deine Erkundung. Zuerst bauen wir deinen Heimatplaneten auf.',

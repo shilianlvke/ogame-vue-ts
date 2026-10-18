@@ -26,6 +26,7 @@ const router = createRouter({
     { path: '/battle-simulator', name: 'battle-simulator', component: () => import('@/views/BattleSimulatorView.vue') },
     { path: '/messages', name: 'messages', component: () => import('@/views/MessagesView.vue') },
     { path: '/galaxy', name: 'galaxy', component: () => import('@/views/GalaxyView.vue') },
+    { path: '/starmap', name: 'starmap', component: () => import('@/views/StarMapView.vue') },
     { path: '/diplomacy', name: 'diplomacy', component: () => import('@/views/DiplomacyView.vue') },
     { path: '/achievements', name: 'achievements', component: () => import('@/views/AchievementsView.vue') },
     { path: '/campaign', name: 'campaign', component: () => import('@/views/CampaignView.vue') },
@@ -36,7 +37,7 @@ const router = createRouter({
   ]
 })
 
-// 路由守卫：检查隐私协议同意状态
+// 路由守卫：首页是「模式选择」页，始终可访问；其它页面需要先同意隐私协议
 router.beforeEach((to, _from, next) => {
   // 联机模式下禁用 GM 面板（调试后门不能出现在线上环境）
   if (to.path === '/gm' && isOnlineMode()) {
@@ -44,29 +45,21 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  const gameStore = useGameStore()
-
-  // 已同意隐私协议
-  if (gameStore.player.privacyAgreed) {
-    // 已同意但访问首页，重定向到总览页
-    if (to.path === '/') {
-      next('/overview')
-      return
-    }
-    // 正常访问其他页面
-    next()
-    return
-  }
-
-  // 未同意隐私协议
-  // 允许访问首页（用于显示隐私协议同意弹窗）
+  // 首页：单机 / 联机入口，永远放行
   if (to.path === '/') {
     next()
     return
   }
 
-  // 未同意隐私协议且访问其他页面，重定向到首页
-  next('/')
+  const gameStore = useGameStore()
+
+  // 其余页面：未同意隐私协议则回到首页
+  if (!gameStore.player.privacyAgreed) {
+    next('/')
+    return
+  }
+
+  next()
 })
 
 export default router

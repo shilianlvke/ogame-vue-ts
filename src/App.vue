@@ -7,10 +7,15 @@
     <Sidebar collapsible="icon">
       <!-- 标志 -->
       <SidebarHeader class="border-b">
-        <div class="flex items-center justify-center p-4 group-data-[collapsible=icon]:p-2">
+        <button
+          type="button"
+          class="flex w-full items-center justify-center p-4 transition-colors hover:bg-muted/50 group-data-[collapsible=icon]:p-2"
+          :title="t('online.mainMenu')"
+          @click="router.push('/')"
+        >
           <img src="@/assets/logo.svg" class="w-10 group-data-[collapsible=icon]:w-8" />
           <h1 class="text-xl font-bold ml-2 group-data-[collapsible=icon]:hidden">{{ pkg.title }}</h1>
-        </div>
+        </button>
       </SidebarHeader>
 
       <SidebarContent>
@@ -1083,9 +1088,17 @@
   const confirmRenamePlanet = () => {
     if (!renamingPlanetId.value || !newPlanetName.value.trim()) return
 
-    const targetPlanet = gameStore.player.planets.find(p => p.id === renamingPlanetId.value)
-    if (targetPlanet) {
-      targetPlanet.name = newPlanetName.value.trim()
+    // 必须走命令层：联机模式下直接改本地 store 会被服务端补丁覆盖
+    const result = dispatchCommand({
+      type: 'planet.rename',
+      planetId: renamingPlanetId.value,
+      name: newPlanetName.value.trim()
+    })
+    console.log('[rename] 提交结果', { online: netStore.isOnline, result })
+
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
     }
 
     renameDialogOpen.value = false
@@ -1107,7 +1120,7 @@
   const switchToMoon = () => {
     if (moon.value) {
       gameStore.currentPlanetId = moon.value.id
-      router.push('/')
+      router.push('/overview')
     }
   }
 
@@ -1115,14 +1128,14 @@
   const switchToParentPlanet = () => {
     if (planet.value?.parentPlanetId) {
       gameStore.currentPlanetId = planet.value.parentPlanetId
-      router.push('/')
+      router.push('/overview')
     }
   }
 
   // 切换到指定星球
   const switchToPlanet = (planetId: string) => {
     gameStore.currentPlanetId = planetId
-    router.push('/')
+    router.push('/overview')
   }
 
   // 切换侧边栏

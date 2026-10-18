@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: 'Одиночная игра',
+    modeSingleDesc: 'Вся вселенная живёт в этом браузере — сеть не нужна.',
+    modeSingleExisting: 'Найдено локальное сохранение — продолжите свою империю.',
+    modeSingleNew: 'При первом входе будет создана новая галактика.',
+    modeSingleLocked: 'Одиночная игра недоступна в онлайн-режиме — сначала отключитесь.',
+    modeContinue: 'Продолжить одиночную игру',
+    modeOnline: 'Онлайн',
+    modeOnlineDesc: 'Подключитесь к серверу и разделите вселенную с другими командирами.',
     subtitle: 'Покори звёзды',
     startGame: 'Начать игру',
     privacyAgreement: 'Политика конфиденциальности',
@@ -37,6 +45,14 @@ export default {
     retry: 'Повторить'
   },
   errors: {
+    scanOutOfRange: 'Вне радиуса сканирования',
+    scanNoProbe: 'Нет разведывательных зондов',
+    scanInsufficientDeuterium: 'Недостаточно дейтерия',
+    scanCooldown: 'Сканирование перезаряжается',
+    renameTooShort: 'Слишком короткое имя (мин. 2 символа)',
+    renameAlreadyNamed: 'Эта система уже названа',
+    targetProtected: 'Цель под защитой',
+    attackerProtected: 'Атакующий под защитой',
     requirementsNotMet: 'Требования не выполнены',
     insufficientResources: 'Недостаточно ресурсов',
     insufficientFleetStorage: 'Недостаточно места для флота',
@@ -507,6 +523,7 @@ export default {
       'Пожалуйста, проверьте, достаточно ли у вас ресурсов или выполнены ли предварительные условия. Щитовые купола можно построить только один раз.'
   },
   fleetView: {
+    routeProgress: 'Этап',
     title: 'Управление флотом',
     fleetOverview: 'Обзор флота',
     sendFleet: 'Отправить флот',
@@ -674,6 +691,7 @@ export default {
     insufficientResources: 'Недостаточно ресурсов!'
   },
   galaxyView: {
+    phalanxOutOfRange: 'Вне радиуса сенсорной фаланги',
     title: 'Галактика',
     selectCoordinates: 'Выбрать координаты',
     galaxy: 'Галактика',
@@ -952,7 +970,140 @@ export default {
     selectSpyReport: 'Выбрать шпионский отчет',
     noSpyReports: 'Нет шпионских отчетов'
   },
+  online: {
+    status: {
+      idle: 'Не подключено',
+      connecting: 'Подключение',
+      online: 'Подключено',
+      reconnecting: 'Переподключение',
+      error: 'Ошибка',
+    },
+    server: 'Адрес сервера',
+    name: 'Имя командира',
+    password: 'Пароль',
+    passwordHint: 'Не менее 4 символов',
+    connect: 'Подключиться',
+    connecting: 'Подключение…',
+    enterGame: 'Войти в игру',
+    disconnect: 'Отключиться',
+    mainMenu: 'Главное меню',
+    loginHint: 'При первом подключении создаётся аккаунт; окна одного браузера используют общее состояние входа.',
+    backupHint: 'Локальное сохранение создаётся при первом подключении и может быть восстановлено в любой момент.',
+    player: 'Текущий игрок',
+    players: 'Игроков онлайн',
+    onlineHint: 'Подключено — игру продвигает сервер; флоты продолжают лететь после закрытия страницы.',
+    reconnectHint: 'Переподключение к серверу…',
+    restoreLocal: 'Восстановить локальное сохранение',
+    restoreConfirm: 'Прогресс на сервере будет отброшен, локальное сохранение восстановлено, страница перезагрузится. Продолжить?',
+    confirm: 'Восстановить',
+    cancel: 'Отмена',
+    passwordNew: 'При первом подключении будет создан аккаунт. Запомните пароль.',
+    passwordKeep: 'На этом устройстве уже сохранён токен; пароль можно оставить пустым.',
+    multiWindowHint: 'Окна одного браузера используют общее состояние входа. Для двух аккаунтов используйте разные браузеры (или обычное + приватное окно); для смены аккаунта сначала восстановите локальное сохранение.',
+    error: {
+      wrongPassword: 'Неверный пароль',
+      nameTaken: 'Это имя уже занято',
+      passwordRequired: 'Требуется пароль (не менее 4 символов)',
+      replaced: 'Этот аккаунт вошёл в другом месте; это окно отключено',
+      invalidUrl: 'Адрес сервера должен начинаться с ws:// или wss://',
+    },
+  },
+  chat: {
+    title: 'Галактический чат',
+    channel: 'Общий',
+    placeholder: 'Напишите что-нибудь…',
+    empty: 'Пока никто не писал — поздоровайтесь!',
+  },
+  // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: 'Пышная',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: 'Прыжок цикла',
+    cycleJumpDesc: 'Перейти в следующую галактику: технологии и достижения сохраняются, колонии строятся заново.',
+    cycleJumpButton: 'Прыгнуть',
+    cycleJumpConfirm: 'Перейти в следующий цикл? Старые планеты будут разобраны.',
     dataManagement: 'Управление данными',
     dataManagementDesc: 'Экспорт, импорт или очистка игровых данных',
     exportData: 'Экспорт данных',
@@ -1958,6 +2109,7 @@ export default {
       choiceEffect: 'Эффект выбора диалога'
     },
     chapters: {
+      '6': { title: 'Навигация по звёздам', description: 'Карта, сканирование, имена и прыжки', backgroundStory: 'Звёздная карта раскрывается; новые маршруты ждут имён.' },
       '1': {
         title: 'Начало',
         description: 'Постройте свой дом и сделайте первый шаг в космос',
@@ -1990,6 +2142,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: 'Курс на звёзды', description: 'Откройте 3D-карту и просканируйте систему' },
+      '6_2': { title: 'Право назвать', description: 'Дайте имя своему открытию' },
+      '6_3': { title: 'Эхо руин', description: 'Подберите неизвестный сигнал' },
+      '6_4': { title: 'Битва за врата', description: 'Захватите звёздные врата' },
+      '6_5': { title: 'Прыжок', description: 'Совершите прыжок цикла' },
       '1_1': { title: 'Строительство дома', description: 'Постройте инфраструктуру, чтобы заложить основу для вашей планеты' },
       '1_2': { title: 'Техническое просвещение', description: 'Исследуйте базовые технологии, чтобы начать свой технологический путь' },
       '1_3': { title: 'Первый корабль', description: 'Постройте свой первый боевой корабль' },
@@ -2052,6 +2209,11 @@ export default {
       ancientGuardian: 'Древний страж'
     },
     objectiveDescriptions: {
+      scanSystem: 'Просканировать 1 систему',
+      nameSystem: 'Назвать 1 систему',
+      collectSignal: 'Подобрать 1 сигнал',
+      captureGate: 'Захватить 1 врата',
+      cycleJump: 'Совершить 1 прыжок',
       buildMetalMine: 'Построить Металлургический завод до уровня 2',
       buildCrystalMine: 'Построить Кристаллический завод до уровня 2',
       buildSolarPlant: 'Построить Солнечную электростанцию до уровня 2',
@@ -2104,6 +2266,11 @@ export default {
       continueDevelopment: 'Продолжить развитие'
     },
     dialogues: {
+      '6_1': { prologue_1: 'Откройте 3D-карту и просканируйте ближайшую систему.' },
+      '6_2': { prologue_1: 'Оставьте своё имя на этом небе.' },
+      '6_3': { prologue_1: 'Сигналы хранят реликвии павшей эпохи.' },
+      '6_4': { prologue_1: 'Врата — горловина маршрутов. Держите там флот.' },
+      '6_5': { prologue_1: 'С вратами вы сможете прыгнуть в следующую галактику.' },
       '1_1': {
         prologue_1:
           'Добро пожаловать в галактику, молодой командир. Эта необъятная вселенная ждёт вашего исследования. Сначала построим вашу родную планету.',

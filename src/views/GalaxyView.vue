@@ -1,6 +1,12 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <h1 class="text-2xl sm:text-3xl font-bold">{{ t('galaxyView.title') }}</h1>
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl sm:text-3xl font-bold">{{ t('galaxyView.title') }}</h1>
+      <Button variant="outline" size="sm" @click="router.push('/starmap')">
+        <Box class="mr-2 h-4 w-4" />
+        3D 星图
+      </Button>
+    </div>
 
     <!-- 坐标选择器 -->
     <Card>
@@ -31,7 +37,9 @@
                 <SelectValue :placeholder="t('galaxyView.selectGalaxy')" />
               </SelectTrigger>
               <SelectContent position="popper">
-                <SelectItem v-for="g in 9" :key="g" :value="String(g)">{{ t('galaxyView.galaxy') }} {{ g }}</SelectItem>
+                <SelectItem v-for="region in GALAXY_CONFIG.REGIONS_PER_CYCLE" :key="region" :value="String(galaxyForRegion(region))">
+              {{ generateRegionName(region) }}
+            </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -52,7 +60,9 @@
                 <SelectValue :placeholder="t('galaxyView.selectSystem')" />
               </SelectTrigger>
               <SelectContent position="popper">
-                <SelectItem v-for="s in 10" :key="s" :value="String(s)">{{ t('galaxyView.system') }} {{ s }}</SelectItem>
+                <SelectItem v-for="s in GALAXY_CONFIG.SYSTEMS_PER_REGION" :key="s" :value="String(s)">
+              {{ stellarLabel(selectedGalaxy, s) }}
+            </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -154,7 +164,17 @@
     <!-- 星系视图 -->
     <Card>
       <CardHeader>
-        <CardTitle>{{ t('galaxyView.galaxy') }} {{ currentGalaxy }}:{{ currentSystem }}</CardTitle>
+        <CardTitle>{{ generateGalaxyName(currentCycle) }} · {{ generateRegionName(currentRegion) }} · {{ stellarLabel(currentGalaxy, currentSystem) }}</CardTitle>
+            <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span v-if="systemScan" class="rounded bg-primary/10 px-1.5 py-0.5 text-foreground">已扫描</span>
+              <span v-else class="rounded border px-1.5 py-0.5">未扫描</span>
+              <span v-if="systemGate">
+                星门：{{ systemGate.owner === 'neutral' ? '中立' : systemGate.owner }} · 过路费 {{ systemGate.toll }}
+              </span>
+              <span v-if="systemSignal && systemScan">
+                未知信号：{{ systemSignal.kind === 'derelict' ? '残骸' : systemSignal.kind === 'ruin' ? '遗迹' : '虫洞' }}
+              </span>
+            </div>
         <CardDescription>{{ t('galaxyView.totalPositions') }}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -948,7 +968,7 @@
   import { useNPCStore } from '@/stores/npcStore'
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
-  import { ref, onMounted, computed } from 'vue'
+  import { ref, onMounted, computed , watch } from 'vue'
   import type { Planet, DebrisField } from '@/types/game'
   import { RelationStatus } from '@/types/game'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -972,6 +992,11 @@
     AlertDialogTitle
   } from '@/components/ui/alert-dialog'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'
+  import { generateGalaxyName, generateRegionName, generateStellarName } from '@/logic/nameGenerator'
+import { DEFAULT_LAYOUT_SEED, GALAXY_CONFIG, regionOfGalaxy } from '@/config/galaxyConfig'
+import { buildCycleLayout } from '@/logic/galaxyGen'
+import { buildGateInfos } from '@/logic/gateLogic'
+import { signalOf } from '@/logic/signalLogic'
   import {
     Home,
     Eye,
@@ -989,7 +1014,8 @@
     Target,
     Navigation,
     Clock,
-    AlertTriangle
+    AlertTriangle,
+    Box
   } from 'lucide-vue-next'
   import { useRouter, useRoute } from 'vue-router'
   import * as gameLogic from '@/logic/gameLogic'
@@ -1028,8 +1054,46 @@
 
   const selectedGalaxy = ref(1)
   const selectedSystem = ref(1)
-  const currentGalaxy = ref(1)
+  const currentCycle = computed(() => gameStore.player.cycle ?? 1)
+
+/** 当前周目内的星区 → 全局 galaxy 坐标 */
+const galaxyForRegion = (region: number): number =>
+  (currentCycle.value - 1) * GALAXY_CONFIG.REGIONS_PER_CYCLE + region
+const currentRegion = computed(() => regionOfGalaxy(currentGalaxy.value))
+/** 当前周目布局（缓存命中，开销很小） */
+const layoutForCycle = buildCycleLayout(DEFAULT_LAYOUT_SEED, currentCycle.value)
+const allSystemIds = layoutForCycle.regions.flatMap(region => region.systems.map(system => system.id))
+const gateInfosForCycle = buildGateInfos(layoutForCycle)
+
+const systemIdNow = computed(() => `${currentCycle.value}:${regionOfGalaxy(currentGalaxy.value)}:${currentSystem.value}`)
+const systemScan = computed(() => gameStore.player.discoveredSystems?.[systemIdNow.value])
+const systemGate = computed(() => gateInfosForCycle[systemIdNow.value])
+const systemSignal = computed(() => signalOf(layoutForCycle.seed, systemIdNow.value, allSystemIds))
+
+
+/** 恒星系显示名：玩家自定义名优先，否则用程序化名（与 3D 星图保持一致） */
+const stellarLabel = (galaxy: number, system: number): string => {
+  const id = `${currentCycle.value}:${regionOfGalaxy(galaxy)}:${system}`
+  const custom = gameStore.player.discoveredSystems?.[id]?.name
+  return custom ?? layoutForCycle.systemIndex.get(id)?.name ?? generateStellarName(galaxy, system)
+}
+
+const currentGalaxy = ref(1)
   const currentSystem = ref(1)
+
+// homeFollowWatch：联机快照晚到时，自动把 2D 定位到母星
+watch(
+  () => gameStore.player.planets.length,
+  length => {
+    const home = gameStore.player.planets[0]
+    if (length > 0 && home && currentGalaxy.value === 1 && currentSystem.value === 1) {
+      currentGalaxy.value = home.position.galaxy
+      currentSystem.value = home.position.system
+      selectedGalaxy.value = home.position.galaxy
+      selectedSystem.value = home.position.system
+    }
+  }
+)
 
   // 保存要高亮的NPC ID（从URL参数初始化，之后即使URL清除也保持）
   const highlightNpcId = ref<string | undefined>(undefined)
@@ -1278,7 +1342,7 @@
   // 切换到指定星球
   const switchToPlanet = (planetId: string) => {
     gameStore.currentPlanetId = planetId
-    router.push('/')
+    router.push('/overview')
   }
 
   // AlertDialog 确认处理

@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: 'Un jugador',
+    modeSingleDesc: 'Todo el universo vive en este navegador; no se necesita red.',
+    modeSingleExisting: 'Se encontró una partida local: continúa tu imperio.',
+    modeSingleNew: 'Se creará una galaxia nueva al entrar por primera vez.',
+    modeSingleLocked: 'El modo un jugador no está disponible en línea; desconéctate primero.',
+    modeContinue: 'Continuar partida',
+    modeOnline: 'En línea',
+    modeOnlineDesc: 'Únete a un servidor y comparte el universo con otros comandantes.',
     subtitle: 'Conquista las Estrellas',
     startGame: 'Iniciar Juego',
     privacyAgreement: 'Acuerdo de Privacidad',
@@ -35,6 +43,14 @@ export default {
     retry: 'Reintentar'
   },
   errors: {
+    scanOutOfRange: 'Fuera del alcance de escaneo',
+    scanNoProbe: 'No hay sondas de espionaje',
+    scanInsufficientDeuterium: 'Deuterio insuficiente',
+    scanCooldown: 'Escaneo enfriándose',
+    renameTooShort: 'Nombre demasiado corto (mín. 2 caracteres)',
+    renameAlreadyNamed: 'Este sistema ya tiene nombre',
+    targetProtected: 'El objetivo está protegido',
+    attackerProtected: 'El atacante está protegido',
     requirementsNotMet: 'Requisitos no cumplidos',
     insufficientResources: 'Recursos insuficientes',
     insufficientFleetStorage: 'Almacenamiento de flota insuficiente',
@@ -495,6 +511,7 @@ export default {
       'Por favor verifica si tienes suficientes recursos o si se cumplen los prerrequisitos. Las cúpulas de escudo solo se pueden construir una vez.'
   },
   fleetView: {
+    routeProgress: 'Tramo',
     title: 'Gestión de Flota',
     fleetOverview: 'Resumen de Flota',
     sendFleet: 'Enviar Flota',
@@ -665,6 +682,7 @@ export default {
     insufficientResources: '¡Recursos insuficientes!'
   },
   galaxyView: {
+    phalanxOutOfRange: 'Fuera del alcance de la falange sensora',
     selectCoordinates: 'Seleccionar Coordenadas',
     galaxy: 'Galaxia',
     selectGalaxy: 'Seleccionar Galaxia',
@@ -960,7 +978,140 @@ export default {
     detected: 'Detectado',
     undetected: 'No detectado'
   },
+  online: {
+    status: {
+      idle: 'Sin conexión',
+      connecting: 'Conectando',
+      online: 'Conectado',
+      reconnecting: 'Reconectando',
+      error: 'Error',
+    },
+    server: 'Dirección del servidor',
+    name: 'Nombre del comandante',
+    password: 'Contraseña',
+    passwordHint: 'Al menos 4 caracteres',
+    connect: 'Conectar',
+    connecting: 'Conectando…',
+    enterGame: 'Entrar al juego',
+    disconnect: 'Desconectar',
+    mainMenu: 'Menú principal',
+    loginHint: 'Se registra una cuenta al conectarse por primera vez; las ventanas del mismo navegador comparten la sesión.',
+    backupHint: 'Tu partida local se respalda al conectarte por primera vez y puedes restaurarla cuando quieras.',
+    player: 'Jugador actual',
+    players: 'Jugadores en línea',
+    onlineHint: 'Conectado: el servidor avanza el juego; las flotas siguen volando aunque cierres la página.',
+    reconnectHint: 'Reconectando con el servidor…',
+    restoreLocal: 'Restaurar partida local',
+    restoreConfirm: 'Se descartará el progreso del servidor, se restaurará tu partida local y se recargará la página. ¿Continuar?',
+    confirm: 'Restaurar',
+    cancel: 'Cancelar',
+    passwordNew: 'Se registrará una cuenta al conectarte por primera vez. Recuerda tu contraseña.',
+    passwordKeep: 'Ya hay un token guardado en este dispositivo; la contraseña puede quedar vacía.',
+    multiWindowHint: 'Las ventanas del mismo navegador comparten la sesión. Para usar dos cuentas, usa navegadores distintos (o una ventana normal + una incógnito); para cambiar de cuenta, restaura primero la partida local.',
+    error: {
+      wrongPassword: 'Contraseña incorrecta',
+      nameTaken: 'Este nombre ya está en uso',
+      passwordRequired: 'Se requiere contraseña (al menos 4 caracteres)',
+      replaced: 'Esta cuenta inició sesión en otro lugar; esta ventana se desconectó',
+      invalidUrl: 'La dirección del servidor debe empezar por ws:// o wss://',
+    },
+  },
+  chat: {
+    title: 'Canal galáctico',
+    channel: 'Público',
+    placeholder: 'Di algo…',
+    empty: 'Nadie ha hablado todavía, ¡saluda!',
+  },
+  // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: 'Frondoso',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: 'Salto de ciclo',
+    cycleJumpDesc: 'Salta a la siguiente galaxia: conserva tecnología y logros, reconstruye y recibe suministros.',
+    cycleJumpButton: 'Saltar',
+    cycleJumpConfirm: '¿Saltar al siguiente ciclo? Los planetas antiguos se desmantelarán.',
     dataManagement: 'Gestión de Datos',
     dataManagementDesc: 'Exportar, importar o limpiar datos del juego',
     exportData: 'Exportar Datos',
@@ -1844,6 +1995,7 @@ export default {
       choiceEffect: 'Efecto de elección de diálogo'
     },
     chapters: {
+      '6': { title: 'Navegación estelar', description: 'Mapa, escaneo, nombres y salto', backgroundStory: 'El mapa estelar se despliega; nuevas rutas esperan nombre.' },
       '1': {
         title: 'Origen',
         description: 'Construye tu hogar y da el primer paso al espacio',
@@ -1876,6 +2028,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: 'Rumbo a las estrellas', description: 'Abre el mapa 3D y escanea un sistema' },
+      '6_2': { title: 'El derecho a nombrar', description: 'Dale un nombre a tu descubrimiento' },
+      '6_3': { title: 'Ecos de ruinas', description: 'Recupera una señal desconocida' },
+      '6_4': { title: 'Disputa de portales', description: 'Captura un portal estelar' },
+      '6_5': { title: 'El salto', description: 'Completa un salto de ciclo' },
       '1_1': {
         title: 'Construcción del Hogar',
         description: 'Construye infraestructura para sentar las bases de tu planeta'
@@ -2013,6 +2170,11 @@ export default {
       ancientGuardian: 'Guardián Antiguo'
     },
     objectiveDescriptions: {
+      scanSystem: 'Escanear 1 sistema',
+      nameSystem: 'Nombrar 1 sistema',
+      collectSignal: 'Recuperar 1 señal',
+      captureGate: 'Capturar 1 portal',
+      cycleJump: 'Completar 1 salto',
       buildMetalMine: 'Construir Mina de Metal al nivel 2',
       buildCrystalMine: 'Construir Mina de Cristal al nivel 2',
       buildSolarPlant: 'Construir Planta Solar al nivel 2',
@@ -2065,6 +2227,11 @@ export default {
       continueDevelopment: 'Continuar desarrollo'
     },
     dialogues: {
+      '6_1': { prologue_1: 'Abre el mapa 3D y escanea un sistema cercano.' },
+      '6_2': { prologue_1: 'Deja tu nombre en este cielo.' },
+      '6_3': { prologue_1: 'Las señales esconden reliquias de una era caída.' },
+      '6_4': { prologue_1: 'Los portales son el cuello de las rutas. Destaca una flota.' },
+      '6_5': { prologue_1: 'Con un portal asegurado podrás saltar a la siguiente galaxia.' },
       '1_1': {
         prologue_1:
           'Bienvenido a la galaxia, joven comandante. Este vasto universo espera tu exploración. Primero, construyamos tu planeta natal.',

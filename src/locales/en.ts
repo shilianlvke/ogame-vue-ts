@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: 'Single Player',
+    modeSingleDesc: 'The whole universe lives in this browser — no network needed.',
+    modeSingleExisting: 'A local save was found — continue your empire.',
+    modeSingleNew: 'A brand-new galaxy will be created on first entry.',
+    modeSingleLocked: 'Single player is unavailable while online — disconnect first.',
+    modeContinue: 'Continue single player',
+    modeOnline: 'Online',
+    modeOnlineDesc: 'Join a server and share the universe with other commanders.',
     subtitle: 'Conquer the Stars',
     startGame: 'Start Game',
     privacyAgreement: 'Privacy Agreement',
@@ -35,6 +43,12 @@ export default {
     retry: 'Retry'
   },
   errors: {
+    scanOutOfRange: 'Out of scan range',
+    scanNoProbe: 'No espionage probes available',
+    scanInsufficientDeuterium: 'Not enough deuterium',
+    scanCooldown: 'Scan cooling down',
+    renameTooShort: 'Name too short (min 2 characters)',
+    renameAlreadyNamed: 'This system is already named',
     requirementsNotMet: 'Requirements not met',
     insufficientResources: 'Insufficient resources',
     insufficientFleetStorage: 'Insufficient fleet storage',
@@ -508,6 +522,7 @@ export default {
     buildFailedMessage: 'Please check if you have enough resources or if prerequisites are met. Shield domes can only be built once.'
   },
   fleetView: {
+    routeProgress: 'Leg',
     title: 'Fleet Management',
     fleetOverview: 'Fleet Overview',
     sendFleet: 'Send Fleet',
@@ -677,6 +692,7 @@ export default {
     insufficientResources: 'Insufficient resources!'
   },
   galaxyView: {
+    phalanxOutOfRange: 'Out of sensor phalanx range',
     title: 'Galaxy',
     selectCoordinates: 'Select Coordinates',
     galaxy: 'Galaxy',
@@ -971,7 +987,139 @@ export default {
     detected: 'Detected',
     undetected: 'Undetected'
   },
+  online: {
+    status: {
+      idle: 'Offline',
+      connecting: 'Connecting',
+      online: 'Connected',
+      reconnecting: 'Reconnecting',
+      error: 'Failed',
+    },
+    server: 'Server URL',
+    name: 'Commander name',
+    password: 'Password',
+    passwordHint: 'At least 4 characters',
+    connect: 'Connect',
+    connecting: 'Connecting…',
+    enterGame: 'Enter game',
+    disconnect: 'Disconnect',
+    mainMenu: 'Main menu',
+    loginHint: 'A new account is registered on first connect; windows of the same browser share login state.',
+    backupHint: 'Your local save is backed up on first connect and can be restored anytime.',
+    player: 'Current player',
+    players: 'Online players',
+    onlineHint: 'Connected — the server advances the game; fleets keep flying after you close the page.',
+    reconnectHint: 'Reconnecting to the server…',
+    restoreLocal: 'Restore local save',
+    restoreConfirm: 'This discards server progress, restores your local save and reloads. Continue?',
+    confirm: 'Restore',
+    cancel: 'Cancel',
+    passwordNew: 'A new account will be registered on first connect. Remember your password.',
+    passwordKeep: 'A login token is already stored on this device; password can be empty.',
+    multiWindowHint: 'Windows of the same browser share login state. To play two accounts at once, use different browsers (or a normal + incognito window); to switch accounts, restore the local save first.',
+    error: {
+      wrongPassword: 'Wrong password',
+      nameTaken: 'This name is already taken',
+      passwordRequired: 'Password required (at least 4 characters)',
+      replaced: 'This account logged in elsewhere; this window was disconnected',
+      invalidUrl: 'Server URL must start with ws:// or wss://',
+    },
+  },
+  chat: {
+    title: 'Galactic Chat',
+    channel: 'Public',
+    placeholder: 'Say something…',
+    empty: 'Nobody has spoken yet — say hi!',
+  },
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: 'Lush',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: 'Cycle Jump',
+    cycleJumpDesc: 'Jump to the next galaxy: keep tech and achievements, rebuild and receive supplies.',
+    cycleJumpButton: 'Jump',
+    cycleJumpConfirm: 'Jump to the next cycle? Old planets will be dismantled.',
     dataManagement: 'Data Management',
     dataManagementDesc: 'Export, import, or clear game data',
     exportData: 'Export Data',
@@ -1859,6 +2007,7 @@ export default {
       choiceEffect: 'Dialogue choice effect'
     },
     chapters: {
+      '6': { title: 'Star Navigation', description: 'Learn the star map, scanning, naming and jumping', backgroundStory: 'The star map unfolds before you; new routes await their names.' },
       '1': {
         title: 'Origin',
         description: 'Build your home and take the first step into space',
@@ -1891,6 +2040,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: 'Charting the Stars', description: 'Open the 3D star map and scan a system' },
+      '6_2': { title: 'The Right to Name', description: 'Give your discovery a name' },
+      '6_3': { title: 'Echoes of Ruins', description: 'Salvage an unknown signal' },
+      '6_4': { title: 'Contest of Gates', description: 'Capture a star gate' },
+      '6_5': { title: 'The Jump', description: 'Complete a cycle jump' },
       '1_1': {
         title: 'Home Building',
         description: 'Build infrastructure to lay the foundation for your planet'
@@ -2028,6 +2182,11 @@ export default {
       ancientGuardian: 'Ancient Guardian'
     },
     objectiveDescriptions: {
+      scanSystem: 'Scan 1 star system',
+      nameSystem: 'Name 1 star system',
+      collectSignal: 'Salvage 1 unknown signal',
+      captureGate: 'Capture 1 star gate',
+      cycleJump: 'Complete 1 cycle jump',
       buildMetalMine: 'Build Metal Mine to level 2',
       buildCrystalMine: 'Build Crystal Mine to level 2',
       buildSolarPlant: 'Build Solar Plant to level 2',
@@ -2080,6 +2239,11 @@ export default {
       continueDevelopment: 'Continue development'
     },
     dialogues: {
+      '6_1': { prologue_1: 'Open the 3D star map and scan a nearby system.' },
+      '6_2': { prologue_1: 'Leave your name on this patch of sky.' },
+      '6_3': { prologue_1: 'The signals hide relics of a fallen age.' },
+      '6_4': { prologue_1: 'Gates are the throat of the lanes. Garrison one.' },
+      '6_5': { prologue_1: 'With a gate secured, you may jump to the next galaxy.' },
       '1_1': {
         prologue_1:
           'Welcome to the galaxy, young commander. This vast universe awaits your exploration. First, let us build up your home planet.',

@@ -65,6 +65,10 @@
               {{ t('gmView.maxAllResources') }}
             </Button>
 
+              <Button @click="handleMaxAccount" variant="secondary" class="w-full">
+                满级账号（开发）
+              </Button>
+
             <div v-for="resource in resourceTypes" :key="resource" class="space-y-2">
               <Label>{{ t(`resources.${resource}`) }}</Label>
               <div class="flex gap-2">
@@ -288,10 +292,12 @@
 </template>
 
 <script setup lang="ts">
+  import { saveStorage, flushSaveStorage } from '@/services/saveStorage'
   import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { toast } from 'vue-sonner'
   import { useGameStore } from '@/stores/gameStore'
+import { applyMaxAccount } from '@/logic/devAccount'
   import { useNPCStore } from '@/stores/npcStore'
   import { useUniverseStore } from '@/stores/universeStore'
   import { useI18n } from '@/composables/useI18n'
@@ -381,7 +387,7 @@
 
   const getPresets = (type: GMPresetSectionKey): GMPreset[] => {
     const key = `gm_presets_${type}`
-    const data = localStorage.getItem(key)
+    const data = saveStorage.getItem(key)
     if (!data) {
       return []
     }
@@ -390,25 +396,25 @@
       // 兼容旧版本或手动修改导致的损坏数据，避免页面因解析失败崩溃
       const parsed = JSON.parse(data)
       if (!Array.isArray(parsed)) {
-        localStorage.removeItem(key)
+        saveStorage.removeItem(key)
         return []
       }
 
       const presets = parsed.filter(isGMPreset)
       // 过滤掉结构不完整的预设，并顺手回写清理后的结果
       if (presets.length !== parsed.length) {
-        localStorage.setItem(key, JSON.stringify(presets))
+        saveStorage.setItem(key, JSON.stringify(presets))
       }
 
       return presets
     } catch {
-      localStorage.removeItem(key)
+      saveStorage.removeItem(key)
       return []
     }
   }
 
   const savePresets = (type: GMPresetSectionKey, presets: GMPreset[]) => {
-    localStorage.setItem(`gm_presets_${type}`, JSON.stringify(presets))
+    saveStorage.setItem(`gm_presets_${type}`, JSON.stringify(presets))
   }
 
   const presetNames = ref<GMPresetNameMap>({
@@ -611,7 +617,7 @@
   }
 
   const goHome = () => {
-    router.push('/')
+    router.push('/overview')
   }
 
   // 默认选中当前正在游玩的星球
@@ -834,17 +840,18 @@
   }
 
   // 确认重置游戏
-  const confirmResetGame = () => {
+  const confirmResetGame = async () => {
     gameStore.isPaused = true
     resetDialogOpen.value = false
     try {
       gameStore.player.isGMEnabled = false
-      localStorage.clear()
-      location.reload()
+      saveStorage.clear()
+      // 清空请求是异步落盘的，必须等它写完再刷新，否则 IndexedDB 里会残留旧档
+      await flushSaveStorage()
     } catch (error) {
       console.error('Failed to reset game:', error)
-      window.location.reload()
     }
+    window.location.reload()
   }
 
   // 显示AlertDialog的辅助函数
@@ -975,7 +982,12 @@
   }
 
   // 一键拉满所有资源
-  const maxAllResources = () => {
+  const handleMaxAccount = () => {
+  applyMaxAccount(gameStore.player)
+  toast.success('已拉满建筑 / 科技 / 资源')
+}
+
+const maxAllResources = () => {
     if (!selectedPlanet.value) return
 
     // 计算当前星球的资源存储上限

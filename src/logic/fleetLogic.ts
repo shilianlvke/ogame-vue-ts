@@ -3,6 +3,7 @@ import type { Locale } from '@/locales'
 import { ShipType, DefenseType, MissionType, BuildingType, OfficerType, TechnologyType, ExpeditionZone } from '@/types/game'
 import { FLEET_STORAGE_CONFIG, EXPEDITION_ZONES } from '@/config/gameConfig'
 import { generateId } from '@/utils/id'
+import { generatePlanetName } from './nameGenerator'
 import * as battleLogic from './battleLogic'
 import * as moonLogic from './moonLogic'
 import * as moonValidation from './moonValidation'
@@ -397,7 +398,7 @@ export const processColonizeArrival = (
   mission: FleetMission,
   targetPlanet: Planet | undefined,
   player: Player,
-  colonyNameTemplate: string = 'Colony'
+  _colonyNameTemplate: string = 'Colony'
 ): ColonizeResult => {
   if (targetPlanet) {
     // 位置已被占用
@@ -415,7 +416,9 @@ export const processColonizeArrival = (
   // 创建新殖民地
   const newPlanet: Planet = {
     id: generateId('planet'),
-    name: `${colonyNameTemplate} ${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}`,
+    name: generatePlanetName(
+      `colony:${mission.targetPosition.galaxy}:${mission.targetPosition.system}:${mission.targetPosition.position}`
+    ),
     ownerId: player.id,
     position: mission.targetPosition,
     resources: { metal: 500, crystal: 500, deuterium: 0, darkMatter: 0, energy: 0 },

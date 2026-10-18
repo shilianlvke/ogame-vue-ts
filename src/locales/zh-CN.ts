@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: '单机模式',
+    modeSingleDesc: '整个宇宙都在本机浏览器里，无需联网。',
+    modeSingleExisting: '检测到本机已有存档，可以继续上一次的帝国。',
+    modeSingleNew: '首次进入会创建属于你的银河系。',
+    modeSingleLocked: '联机中无法进入单机模式，请先断开联机。',
+    modeContinue: '继续单机游戏',
+    modeOnline: '联机模式',
+    modeOnlineDesc: '连接服务器，与其它指挥官共享同一个宇宙。',
     subtitle: '征服星辰大海',
     startGame: '开始游戏',
     privacyAgreement: '隐私协议',
@@ -36,6 +44,12 @@ export default {
     playerName: '玩家名称'
   },
   errors: {
+    scanOutOfRange: '超出扫描范围',
+    scanNoProbe: '没有可用的探测卫星',
+    scanInsufficientDeuterium: '重氢不足',
+    scanCooldown: '扫描冷却中',
+    renameTooShort: '名称太短（至少 2 个字符）',
+    renameAlreadyNamed: '该恒星系已被命名',
     requirementsNotMet: '不满足前置条件',
     insufficientResources: '资源不足',
     insufficientFleetStorage: '舰队仓储空间不足',
@@ -503,6 +517,7 @@ export default {
     buildFailedMessage: '请检查资源是否足够或前置条件是否满足。护盾罩只能建造一个。'
   },
   fleetView: {
+    routeProgress: '航段',
     title: '舰队管理',
     fleetOverview: '舰队总览',
     sendFleet: '派遣舰队',
@@ -667,6 +682,7 @@ export default {
     insufficientResources: '资源不足！'
   },
   galaxyView: {
+    phalanxOutOfRange: '超出传感器阵列射程',
     title: '星系',
     selectCoordinates: '选择坐标',
     galaxy: '银河系',
@@ -941,7 +957,139 @@ export default {
     selectSpyReport: '选择侦查报告',
     noSpyReports: '没有侦查报告'
   },
+  online: {
+    status: {
+      idle: '未连接',
+      connecting: '连接中',
+      online: '已连接',
+      reconnecting: '重连中',
+      error: '连接失败',
+    },
+    server: '服务器地址',
+    name: '指挥官名称',
+    password: '密码',
+    passwordHint: '至少 4 位',
+    connect: '连接服务器',
+    connecting: '连接中…',
+    enterGame: '进入游戏',
+    disconnect: '断开连接',
+    mainMenu: '主菜单',
+    loginHint: '首次连接会自动注册账号；同一浏览器的多个窗口共享登录状态。',
+    backupHint: '首次连接会自动备份当前单机存档，随时可以恢复。',
+    player: '当前玩家',
+    players: '在线玩家',
+    onlineHint: '已连接：游戏由服务器推进，关闭页面后舰队仍会继续飞行。',
+    reconnectHint: '正在重连服务器…',
+    restoreLocal: '恢复单机存档',
+    restoreConfirm: '将放弃服务器进度，恢复连接前的单机存档并刷新页面。确定继续？',
+    confirm: '确定恢复',
+    cancel: '取消',
+    passwordNew: '首次进入该服务器时会自动注册账号，请牢记密码。',
+    passwordKeep: '当前设备已保存登录令牌，密码可留空。',
+    multiWindowHint: '同一浏览器的多个窗口共享登录状态。想同时登录两个账号，请使用不同浏览器（或普通 + 无痕窗口）；换号请先「恢复单机存档」再连接。',
+    error: {
+      wrongPassword: '密码错误',
+      nameTaken: '该昵称已被占用（或该账号只能用原设备令牌登录）',
+      passwordRequired: '请输入密码（至少 4 位）',
+      replaced: '该账号已在其它窗口/设备登录，本窗口已断开',
+      invalidUrl: '服务器地址需要以 ws:// 或 wss:// 开头',
+    },
+  },
+  chat: {
+    title: '银河频道',
+    channel: '公共',
+    placeholder: '说点什么…',
+    empty: '还没有人说话，打个招呼吧',
+  },
+  galaxy: {
+    economy: {
+      mining: '矿业',
+      industrial: '工业',
+      tech: '科技',
+      trade: '贸易',
+      agriculture: '农业',
+      military: '军事',
+    },
+    biome: {
+      lush: '乐土',
+      rocky: '岩石',
+      ocean: '海洋',
+      desert: '沙漠',
+      frozen: '冰封',
+      toxic: '毒气',
+      lava: '熔岩',
+      gas: '气态',
+      barren: '贫瘠',
+    },
+    starClass: {
+      yellow: '黄矮星',
+      red: '红矮星',
+      blue: '蓝巨星',
+      green: '绿星',
+      white: '白矮星',
+    },
+    hazard: {
+      none: '无',
+      storm: '风暴',
+      radiation: '辐射',
+      extremeCold: '极寒',
+      extremeHeat: '极热',
+    },
+    danger: {
+      low: '低',
+      medium: '中',
+      high: '高',
+    },
+    scan: {
+      needScan: '需要扫描',
+      level1: '已扫描 · 恒星系档案',
+      level2: '已扫描 · 行星明细',
+      cooldown: '扫描冷却中',
+    },
+    route: {
+      legs: '段',
+      fuel: '燃料',
+      toll: '过路费',
+      noPath: '无法抵达',
+    },
+    discovery: {
+      unknownSignal: '未知信号',
+      explorePercent: '探索度',
+    },
+  },
+  cycle: {
+    title: '周目',
+    current: '当前周目',
+    online: '在线',
+    highest: '最高抵达',
+    keep: '保留',
+    lose: '失去',
+    countdown: '倒计时',
+    cooldown: '冷却',
+    pressure: '层压制',
+    status: {
+      active: '活跃',
+      frozen: '冻结',
+      unexplored: '未探索',
+    },
+    jump: {
+      up: '跃迁到上一层',
+      down: '下潜到低层',
+      cancel: '取消',
+      confirm: '确认跃迁',
+    },
+  },
+  faction: {
+    miners_guild: '矿业联合会',
+    deep_council: '深空议会',
+    free_fleet: '自由舰队',
+    swarm: '虫群',
+  },
   settings: {
+    cycleJumpTitle: '周目跃迁',
+    cycleJumpDesc: '跃迁到下一个银河：保留科技与成就，重建殖民地并领取补给。',
+    cycleJumpButton: '跃迁',
+    cycleJumpConfirm: '确定跃迁到下一周目？旧星球会被拆除。',
     dataManagement: '数据管理',
     dataManagementDesc: '导出、导入或清除游戏数据',
     exportData: '导出数据',
@@ -1875,6 +2023,7 @@ export default {
       choiceEffect: '对话选择效果'
     },
     chapters: {
+      '6': { title: '星海导航', description: '掌握星图、扫描、命名与跃迁', backgroundStory: '星图在你面前展开，新的航路等待命名。' },
       '1': {
         title: '起源之地',
         description: '建设你的家园，迈出星际征途的第一步',
@@ -1904,6 +2053,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: '星图启航', description: '打开 3D 星图，扫描一个恒星系' },
+      '6_2': { title: '命名权', description: '为你的发现取一个名字' },
+      '6_3': { title: '遗迹回声', description: '回收一个未知信号' },
+      '6_4': { title: '星门之争', description: '占领一座星门' },
+      '6_5': { title: '跃迁时刻', description: '完成一次周目跃迁' },
       '1_1': {
         title: '家园建设',
         description: '建造基础设施，为你的星球奠定发展基础'
@@ -2041,6 +2195,11 @@ export default {
       ancientGuardian: '远古守护者'
     },
     objectiveDescriptions: {
+      scanSystem: '扫描 1 个恒星系',
+      nameSystem: '命名 1 个恒星系',
+      collectSignal: '回收 1 个未知信号',
+      captureGate: '占领 1 座星门',
+      cycleJump: '完成 1 次跃迁',
       buildMetalMine: '建造金属矿到2级',
       buildCrystalMine: '建造晶体矿到2级',
       buildSolarPlant: '建造太阳能电站到2级',
@@ -2093,6 +2252,11 @@ export default {
       continueDevelopment: '继续发展'
     },
     dialogues: {
+      '6_1': { prologue_1: '打开 3D 星图，先扫描最近的恒星系。' },
+      '6_2': { prologue_1: '给这片星空留下你的名字。' },
+      '6_3': { prologue_1: '扫描到的信号里藏着旧时代的残骸。' },
+      '6_4': { prologue_1: '星门是航道咽喉，派舰队驻守它。' },
+      '6_5': { prologue_1: '控制星门之后，你可以跃迁到下一个银河。' },
       '1_1': {
         prologue_1: '欢迎来到银河系，年轻的指挥官。这片广袤的宇宙等待着你的探索。首先，让我们建设好你的家园星球。',
         prologue_2: '我感应到了新的意识觉醒...有趣...让我们看看你能走多远...'

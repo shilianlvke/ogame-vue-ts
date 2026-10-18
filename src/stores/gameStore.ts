@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import type {
   Planet,
   Player,
@@ -20,13 +20,15 @@ import { initializeAchievementStats, initializeAchievements } from '@/logic/achi
 import type { Locale } from '@/locales'
 import pkg from '../../package.json'
 import { encryptData, decryptData } from '@/utils/crypto'
+import { saveStorage } from '@/services/saveStorage'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
     gameTime: Date.now(),
     isPaused: false,
     gameSpeed: 1,
-    battleToFinish: true, // 战斗到底模式：false=经典模式(6回合平局)，true=战斗到底(最多100回合)
+    caravans: [] as Array<{ id: string; fromSystemId: string; toSystemId: string; departAt: number; arriveAt: number }>,
+    battleToFinish: true, // 鎴樻枟鍒板簳妯″紡锛歠alse=缁忓吀妯″紡(6鍥炲悎骞冲眬)锛宼rue=鎴樻枟鍒板簳(鏈€澶?00鍥炲悎)
     player: {
       id: 'player1',
       name: '',
@@ -47,8 +49,8 @@ export const useGameStore = defineStore('game', {
       giftRejectedNotifications: [],
       points: 0,
       bonusPoints: 0,
-      isGMEnabled: false, // 明确设置 GM 模式默认为 false
-      lastVersionCheckTime: 0, // 最后一次检查版本的时间戳，默认为0
+      isGMEnabled: false, // 鏄庣‘璁剧疆 GM 妯″紡榛樿涓?false
+      lastVersionCheckTime: 0, // 鏈€鍚庝竴娆℃鏌ョ増鏈殑鏃堕棿鎴筹紝榛樿涓?
       achievementStats: initializeAchievementStats() as AchievementStats,
       achievements: initializeAchievements() as Record<string, AchievementProgress>
     } as Player,
@@ -89,7 +91,7 @@ export const useGameStore = defineStore('game', {
   },
   persist: {
     key: pkg.name,
-    storage: localStorage,
+    storage: saveStorage,
     serializer: {
       serialize: state => encryptData(state),
       deserialize: value => decryptData(value)

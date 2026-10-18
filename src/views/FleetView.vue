@@ -347,6 +347,12 @@
               </div>
             </div>
 
+            <!-- 多段航行进度 -->
+            <div v-if="mission.route && mission.route.length > 1" class="flex justify-between text-xs sm:text-sm">
+              <span>{{ t('fleetView.routeProgress') }}:</span>
+              <span>{{ (mission.routeIndex ?? 0) + 1 }} / {{ mission.route.length }}</span>
+            </div>
+
             <!-- 进度条 -->
             <div class="space-y-2">
               <div class="flex justify-between text-xs sm:text-sm">

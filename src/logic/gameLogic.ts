@@ -18,6 +18,7 @@ export const initializePlayer = (playerId: string, playerName: string = 'Command
   const player: Player = {
     id: playerId,
     name: playerName,
+    cycle: 1,
     planets: [],
     technologies: {} as Record<TechnologyType, number>,
     officers: {} as Record<OfficerType, Officer>,

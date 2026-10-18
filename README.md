@@ -129,3 +129,11 @@ pnpm preview
   <br>
   © 2025 - 保留所有权利（除 CC BY-NC 4.0 许可证授予的权利外）
 </div>
+
+## 银河星系改版
+
+星系系统正在向《无人深空》式的大星图演进，阶段与设计文档：
+
+- 当前进度总览：[doc/GALAXY_STATUS.md](doc/GALAXY_STATUS.md)
+- 设计文档：[GALAXY_REDESIGN](doc/GALAXY_REDESIGN.md)、[GALAXY_MAP_DESIGN](doc/GALAXY_MAP_DESIGN.md)、[GALAXY_CYCLES](doc/GALAXY_CYCLES.md)、[GALAXY_BALANCE](doc/GALAXY_BALANCE.md)
+- 3D 星图入口：`/#/starmap`（或星系页右上角「3D 星图」）

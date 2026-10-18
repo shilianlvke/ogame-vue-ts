@@ -1022,6 +1022,85 @@ const chapter5Quests: CampaignQuestConfig[] = [
 ]
 
 // ==================== 章节配置 ====================
+// chapter 6: star navigation
+const chapter6Quests: CampaignQuestConfig[] = [
+  {
+    id: 'quest_6_1',
+    chapter: 6,
+    order: 1,
+    titleKey: 'campaign.quests.6_1.title',
+    descriptionKey: 'campaign.quests.6_1.description',
+    prologueDialogues: [
+      { id: 'quest_6_1_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_1.prologue_1' }
+    ],
+    objectives: [
+      { id: 'obj_6_1_1', type: ObjectiveType.ScanSystem, target: 'any', descriptionKey: 'campaign.objectiveDescriptions.scanSystem', required: 1 }
+    ],
+    rewards: { resources: { metal: 5000, crystal: 2500, deuterium: 1000 }, darkMatter: 50, points: 100 },
+    mapPosition: { x: 20, y: 80 }
+  },
+  {
+    id: 'quest_6_2',
+    chapter: 6,
+    order: 2,
+    titleKey: 'campaign.quests.6_2.title',
+    descriptionKey: 'campaign.quests.6_2.description',
+    prologueDialogues: [
+      { id: 'quest_6_2_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_2.prologue_1' }
+    ],
+    objectives: [
+      { id: 'obj_6_2_1', type: ObjectiveType.NameSystem, target: 'any', descriptionKey: 'campaign.objectiveDescriptions.nameSystem', required: 1 }
+    ],
+    rewards: { resources: { metal: 6000, crystal: 3000, deuterium: 1200 }, darkMatter: 60, points: 120 },
+    mapPosition: { x: 35, y: 88 }
+  },
+  {
+    id: 'quest_6_3',
+    chapter: 6,
+    order: 3,
+    titleKey: 'campaign.quests.6_3.title',
+    descriptionKey: 'campaign.quests.6_3.description',
+    prologueDialogues: [
+      { id: 'quest_6_3_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_3.prologue_1' }
+    ],
+    objectives: [
+      { id: 'obj_6_3_1', type: ObjectiveType.CollectSignal, target: 'any', descriptionKey: 'campaign.objectiveDescriptions.collectSignal', required: 1 }
+    ],
+    rewards: { resources: { metal: 7000, crystal: 3500, deuterium: 1400 }, darkMatter: 70, points: 140 },
+    mapPosition: { x: 50, y: 92 }
+  },
+  {
+    id: 'quest_6_4',
+    chapter: 6,
+    order: 4,
+    titleKey: 'campaign.quests.6_4.title',
+    descriptionKey: 'campaign.quests.6_4.description',
+    prologueDialogues: [
+      { id: 'quest_6_4_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_4.prologue_1' }
+    ],
+    objectives: [
+      { id: 'obj_6_4_1', type: ObjectiveType.CaptureGate, target: 'any', descriptionKey: 'campaign.objectiveDescriptions.captureGate', required: 1 }
+    ],
+    rewards: { resources: { metal: 9000, crystal: 4500, deuterium: 1800 }, darkMatter: 90, points: 180 },
+    mapPosition: { x: 65, y: 88 }
+  },
+  {
+    id: 'quest_6_5',
+    chapter: 6,
+    order: 5,
+    titleKey: 'campaign.quests.6_5.title',
+    descriptionKey: 'campaign.quests.6_5.description',
+    prologueDialogues: [
+      { id: 'quest_6_5_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_5.prologue_1' }
+    ],
+    objectives: [
+      { id: 'obj_6_5_1', type: ObjectiveType.CycleJump, target: 'any', descriptionKey: 'campaign.objectiveDescriptions.cycleJump', required: 1 }
+    ],
+    rewards: { resources: { metal: 15000, crystal: 7500, deuterium: 3000 }, darkMatter: 150, points: 300 },
+    mapPosition: { x: 80, y: 80 }
+  }
+]
+
 const chapters: CampaignChapterConfig[] = [
   {
     id: 'chapter_1',
@@ -1062,6 +1141,14 @@ const chapters: CampaignChapterConfig[] = [
     descriptionKey: 'campaign.chapters.5.description',
     backgroundStoryKey: 'campaign.chapters.5.backgroundStory',
     quests: chapter5Quests
+  },
+  {
+    id: 'chapter_6',
+    number: 6,
+    titleKey: 'campaign.chapters.6.title',
+    descriptionKey: 'campaign.chapters.6.description',
+    backgroundStoryKey: 'campaign.chapters.6.backgroundStory',
+    quests: chapter6Quests
   }
 ]
 

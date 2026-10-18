@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: '싱글 플레이',
+    modeSingleDesc: '우주 전체가 이 브라우저 안에 있습니다. 네트워크가 필요 없습니다.',
+    modeSingleExisting: '로컬 저장을 찾았습니다. 제국을 이어가세요.',
+    modeSingleNew: '처음 진입하면 새로운 은하가 생성됩니다.',
+    modeSingleLocked: '온라인 중에는 싱글 플레이를 사용할 수 없습니다. 먼저 연결을 끊으세요.',
+    modeContinue: '싱글 플레이 계속하기',
+    modeOnline: '온라인',
+    modeOnlineDesc: '서버에 접속해 다른 지휘관과 같은 우주를 공유합니다.',
     subtitle: '별들을 정복하라',
     startGame: '게임 시작',
     privacyAgreement: '개인정보 처리방침',
@@ -36,6 +44,14 @@ export default {
     retry: '재시도'
   },
   errors: {
+    scanOutOfRange: '스캔 범위를 벗어났습니다',
+    scanNoProbe: '정찰 위성이 없습니다',
+    scanInsufficientDeuterium: '중수소가 부족합니다',
+    scanCooldown: '스캔 재사용 대기 중',
+    renameTooShort: '이름이 너무 짧습니다(최소 2자)',
+    renameAlreadyNamed: '이미 이름이 지정된 항성계입니다',
+    targetProtected: '대상이 보호 중입니다',
+    attackerProtected: '공격자가 보호 중입니다',
     requirementsNotMet: '전제 조건 미충족',
     insufficientResources: '자원 부족',
     insufficientFleetStorage: '함대 저장소 부족',
@@ -488,6 +504,7 @@ export default {
     buildFailedMessage: '자원이 충분한지 또는 전제 조건이 충족되었는지 확인하세요. 실드 돔은 하나만 건설할 수 있습니다.'
   },
   fleetView: {
+    routeProgress: '구간',
     title: '함대 관리',
     fleetOverview: '함대 개요',
     sendFleet: '함대 파견',
@@ -655,6 +672,7 @@ export default {
     insufficientResources: '자원 부족!'
   },
   galaxyView: {
+    phalanxOutOfRange: '센서 팔랑크스 사거리를 벗어났습니다',
     title: '은하계',
     selectCoordinates: '좌표 선택',
     galaxy: '은하계',
@@ -929,7 +947,140 @@ export default {
     selectSpyReport: '정찰 보고서 선택',
     noSpyReports: '정찰 보고서가 없습니다'
   },
+  online: {
+    status: {
+      idle: '연결 안 됨',
+      connecting: '연결 중',
+      online: '연결됨',
+      reconnecting: '재연결 중',
+      error: '실패',
+    },
+    server: '서버 주소',
+    name: '지휘관 이름',
+    password: '비밀번호',
+    passwordHint: '4자 이상',
+    connect: '연결',
+    connecting: '연결 중…',
+    enterGame: '게임 입장',
+    disconnect: '연결 끊기',
+    mainMenu: '메인 메뉴',
+    loginHint: '처음 연결하면 계정이 자동 생성됩니다. 같은 브라우저의 창들은 로그인 상태를 공유합니다.',
+    backupHint: '처음 연결할 때 로컬 저장이 자동으로 백업되며 언제든 복원할 수 있습니다.',
+    player: '현재 플레이어',
+    players: '온라인 플레이어',
+    onlineHint: '연결됨 — 서버가 게임을 진행합니다. 페이지를 닫아도 함대는 계속 이동합니다.',
+    reconnectHint: '서버에 다시 연결하는 중…',
+    restoreLocal: '로컬 저장 복원',
+    restoreConfirm: '서버 진행 상황을 버리고 로컬 저장을 복원한 뒤 페이지를 새로고침합니다. 계속할까요?',
+    confirm: '복원',
+    cancel: '취소',
+    passwordNew: '처음 연결하면 계정이 자동 생성됩니다. 비밀번호를 기억하세요.',
+    passwordKeep: '이 기기에 로그인 토큰이 저장되어 있습니다. 비밀번호는 비워도 됩니다.',
+    multiWindowHint: '같은 브라우저의 창들은 로그인 상태를 공유합니다. 두 계정을 동시에 하려면 다른 브라우저(또는 일반 + 시크릿 창)를 사용하세요. 계정을 바꾸려면 먼저 로컬 저장을 복원하세요.',
+    error: {
+      wrongPassword: '비밀번호가 틀렸습니다',
+      nameTaken: '이미 사용 중인 이름입니다',
+      passwordRequired: '비밀번호를 입력하세요(4자 이상)',
+      replaced: '이 계정은 다른 곳에서 로그인되어 이 창의 연결이 끊겼습니다',
+      invalidUrl: '서버 주소는 ws:// 또는 wss:// 로 시작해야 합니다',
+    },
+  },
+  chat: {
+    title: '은하 채널',
+    channel: '공개',
+    placeholder: '무언가 말해보세요…',
+    empty: '아직 아무도 말하지 않았습니다. 인사해 보세요!',
+  },
+  // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: '비옥',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: '주기 점프',
+    cycleJumpDesc: '다음 은하로 이동합니다. 기술과 업적은 유지되고 식민지가 재건됩니다.',
+    cycleJumpButton: '점프',
+    cycleJumpConfirm: '다음 주기로 이동하시겠습니까? 기존 행성은 철거됩니다.',
     dataManagement: '데이터 관리',
     dataManagementDesc: '게임 데이터 내보내기, 가져오기 또는 지우기',
     exportData: '데이터 내보내기',
@@ -1901,6 +2052,7 @@ export default {
       choiceEffect: '선택지 효과'
     },
     chapters: {
+      '6': { title: '성해 항법', description: '성도, 스캔, 명명, 점프를 익힌다', backgroundStory: '성도가 눈앞에 펼쳐지고 새로운 항로가 이름을 기다린다.' },
       '1': {
         title: '기원',
         description: '고향을 건설하고 우주로 첫 발을 내딛으세요',
@@ -1933,6 +2085,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: '성도 항해', description: '3D 성도를 열고 항성계를 스캔' },
+      '6_2': { title: '명명권', description: '발견에 이름을 붙이기' },
+      '6_3': { title: '유적의 메아리', description: '미확인 신호 회수' },
+      '6_4': { title: '성문 쟁탈', description: '성문 점령' },
+      '6_5': { title: '점프의 순간', description: '주기 점프 완료' },
       '1_1': { title: '고향 건설', description: '기반 시설을 구축하여 행성의 토대를 마련하세요' },
       '1_2': { title: '기술 계몽', description: '기초 기술을 연구하여 기술 여정을 시작하세요' },
       '1_3': { title: '첫 번째 함선', description: '첫 전함을 건조하세요' },
@@ -1995,6 +2152,11 @@ export default {
       ancientGuardian: '고대의 수호자'
     },
     objectiveDescriptions: {
+      scanSystem: '항성계 1개 스캔',
+      nameSystem: '항성계 1개 명명',
+      collectSignal: '미확인 신호 1개 회수',
+      captureGate: '성문 1개 점령',
+      cycleJump: '점프 1회 완료',
       buildMetalMine: '금속 광산을 레벨 2로 건설',
       buildCrystalMine: '크리스탈 광산을 레벨 2로 건설',
       buildSolarPlant: '태양열 발전소를 레벨 2로 건설',
@@ -2047,6 +2209,11 @@ export default {
       continueDevelopment: '개발 계속'
     },
     dialogues: {
+      '6_1': { prologue_1: '3D 성도를 열고 가까운 항성계를 스캔하세요.' },
+      '6_2': { prologue_1: '이 별자리에 당신의 이름을 남기세요.' },
+      '6_3': { prologue_1: '신호에는 몰락한 시대의 잔해가 숨어 있습니다.' },
+      '6_4': { prologue_1: '성문은 항로의 요충지입니다. 함대를 주둔시키세요.' },
+      '6_5': { prologue_1: '성문을 확보하면 다음 은하로 점프할 수 있습니다.' },
       '1_1': {
         prologue_1:
           '은하에 오신 것을 환영합니다, 젊은 사령관. 이 광활한 우주가 당신의 탐험을 기다리고 있습니다. 먼저 고향 행성을 건설합시다.',

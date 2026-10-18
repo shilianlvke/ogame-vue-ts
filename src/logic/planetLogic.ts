@@ -2,12 +2,18 @@ import type { Planet, Resources } from '@/types/game'
 import { ShipType, DefenseType, BuildingType } from '@/types/game'
 import { MOON_CONFIG, PLANET_CONFIG, FLEET_STORAGE_CONFIG } from '@/config/gameConfig'
 import { generateId } from '@/utils/id'
+import { npcIdOf, npcPlanetIdOf } from '@/core/ids'
+import { generatePlanetName } from './nameGenerator'
 import * as oreDepositLogic from './oreDepositLogic'
 
 /**
  * 创建初始星球
  */
-export const createInitialPlanet = (playerId: string, planetName: string = 'Home Planet'): Planet => {
+export const createInitialPlanet = (
+  playerId: string,
+  planetName: string = 'Home Planet',
+  oreModifiers: { metal: number; crystal: number; deuterium: number } = { metal: 1, crystal: 1, deuterium: 1 }
+): Planet => {
   const initialPlanet: Planet = {
     id: 'planet1',
     name: planetName,
@@ -65,7 +71,7 @@ export const createInitialPlanet = (playerId: string, planetName: string = 'Home
   })
 
   // 初始化矿脉储量
-  initialPlanet.oreDeposits = oreDepositLogic.generateOreDeposits(initialPlanet.position)
+  initialPlanet.oreDeposits = oreDepositLogic.generateOreDeposits(initialPlanet.position, oreModifiers)
 
   // 初始化温度
   initialPlanet.temperature = generatePlanetTemperature(initialPlanet.position.position)
@@ -79,12 +85,14 @@ export const createInitialPlanet = (playerId: string, planetName: string = 'Home
 export const createNPCPlanet = (
   npcId: number,
   position: { galaxy: number; system: number; position: number },
-  planetPrefix: string = 'Planet'
+  _planetPrefix: string = 'Planet',
+  cycle: number = 1,
+  oreModifiers: { metal: number; crystal: number; deuterium: number } = { metal: 1, crystal: 1, deuterium: 1 }
 ): Planet => {
   const npcPlanet: Planet = {
-    id: `npc_planet_${npcId}`,
-    name: `${planetPrefix} ${position.galaxy}:${position.system}:${position.position}`,
-    ownerId: `npc_${npcId}`,
+    id: npcPlanetIdOf(cycle, npcId),
+    name: generatePlanetName(`${cycle}:${position.galaxy}:${position.system}:${position.position}`),
+    ownerId: npcIdOf(cycle, npcId),
     position,
     resources: {
       metal: Math.floor(Math.random() * 10000) + 5000,
@@ -140,7 +148,7 @@ export const createNPCPlanet = (
   })
 
   // 初始化矿脉储量
-  npcPlanet.oreDeposits = oreDepositLogic.generateOreDeposits(npcPlanet.position)
+  npcPlanet.oreDeposits = oreDepositLogic.generateOreDeposits(npcPlanet.position, oreModifiers)
 
   // 初始化温度
   npcPlanet.temperature = generatePlanetTemperature(npcPlanet.position.position)

@@ -15,6 +15,8 @@ export default defineConfig(async () => {
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // 不自动注册 SW：避免浏览器一直跑缓存里的旧 JS
+      injectRegister: null,
       manifest: {
         name: pkg.name,
         short_name: pkg.title,

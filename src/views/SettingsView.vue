@@ -2,6 +2,10 @@
   <div class="container mx-auto p-4 sm:p-6 space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">{{ t('nav.settings') }}</h1>
+      <Button variant="outline" size="sm" @click="router.push('/')">
+        <LayoutGrid class="mr-2 h-4 w-4" />
+        {{ t('online.mainMenu') }}
+      </Button>
     </div>
 
     <!-- 数据管理 -->
@@ -82,6 +86,32 @@
 
     <!-- 联机模式 -->
     <OnlinePanel />
+
+    <!-- 周目跃迁 -->
+    <Card v-if="gameStore.player.cycle && gameStore.player.cycle > 1 || gameStore.player.technologies.astrophysics >= 1">
+      <CardHeader>
+        <CardTitle>{{ t('settings.cycleJumpTitle') }}</CardTitle>
+        <CardDescription>{{ t('settings.cycleJumpDesc') }}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-sm text-muted-foreground">
+            {{ t('cycle.current') }}: {{ gameStore.player.cycle ?? 1 }}
+            <template v-if="gameStore.player.cycleJumpAt">
+              · 倒计时
+              {{ Math.max(0, Math.ceil((gameStore.player.cycleJumpAt - Date.now()) / 3600000)) }}h
+            </template>
+          </span>
+          <Button
+            variant="destructive"
+            :disabled="!!gameStore.player.cycleJumpAt"
+            @click="handleCycleJump"
+          >
+            {{ gameStore.player.cycleJumpAt ? t('settings.cycleJumpConfirm') : t('settings.cycleJumpButton') }}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- 游戏设置 -->
     <Card>
@@ -355,7 +385,12 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { saveStorage, flushSaveStorage } from '@/services/saveStorage'
+  import { LayoutGrid } from 'lucide-vue-next'
   import { useGameStore } from '@/stores/gameStore'
+import { dispatchCommand } from '@/core/runtime'
+  import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
@@ -408,6 +443,8 @@
   const { t } = useI18n()
   const { hintsEnabled, setHintsEnabled, resetHints } = useHints()
   const gameStore = useGameStore()
+  const netStore = useNetStore()
+  const router = useRouter()
 
   const fileInputRef = ref<HTMLInputElement>()
   const isExporting = ref(false)
@@ -517,7 +554,21 @@
 
   // 每秒更新倒计时
   let cooldownInterval: ReturnType<typeof setInterval> | null = null
-  onMounted(() => {
+  
+const handleCycleJump = () => {
+  if (!window.confirm(t('settings.cycleJumpConfirm'))) return
+  const result = dispatchCommand({ type: 'galaxy.jump' })
+  if (!result.ok) {
+    toast.error(result.reason ? t(result.reason) : t('errors.requirementsNotMet'))
+    return
+  }
+  // 联机模式下服务端可能拒绝，乐观成功提示会与 reject 冲突，交给补丁/倒计时反馈
+  if (!netStore.isOnline) {
+    toast.success(t('settings.cycleJumpTitle'))
+  }
+}
+
+onMounted(() => {
     updateCooldownTime()
     cooldownInterval = setInterval(updateCooldownTime, 1000)
   })
@@ -574,11 +625,11 @@
       isExporting.value = true
 
       // 获取游戏数据
-      const gameData = localStorage.getItem(pkg.name)
+      const gameData = saveStorage.getItem(pkg.name)
       // 获取地图数据
-      const universeData = localStorage.getItem(`${pkg.name}-universe`)
+      const universeData = saveStorage.getItem(`${pkg.name}-universe`)
       // 获取npc数据
-      const npcData = localStorage.getItem(`${pkg.name}-npcs`)
+      const npcData = saveStorage.getItem(`${pkg.name}-npcs`)
 
       if (!gameData) {
         toast.error(t('settings.exportFailed'))
@@ -717,16 +768,16 @@
 
             if (importData.data) {
               const data = decryptData(importData.data)
-              localStorage.setItem(pkg.name, encryptData(data.game))
-              localStorage.setItem(`${pkg.name}-universe`, encryptData(data.universe))
-              localStorage.setItem(`${pkg.name}-npcs`, encryptData(data.npcs))
+              saveStorage.setItem(pkg.name, encryptData(data.game))
+              saveStorage.setItem(`${pkg.name}-universe`, encryptData(data.universe))
+              saveStorage.setItem(`${pkg.name}-npcs`, encryptData(data.npcs))
               setTimeout(() => window.location.reload(), 1000)
               return
             }
 
             // 兼容旧版本：如果是旧格式（直接是字符串），只导入游戏数据
             if (typeof importData === 'string' || !importData.game) {
-              localStorage.setItem(pkg.name, result)
+              saveStorage.setItem(pkg.name, result)
               toast.success(t('settings.importSuccess'))
               setTimeout(() => window.location.reload(), 1000)
               return
@@ -734,15 +785,15 @@
 
             // 新格式：分别导入游戏数据和地图数据
             if (importData.game) {
-              localStorage.setItem(pkg.name, importData.game)
+              saveStorage.setItem(pkg.name, importData.game)
             }
 
             if (importData.universe) {
-              localStorage.setItem(`${pkg.name}-universe`, importData.universe)
+              saveStorage.setItem(`${pkg.name}-universe`, importData.universe)
             }
 
             if (importData.npcs) {
-              localStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
+              saveStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
             }
 
             toast.success(t('settings.importSuccess'))
@@ -772,16 +823,16 @@
     confirmCallback = clearData
   }
 
-  const clearData = () => {
+  const clearData = async () => {
     gameStore.isPaused = true
     try {
-      localStorage.clear()
-      window.location.reload()
+      saveStorage.clear()
+      // 清空请求是异步落盘的，必须等它写完再刷新，否则 IndexedDB 里会残留旧档
+      await flushSaveStorage()
     } catch (error) {
       console.error('Failed to clear data:', error)
-      // 即使出错也尝试重新加载
-      window.location.reload()
     }
+    window.location.reload()
   }
 
   // 增加游戏倍率
@@ -854,9 +905,9 @@
     isWebDAVUploading.value = true
     try {
       // 获取游戏数据
-      const gameData = localStorage.getItem(pkg.name)
-      const universeData = localStorage.getItem(`${pkg.name}-universe`)
-      const npcData = localStorage.getItem(`${pkg.name}-npcs`)
+      const gameData = saveStorage.getItem(pkg.name)
+      const universeData = saveStorage.getItem(`${pkg.name}-universe`)
+      const npcData = saveStorage.getItem(`${pkg.name}-npcs`)
 
       if (!gameData) {
         toast.error(t('settings.exportFailed'))
@@ -910,16 +961,16 @@
 
           // 兼容旧版本格式
           if (typeof importData === 'string' || !importData.game) {
-            localStorage.setItem(pkg.name, result.data!)
+            saveStorage.setItem(pkg.name, result.data!)
           } else {
             if (importData.game) {
-              localStorage.setItem(pkg.name, importData.game)
+              saveStorage.setItem(pkg.name, importData.game)
             }
             if (importData.universe) {
-              localStorage.setItem(`${pkg.name}-universe`, importData.universe)
+              saveStorage.setItem(`${pkg.name}-universe`, importData.universe)
             }
             if (importData.npcs) {
-              localStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
+              saveStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
             }
           }
 

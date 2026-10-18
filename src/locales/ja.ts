@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: 'シングルプレイ',
+    modeSingleDesc: '宇宙全体がこのブラウザの中にあります。ネットワークは不要です。',
+    modeSingleExisting: 'ローカルセーブが見つかりました。帝国を続けましょう。',
+    modeSingleNew: '初回は新しい銀河が作られます。',
+    modeSingleLocked: 'オンライン中はシングルプレイを利用できません。先に切断してください。',
+    modeContinue: 'シングルプレイを続ける',
+    modeOnline: 'オンライン',
+    modeOnlineDesc: 'サーバーに接続して他の司令官と同じ宇宙を共有します。',
     subtitle: '星々を征服せよ',
     startGame: 'ゲーム開始',
     privacyAgreement: 'プライバシーポリシー',
@@ -36,6 +44,14 @@ export default {
     retry: '再試行'
   },
   errors: {
+    scanOutOfRange: 'スキャン範囲外です',
+    scanNoProbe: '偵察衛星がありません',
+    scanInsufficientDeuterium: '重水素が足りません',
+    scanCooldown: 'スキャン冷却中',
+    renameTooShort: '名前が短すぎます（2文字以上）',
+    renameAlreadyNamed: 'この星系は既に命名されています',
+    targetProtected: '対象は保護中です',
+    attackerProtected: '攻撃側は保護中です',
     requirementsNotMet: '前提条件を満たしていません',
     insufficientResources: '資源が不足しています',
     insufficientFleetStorage: '艦隊ストレージが不足しています',
@@ -526,6 +542,7 @@ export default {
     buildFailedMessage: '資源が十分か、前提条件が満たされているか確認してください。シールドドームは1つのみ建設できます。'
   },
   fleetView: {
+    routeProgress: '区間',
     title: '艦隊管理',
     fleetOverview: '艦隊概要',
     sendFleet: '艦隊派遣',
@@ -974,7 +991,140 @@ export default {
     selectSpyReport: 'スパイレポートを選択',
     noSpyReports: 'スパイレポートがありません'
   },
+  online: {
+    status: {
+      idle: '未接続',
+      connecting: '接続中',
+      online: '接続済み',
+      reconnecting: '再接続中',
+      error: '失敗',
+    },
+    server: 'サーバーアドレス',
+    name: '司令官名',
+    password: 'パスワード',
+    passwordHint: '4文字以上',
+    connect: '接続',
+    connecting: '接続中…',
+    enterGame: 'ゲームに入る',
+    disconnect: '切断',
+    mainMenu: 'メインメニュー',
+    loginHint: '初回接続時にアカウントが自動登録されます。同じブラウザのウィンドウはログイン状態を共有します。',
+    backupHint: '初回接続時にローカルセーブを自動でバックアップします。いつでも復元できます。',
+    player: '現在のプレイヤー',
+    players: 'オンラインプレイヤー',
+    onlineHint: '接続済み — ゲームはサーバーが進めます。ページを閉じても艦隊は飛行を続けます。',
+    reconnectHint: 'サーバーに再接続しています…',
+    restoreLocal: 'ローカルセーブを復元',
+    restoreConfirm: 'サーバーの進行を破棄し、ローカルセーブを復元して再読み込みします。続行しますか？',
+    confirm: '復元',
+    cancel: 'キャンセル',
+    passwordNew: '初回接続時にアカウントが自動登録されます。パスワードを忘れないでください。',
+    passwordKeep: 'この端末にはログイントークンが保存済みです。パスワードは空でも構いません。',
+    multiWindowHint: '同じブラウザのウィンドウはログイン状態を共有します。2つのアカウントを同時に使うには別のブラウザ（または通常＋シークレットウィンドウ）を使ってください。切り替える前にローカルセーブを復元してください。',
+    error: {
+      wrongPassword: 'パスワードが違います',
+      nameTaken: 'この名前は既に使われています',
+      passwordRequired: 'パスワードを入力してください（4文字以上）',
+      replaced: 'このアカウントは別の場所でログインしたため、このウィンドウは切断されました',
+      invalidUrl: 'サーバーアドレスは ws:// または wss:// で始まる必要があります',
+    },
+  },
+  chat: {
+    title: '銀河チャンネル',
+    channel: '公開',
+    placeholder: '何か話しましょう…',
+    empty: 'まだ誰も話していません。挨拶してみましょう！',
+  },
+  // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
+  galaxy: {
+    economy: {
+      mining: 'Mining',
+      industrial: 'Industrial',
+      tech: 'Tech',
+      trade: 'Trade',
+      agriculture: 'Agriculture',
+      military: 'Military',
+    },
+    biome: {
+      lush: '楽園',
+      rocky: 'Rocky',
+      ocean: 'Ocean',
+      desert: 'Desert',
+      frozen: 'Frozen',
+      toxic: 'Toxic',
+      lava: 'Lava',
+      gas: 'Gas',
+      barren: 'Barren',
+    },
+    starClass: {
+      yellow: 'Yellow dwarf',
+      red: 'Red dwarf',
+      blue: 'Blue giant',
+      green: 'Green star',
+      white: 'White dwarf',
+    },
+    hazard: {
+      none: 'None',
+      storm: 'Storm',
+      radiation: 'Radiation',
+      extremeCold: 'Extreme cold',
+      extremeHeat: 'Extreme heat',
+    },
+    danger: {
+      low: 'Low',
+      medium: 'Medium',
+      high: 'High',
+    },
+    scan: {
+      needScan: 'Needs scanning',
+      level1: 'Scanned · system survey',
+      level2: 'Scanned · planet details',
+      cooldown: 'Scan cooling down',
+    },
+    route: {
+      legs: 'legs',
+      fuel: 'Fuel',
+      toll: 'Toll',
+      noPath: 'No route',
+    },
+    discovery: {
+      unknownSignal: 'Unknown signal',
+      explorePercent: 'Explored',
+    },
+  },
+  cycle: {
+    title: 'Cycle',
+    current: 'Current cycle',
+    online: 'Online',
+    highest: 'Highest reached',
+    keep: 'Kept',
+    lose: 'Lost',
+    countdown: 'Countdown',
+    cooldown: 'Cooldown',
+    pressure: 'Cycle pressure',
+    status: {
+      active: 'Active',
+      frozen: 'Frozen',
+      unexplored: 'Unexplored',
+    },
+    jump: {
+      up: 'Jump up',
+      down: 'Dive down',
+      cancel: 'Cancel',
+      confirm: 'Confirm jump',
+    },
+  },
+  faction: {
+    miners_guild: 'Miners Guild',
+    deep_council: 'Deep Council',
+    free_fleet: 'Free Fleet',
+    swarm: 'Swarm',
+  },
   settings: {
+    cycleJumpTitle: 'サイクルジャンプ',
+    cycleJumpDesc: '次の銀河へ移動します。技術と実績は保持され、コロニーは再建されます。',
+    cycleJumpButton: 'ジャンプ',
+    cycleJumpConfirm: '次のサイクルへ移動しますか？旧惑星は解体されます。',
     dataManagement: 'データ管理',
     dataManagementDesc: 'ゲームデータのエクスポート、インポート、またはクリア',
     exportData: 'データエクスポート',
@@ -1961,6 +2111,7 @@ export default {
       choiceEffect: '選択肢の効果'
     },
     chapters: {
+      '6': { title: '星海ナビゲーション', description: '星図・スキャン・命名・ジャンプを学ぶ', backgroundStory: '星図が目の前に広がり、新しい航路が名を待っている。' },
       '1': {
         title: '起源',
         description: '故郷を築き、宇宙への第一歩を踏み出す',
@@ -1993,6 +2144,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: '星図の航海', description: '3D 星図を開き、星系をスキャンする' },
+      '6_2': { title: '命名権', description: '発見に名前を付ける' },
+      '6_3': { title: '遺跡の残響', description: '未知の信号を回収する' },
+      '6_4': { title: '星門の争い', description: '星門を占領する' },
+      '6_5': { title: 'ジャンプの時', description: 'サイクルジャンプを完了する' },
       '1_1': { title: '故郷建設', description: 'インフラを整備し、惑星の基盤を築く' },
       '1_2': { title: '技術啓蒙', description: '基礎技術を研究し、技術の旅を始める' },
       '1_3': { title: '最初の船', description: '最初の戦艦を建造する' },
@@ -2055,6 +2211,11 @@ export default {
       ancientGuardian: '古代の守護者'
     },
     objectiveDescriptions: {
+      scanSystem: '星系を 1 つスキャン',
+      nameSystem: '星系を 1 つ命名',
+      collectSignal: '未知の信号を 1 つ回収',
+      captureGate: '星門を 1 つ占領',
+      cycleJump: 'ジャンプを 1 回完了',
       buildMetalMine: '金属鉱山をレベル2に建設',
       buildCrystalMine: 'クリスタル鉱山をレベル2に建設',
       buildSolarPlant: 'ソーラープラントをレベル2に建設',
@@ -2107,6 +2268,11 @@ export default {
       continueDevelopment: '発展を継続'
     },
     dialogues: {
+      '6_1': { prologue_1: '3D 星図を開き、近くの星系をスキャンしよう。' },
+      '6_2': { prologue_1: 'この星空に君の名を残そう。' },
+      '6_3': { prologue_1: '信号には旧時代の残骸が隠れている。' },
+      '6_4': { prologue_1: '星門は航路の要所だ。艦隊を駐留させよう。' },
+      '6_5': { prologue_1: '星門を確保すれば、次の銀河へ跳べる。' },
       '1_1': {
         prologue_1: '銀河へようこそ、若き司令官。この広大な宇宙があなたの探索を待っています。まずは故郷の惑星を建設しましょう。',
         prologue_2: '新しい意識が目覚めるのを感じる...興味深い...どこまで行けるか見てみよう...'

@@ -1,5 +1,13 @@
 export default {
   home: {
+    modeSingle: '單機模式',
+    modeSingleDesc: '整個宇宙都在本機瀏覽器裡，無需連網。',
+    modeSingleExisting: '偵測到本機已有存檔，可以繼續上一次的帝國。',
+    modeSingleNew: '首次進入會建立屬於你的銀河系。',
+    modeSingleLocked: '連線中無法進入單機模式，請先中斷連線。',
+    modeContinue: '繼續單機遊戲',
+    modeOnline: '連線模式',
+    modeOnlineDesc: '連線伺服器，與其他指揮官共享同一個宇宙。',
     subtitle: '征服星辰大海',
     startGame: '開始遊戲',
     privacyAgreement: '隱私協議',
@@ -37,6 +45,14 @@ export default {
     retry: '重試'
   },
   errors: {
+    scanOutOfRange: '超出掃描範圍',
+    scanNoProbe: '沒有可用的探測衛星',
+    scanInsufficientDeuterium: '重氫不足',
+    scanCooldown: '掃描冷卻中',
+    renameTooShort: '名稱太短（至少 2 個字元）',
+    renameAlreadyNamed: '該恆星系已被命名',
+    targetProtected: '目標處於保護期',
+    attackerProtected: '攻擊方處於保護期',
     requirementsNotMet: '不滿足前置條件',
     insufficientResources: '資源不足',
     insufficientFleetStorage: '艦隊倉儲空間不足',
@@ -498,6 +514,7 @@ export default {
     buildFailedMessage: '請檢查資源是否足夠或前置條件是否滿足。護盾罩只能建造一個。'
   },
   fleetView: {
+    routeProgress: '航段',
     title: '艦隊管理',
     fleetOverview: '艦隊總覽',
     sendFleet: '派遣艦隊',
@@ -943,7 +960,139 @@ export default {
     selectSpyReport: '選擇偵查報告',
     noSpyReports: '沒有偵查報告'
   },
+  online: {
+    status: {
+      idle: '未連線',
+      connecting: '連線中',
+      online: '已連線',
+      reconnecting: '重新連線中',
+      error: '連線失敗',
+    },
+    server: '伺服器位址',
+    name: '指揮官名稱',
+    password: '密碼',
+    passwordHint: '至少 4 位',
+    connect: '連線伺服器',
+    connecting: '連線中…',
+    enterGame: '進入遊戲',
+    disconnect: '中斷連線',
+    mainMenu: '主選單',
+    loginHint: '首次連線會自動註冊帳號；同一瀏覽器的多個視窗共享登入狀態。',
+    backupHint: '首次連線會自動備份目前的單機存檔，隨時可以還原。',
+    player: '目前玩家',
+    players: '線上玩家',
+    onlineHint: '已連線：遊戲由伺服器推進，關閉頁面後艦隊仍會繼續飛行。',
+    reconnectHint: '正在重新連線伺服器…',
+    restoreLocal: '還原單機存檔',
+    restoreConfirm: '將放棄伺服器進度，還原連線前的單機存檔並重新整理頁面。確定繼續？',
+    confirm: '確定還原',
+    cancel: '取消',
+    passwordNew: '首次進入該伺服器時會自動註冊帳號，請牢記密碼。',
+    passwordKeep: '目前裝置已儲存登入權杖，密碼可留空。',
+    multiWindowHint: '同一瀏覽器的多個視窗共享登入狀態。想同時登入兩個帳號，請使用不同瀏覽器（或一般 + 無痕視窗）；換帳號請先「還原單機存檔」再連線。',
+    error: {
+      wrongPassword: '密碼錯誤',
+      nameTaken: '該暱稱已被使用（或該帳號只能以原裝置權杖登入）',
+      passwordRequired: '請輸入密碼（至少 4 位）',
+      replaced: '該帳號已在其他視窗/裝置登入，本視窗已中斷',
+      invalidUrl: '伺服器位址需以 ws:// 或 wss:// 開頭',
+    },
+  },
+  chat: {
+    title: '銀河頻道',
+    channel: '公開',
+    placeholder: '說點什麼…',
+    empty: '還沒有人說話，打個招呼吧',
+  },
+  galaxy: {
+    economy: {
+      mining: '礦業',
+      industrial: '工業',
+      tech: '科技',
+      trade: '貿易',
+      agriculture: '農業',
+      military: '軍事',
+    },
+    biome: {
+      lush: '樂土',
+      rocky: '岩石',
+      ocean: '海洋',
+      desert: '沙漠',
+      frozen: '冰封',
+      toxic: '毒氣',
+      lava: '熔岩',
+      gas: '氣態',
+      barren: '貧瘠',
+    },
+    starClass: {
+      yellow: '黃矮星',
+      red: '紅矮星',
+      blue: '藍巨星',
+      green: '綠星',
+      white: '白矮星',
+    },
+    hazard: {
+      none: '無',
+      storm: '風暴',
+      radiation: '輻射',
+      extremeCold: '極寒',
+      extremeHeat: '極熱',
+    },
+    danger: {
+      low: '低',
+      medium: '中',
+      high: '高',
+    },
+    scan: {
+      needScan: '需要掃描',
+      level1: '已掃描 · 恆星系檔案',
+      level2: '已掃描 · 行星明細',
+      cooldown: '掃描冷卻中',
+    },
+    route: {
+      legs: '段',
+      fuel: '燃料',
+      toll: '過路費',
+      noPath: '無法抵達',
+    },
+    discovery: {
+      unknownSignal: '未知訊號',
+      explorePercent: '探索度',
+    },
+  },
+  cycle: {
+    title: '周目',
+    current: '目前周目',
+    online: '線上',
+    highest: '最高抵達',
+    keep: '保留',
+    lose: '失去',
+    countdown: '倒數',
+    cooldown: '冷卻',
+    pressure: '層壓制',
+    status: {
+      active: '活躍',
+      frozen: '凍結',
+      unexplored: '未探索',
+    },
+    jump: {
+      up: '躍遷到上一層',
+      down: '下潛到低層',
+      cancel: '取消',
+      confirm: '確認躍遷',
+    },
+  },
+  faction: {
+    miners_guild: '礦業聯合會',
+    deep_council: '深空議會',
+    free_fleet: '自由艦隊',
+    swarm: '蟲群',
+  },
   settings: {
+    cycleJumpTitle: '周目躍遷',
+    cycleJumpDesc: '躍遷到下一座銀河：保留科技與成就，重建殖民地並領取補給。',
+    cycleJumpButton: '躍遷',
+    cycleJumpConfirm: '確定躍遷到下一周目？舊星球會被拆除。',
     dataManagement: '資料管理',
     dataManagementDesc: '匯出、匯入或清除遊戲資料',
     exportData: '匯出資料',
@@ -2052,6 +2201,7 @@ export default {
       choiceEffect: '對話選擇效果'
     },
     chapters: {
+      '6': { title: '星海導航', description: '掌握星圖、掃描、命名與躍遷', backgroundStory: '星圖在你面前展開，新的航路等待命名。' },
       '1': {
         title: '起源之地',
         description: '建設你的家園，邁出星際征途的第一步',
@@ -2081,6 +2231,11 @@ export default {
       }
     },
     quests: {
+      '6_1': { title: '星圖啟航', description: '打開 3D 星圖，掃描一個恆星系' },
+      '6_2': { title: '命名權', description: '為你的發現取一個名字' },
+      '6_3': { title: '遺跡迴聲', description: '回收一個未知信號' },
+      '6_4': { title: '星門之爭', description: '佔領一座星門' },
+      '6_5': { title: '躍遷時刻', description: '完成一次週目躍遷' },
       '1_1': {
         title: '家園建設',
         description: '建造基礎設施，為你的星球奠定發展基礎'
@@ -2218,6 +2373,11 @@ export default {
       ancientGuardian: '遠古守護者'
     },
     objectiveDescriptions: {
+      scanSystem: '掃描 1 個恆星系',
+      nameSystem: '命名 1 個恆星系',
+      collectSignal: '回收 1 個未知信號',
+      captureGate: '佔領 1 座星門',
+      cycleJump: '完成 1 次躍遷',
       buildMetalMine: '建造金屬礦到2級',
       buildCrystalMine: '建造晶體礦到2級',
       buildSolarPlant: '建造太陽能電站到2級',
@@ -2270,6 +2430,11 @@ export default {
       continueDevelopment: '繼續發展'
     },
     dialogues: {
+      '6_1': { prologue_1: '打開 3D 星圖，先掃描最近的恆星系。' },
+      '6_2': { prologue_1: '給這片星空留下你的名字。' },
+      '6_3': { prologue_1: '掃描到的信號裡藏著舊時代的殘骸。' },
+      '6_4': { prologue_1: '星門是航道咽喉，派艦隊駐守它。' },
+      '6_5': { prologue_1: '控制星門之後，你可以躍遷到下一座銀河。' },
       '1_1': {
         prologue_1: '歡迎來到銀河系，年輕的指揮官。這片廣袤的宇宙等待著你的探索。首先，讓我們建設好你的家園星球。',
         prologue_2: '我感應到了新的意識覺醒...有趣...讓我們看看你能走多遠...'
