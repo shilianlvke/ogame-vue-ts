@@ -202,3 +202,54 @@ chmod +x build-on-ubuntu.sh
 - **npm 源**：用 `--registry https://registry.npmmirror.com`，否则 `pnpm install` 可能很慢
 - 脚本使用 LF 换行；如果从 Windows 拷贝后报 `$'\r': command not found`，执行：
   `sed -i 's/\r$//' build-on-ubuntu.sh`
+
+## 飞牛上 git 源码一键部署（推荐）
+
+飞牛自带 Docker 应用，直接 `git clone` 源码后用脚本部署：
+
+```bash
+cd /vol1/docker
+git clone <仓库地址> ogame
+cd ogame
+
+chmod +x deploy-fnos.sh
+./deploy-fnos.sh
+```
+
+脚本会：构建镜像 → 启动容器 → 打印访问地址。
+
+### 常用命令
+
+```bash
+./deploy-fnos.sh            # 首次部署（构建 + 启动）
+./deploy-fnos.sh --update   # git pull + 重新构建 + 重启
+./deploy-fnos.sh --start    # 只启动
+./deploy-fnos.sh --stop     # 停止并移除容器
+./deploy-fnos.sh --logs     # 跟踪日志
+./deploy-fnos.sh --status   # 查看容器状态
+./deploy-fnos.sh --port 8080                     # 改宿主机端口
+./deploy-fnos.sh --registry https://registry.npmmirror.com   # 国内 npm 加速
+```
+
+### 前置条件
+
+| 条件 | 说明 |
+|---|---|
+| Docker 应用 | 飞牛「应用中心」安装 |
+| git | 飞牛终端一般自带；没有则 `apt install git` |
+| 网络 | 需要能拉取 `node:22-alpine`；国内先配镜像加速 |
+
+镜像加速（飞牛 Docker 设置里填，或 `/etc/docker/daemon.json`）：
+
+```json
+{ "registry-mirrors": ["https://docker.m.daocloud.io"] }
+```
+
+### 更新流程
+
+```bash
+cd /vol1/docker/ogame
+./deploy-fnos.sh --update
+```
+
+存档在 `./data/world.json`，重建容器不受影响。

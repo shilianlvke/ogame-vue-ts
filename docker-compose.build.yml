@@ -18,7 +18,7 @@ services:
     container_name: ogame
     restart: unless-stopped
     ports:
-      - "25122:25122"
+      - "${OGAME_PORT:-25122}:25122"
     volumes:
       - ./data:/app/data
     environment:
