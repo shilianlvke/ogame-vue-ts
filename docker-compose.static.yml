@@ -1,0 +1,16 @@
+# 纯静态部署（单人模式，无联机）
+#   docker compose -f docker-compose.static.yml up -d --build
+#   访问 http://<IP>:8080
+
+services:
+  noskyman-static:
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+    image: noskyman-static:latest
+    container_name: noskyman-static
+    restart: unless-stopped
+    ports:
+      - "${STATIC_PORT:-8080}:80"

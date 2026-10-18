@@ -295,3 +295,30 @@ cd /vol1/docker/ogame
 ```bash
 docker inspect ogame --format '{{json .Mounts}}'
 ```
+
+## 镜像为什么可以很小？（纯静态模式）
+
+有人用 2.5MB 的镜像跑这个游戏，原因是**只打包了前端静态文件，没有游戏服务端**：
+
+- 本项目 `docs/` 产物约 **2.6 MB**，正好是这个量级
+- 那种镜像通常基于 `scratch` / `busybox`，只把自己的一份静态文件塞进去
+
+对比：
+
+| 模式 | 内容 | 体积量级 | 联机 |
+|---|---|---|---|
+| 静态镜像 | nginx + docs | ~20~25 MB | ❌ 不支持 |
+| 本项目默认镜像 | Node 22 + 游戏服务端 + docs | ~80~120 MB | ✅ 支持 |
+
+### 想要小镜像
+
+```bash
+docker compose -f docker-compose.static.yml up -d --build
+# 访问 http://<IP>:8080
+```
+
+存档在浏览器 IndexedDB 里，**换浏览器/清缓存就没了**，也没有多人和账号系统。
+
+### 想要联机
+
+必须用默认镜像（含 Node 服务端），因为联机依赖 WebSocket + 服务端权威存档。
