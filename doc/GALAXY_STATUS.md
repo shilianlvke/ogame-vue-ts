@@ -54,9 +54,8 @@ pnpm build:node-server
 
 ```bash
 pnpm dev
-# 3D 星图：http://localhost:25121/#/starmap
-# 星系页：http://localhost:25121/#/galaxy
+# 2.5D 星图：http://localhost:25121/#/galaxy
 ```
 
-3D 星图操作：拖拽环顾、`W/S` 前进后退、`A/D` 平移、`Q/E` 升降、`Shift` 加速、滚轮调速；
-预设按钮：母星 / 银河全景 / 旋臂巡航 / 银心。
+2.5D 星图操作：拖拽平移、滚轮/双指缩放、点击选择；
+视图按钮：当前恒星系 / 本星系 / 银河全景，三级视图之间带缩放动画切换。

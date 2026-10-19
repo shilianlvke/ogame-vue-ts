@@ -1,5 +1,8 @@
 # 星图 UI 交互稿
 
+> **当前实现**：星系页已改为 2.5D 三级星图（当前恒星系 / 本星系 / 银河全景），
+> 旧表格视图和 3D 飞行视图已移除；后文第 14 节及之后的 3D 内容属于历史设计记录。
+
 > 配套：[GALAXY_REDESIGN.md](./GALAXY_REDESIGN.md)（总体）、[GALAXY_MAP_DESIGN.md](./GALAXY_MAP_DESIGN.md)（布局与航道）、
 > [GALAXY_SYSTEMS_DETAIL.md](./GALAXY_SYSTEMS_DETAIL.md)（结算与数值）。
 >

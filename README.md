@@ -136,7 +136,7 @@ pnpm preview
 
 - 当前进度总览：[doc/GALAXY_STATUS.md](doc/GALAXY_STATUS.md)
 - 设计文档：[GALAXY_REDESIGN](doc/GALAXY_REDESIGN.md)、[GALAXY_MAP_DESIGN](doc/GALAXY_MAP_DESIGN.md)、[GALAXY_CYCLES](doc/GALAXY_CYCLES.md)、[GALAXY_BALANCE](doc/GALAXY_BALANCE.md)
-- 3D 星图入口：`/#/starmap`（或星系页右上角「3D 星图」）
+- 2.5D 星图入口：`/#/galaxy`（恒星系 / 本星系 / 银河全景三级缩放）
 
 ## 部署
 
