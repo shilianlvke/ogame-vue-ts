@@ -318,10 +318,9 @@
           </div>
           <!-- 检查更新按钮 -->
           <div class="pt-2">
-            <Button @click="handleCheckVersion" variant="outline" size="sm" :disabled="isCheckingVersion || !canCheck" class="w-full">
+            <Button @click="handleCheckVersion" variant="outline" size="sm" :disabled="isCheckingVersion" class="w-full">
               <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': isCheckingVersion }" />
               <template v-if="isCheckingVersion">{{ t('settings.checking') }}</template>
-              <template v-else-if="!canCheck && cooldownTime">{{ cooldownTime }}</template>
               <template v-else>{{ t('settings.checkUpdate') }}</template>
             </Button>
           </div>
@@ -370,9 +369,6 @@
       </AlertDialogContent>
     </AlertDialog>
 
-    <!-- 更新对话框 -->
-    <UpdateDialog v-model:open="showUpdateDialog" :version-info="updateInfo" />
-
     <!-- 隐私协议弹窗 -->
     <PrivacyDialog v-model:open="showPrivacyDialog" />
 
@@ -385,7 +381,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted } from 'vue'
+  import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { saveStorage, flushSaveStorage } from '@/services/saveStorage'
   import { LayoutGrid } from 'lucide-vue-next'
@@ -431,10 +427,7 @@ import { dispatchCommand } from '@/core/runtime'
   import { decryptData, encryptData } from '@/utils/crypto'
   import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
   import pkg from '../../package.json'
-  import { checkLatestVersion, canCheckVersion, VERSION_CHECK_COOLDOWN_MS } from '@/utils/versionCheck'
-  import type { VersionInfo } from '@/utils/versionCheck'
   import { CURRENT_BUILD_INFO, fetchLatestBuildInfo, formatBuildTime, isBuildChanged, reloadForUpdate } from '@/utils/appUpdate'
-  import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
   import PrivacyDialog from '@/components/dialogs/PrivacyDialog.vue'
   import WebDAVConfigDialog from '@/components/settings/WebDAVConfigDialog.vue'
   import WebDAVFileListDialog from '@/components/settings/WebDAVFileListDialog.vue'
@@ -451,7 +444,6 @@ import { dispatchCommand } from '@/core/runtime'
   const fileInputRef = ref<HTMLInputElement>()
   const isExporting = ref(false)
   const isCheckingVersion = ref(false)
-  const cooldownTime = ref('')
 
   const showConfirmDialog = ref(false)
   const confirmTitle = ref('')
@@ -528,35 +520,7 @@ import { dispatchCommand } from '@/core/runtime'
     }
   }
 
-  // 计算是否可以检查版本（主动检测：5分钟内不能重复检查）
-  const canCheck = computed(() => canCheckVersion(gameStore.player.lastManualUpdateCheck || 0))
-
-  // 计算剩余冷却时间
-  const updateCooldownTime = () => {
-    if (canCheck.value) {
-      cooldownTime.value = ''
-      return
-    }
-
-    const lastCheck = gameStore.player.lastManualUpdateCheck || 0
-    const now = Date.now()
-    const timePassed = now - lastCheck
-    const timeRemaining = VERSION_CHECK_COOLDOWN_MS - timePassed
-
-    if (timeRemaining <= 0) {
-      cooldownTime.value = ''
-      return
-    }
-
-    const minutes = Math.floor(timeRemaining / 60000)
-    const seconds = Math.floor((timeRemaining % 60000) / 1000)
-    cooldownTime.value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-  }
-
-  // 每秒更新倒计时
-  let cooldownInterval: ReturnType<typeof setInterval> | null = null
-  
-const handleCycleJump = () => {
+  const handleCycleJump = () => {
   if (!window.confirm(t('settings.cycleJumpConfirm'))) return
   const result = dispatchCommand({ type: 'galaxy.jump' })
   if (!result.ok) {
@@ -568,15 +532,6 @@ const handleCycleJump = () => {
     toast.success(t('settings.cycleJumpTitle'))
   }
 }
-
-onMounted(() => {
-    updateCooldownTime()
-    cooldownInterval = setInterval(updateCooldownTime, 1000)
-  })
-
-  onUnmounted(() => {
-    if (cooldownInterval) clearInterval(cooldownInterval)
-  })
 
   const openGithub = () => {
     window.open(`https://github.com/${pkg.author.name}/${pkg.name}`, '_blank')
@@ -594,18 +549,19 @@ onMounted(() => {
     showPrivacyDialog.value = true
   }
 
-  // 手动检查版本
-  const showUpdateDialog = ref(false)
-  const updateInfo = ref<VersionInfo | null>(null)
-
+  // 手动触发“自动检测”逻辑：只检查站点部署的 version.json
   const handleCheckVersion = async () => {
-    if (isCheckingVersion.value || !canCheck.value) return
+    if (isCheckingVersion.value) return
 
     isCheckingVersion.value = true
     try {
-      // 先检查站点是否部署了新的构建（版本号或构建时间变化）
       const latestBuild = await fetchLatestBuildInfo()
-      if (latestBuild && isBuildChanged(latestBuild)) {
+      if (!latestBuild) {
+        toast.error(t('settings.checkUpdateFailed'))
+        return
+      }
+
+      if (isBuildChanged(latestBuild)) {
         toast.info(t('settings.browserUpdateReady'), {
           duration: Infinity,
           dismissible: true,
@@ -619,16 +575,7 @@ onMounted(() => {
         return
       }
 
-      // 再检查 GitHub Release（用于下载桌面/安装包）
-      const versionInfo = await checkLatestVersion(gameStore.player.lastManualUpdateCheck || 0, (time: number) => {
-        gameStore.player.lastManualUpdateCheck = time
-      })
-      if (versionInfo) {
-        updateInfo.value = versionInfo
-        showUpdateDialog.value = true
-      } else {
-        toast.success(t('settings.upToDate'))
-      }
+      toast.success(t('settings.upToDate'))
     } catch (error) {
       console.error('Failed to check for updates:', error)
       toast.error(t('settings.checkUpdateFailed'))

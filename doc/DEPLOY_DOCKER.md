@@ -168,8 +168,10 @@ http://<NAS IP>:25122
 - 切到后台或空闲 60 秒后会自动刷新；
 - 刷新前会先落盘存档，并清理旧 Service Worker / CacheStorage。
 
-因此正常部署后不需要再让用户手动强制刷新。反向代理不要缓存
-`version.json` 与 `index.html`（仓库自带的 `nginx.conf` 已设置 `no-store` / `no-cache`）。
+因此正常部署后不需要再让用户手动强制刷新。设置 → 关于 → “检查更新”
+也是手动触发同一套检测：有变化就提示刷新，没有变化提示已是最新版本。
+反向代理不要缓存 `version.json` 与 `index.html`（仓库自带的 `nginx.conf`
+已设置 `no-store` / `no-cache`）。
 
 ## 常见问题
 
