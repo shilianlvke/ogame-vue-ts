@@ -25,7 +25,7 @@
       <div class="hidden text-[11px] text-muted-foreground sm:block">{{ t('galaxyMap.dragHint') }}</div>
     </div>
 
-    <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <!-- 2.5D 星图 -->
       <Card class="relative h-[58vh] min-h-[380px] overflow-hidden p-0 lg:h-[calc(100vh-9rem)]">
         <Galaxy25DMap
@@ -70,7 +70,7 @@
       </Card>
 
       <!-- 右侧上下文操作面板：留出右下角固定通知按钮的空间 -->
-      <div class="space-y-3 pr-12 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
+      <div class="space-y-3 pr-[10%] lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
         <!-- 恒星系视图：选中轨道/星球 -->
         <Card v-if="mapView === 'system'">
           <CardHeader class="pb-2">
