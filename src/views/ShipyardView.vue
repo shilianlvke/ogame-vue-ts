@@ -434,10 +434,24 @@
       return
     }
 
+    // 走命令层：联机模式下直接改 store 会被服务端补丁覆盖
+    const dispatched = dispatchCommand({
+      type: 'queue.addWaiting',
+      kind: 'ship',
+      planetId: planet.value.id,
+      itemType: shipType,
+      quantity
+    })
+    if (!dispatched.ok) {
+      alertDialogTitle.value = t('queue.waitingQueueFull')
+      alertDialogMessage.value = dispatched.reason ? t(dispatched.reason) : ''
+      alertDialogOpen.value = true
+      return
+    }
+
     // 触发抛物线动画
     triggerQueueAnimation(event, 'ship')
 
-    waitingQueueLogic.addToBuildWaitingQueue(planet.value, item)
     quantities.value[shipType] = 0
   }
 

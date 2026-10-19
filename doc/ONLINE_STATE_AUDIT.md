@@ -9,7 +9,7 @@
 |---|---|
 | 行星改名 | `planet.rename` 命令 |
 | 恒星系改名 | `galaxy.rename` 命令 |
-| 等待队列（建造/研究） | `queue.addWaiting` 命令 |
+| 等待队列（建造/研究/舰船/防御） | `queue.addWaiting` 命令 |
 | 战役接取/领奖 | `campaign.start` / `campaign.claim` 命令 |
 | 扫描 / 信号 / 星门 / 跃迁 | 一开始就走命令 |
 

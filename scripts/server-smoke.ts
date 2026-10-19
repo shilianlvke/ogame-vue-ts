@@ -25,7 +25,7 @@ import { useGameStore } from '@/stores/gameStore'
 import { useUniverseStore } from '@/stores/universeStore'
 import { useNPCStore } from '@/stores/npcStore'
 import { useNetStore } from '@/stores/netStore'
-import { BuildingType, MissionType } from '@/types/game'
+import { BuildingType, DefenseType, MissionType, ShipType, TechnologyType } from '@/types/game'
 import { startServer } from '../server/app'
 import type { RunningServer } from '../server/app'
 import type { Room } from '../server/room'
@@ -254,6 +254,56 @@ const main = async () => {
   assert((aliceHomeInPatch!.buildQueue.length ?? 0) === 1, '补丁中没有建造队列项')
   assert((aliceHomeInPatch!.resources.metal ?? Number.MAX_SAFE_INTEGER) < 1_000_000, '补丁中资源没有扣除')
   assert(server.room.profileOf(alice.playerId)!.planets[0].buildQueue.length === 1, '服务端状态未入队')
+
+  // 5.1) 等待队列命令：服务端必须真正写入，并通过补丁同步，不能被下一份补丁覆盖
+  aliceHome.buildings[BuildingType.Shipyard] = 1
+  alicePlayer.technologies[TechnologyType.CombustionDrive] = 1
+  aliceHome.resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
+
+  alice.client.send({
+    t: 'cmd',
+    seq: 3,
+    command: {
+      type: 'queue.addWaiting',
+      kind: 'ship',
+      planetId: aliceHome.id,
+      itemType: ShipType.LightFighter,
+      quantity: 1
+    }
+  })
+  await alice.client.next(m => m.t === 'ack' && m.seq === 3, 5000, '舰船等待队列 ack')
+  const shipWaitingPatch = (await alice.client.next(
+    m => m.t === 'patch' && !!m.self?.planets?.some(planet => planet.id === aliceHome.id && (planet.waitingBuildQueue?.length ?? 0) > 0),
+    5000,
+    '舰船等待队列补丁'
+  )) as Extract<ServerMessage, { t: 'patch' }>
+  const shipWaitingPlanet = shipWaitingPatch.self!.planets!.find(planet => planet.id === aliceHome.id)!
+  assert(shipWaitingPlanet.waitingBuildQueue.some(item => item.type === 'ship' && item.quantity === 1), '补丁中没有舰船等待队列项')
+  assert(aliceHome.waitingBuildQueue.length === 1, '服务端没有保存舰船等待队列项')
+
+  alice.client.send({
+    t: 'cmd',
+    seq: 4,
+    command: {
+      type: 'queue.addWaiting',
+      kind: 'defense',
+      planetId: aliceHome.id,
+      itemType: DefenseType.RocketLauncher,
+      quantity: 1
+    }
+  })
+  await alice.client.next(m => m.t === 'ack' && m.seq === 4, 5000, '防御等待队列 ack')
+  const defenseWaitingPatch = (await alice.client.next(
+    m => m.t === 'patch' && !!m.self?.planets?.some(planet => planet.id === aliceHome.id && (planet.waitingBuildQueue?.length ?? 0) > 1),
+    5000,
+    '防御等待队列补丁'
+  )) as Extract<ServerMessage, { t: 'patch' }>
+  const defenseWaitingPlanet = defenseWaitingPatch.self!.planets!.find(planet => planet.id === aliceHome.id)!
+  assert(defenseWaitingPlanet.waitingBuildQueue.some(item => item.type === 'defense' && item.quantity === 1), '补丁中没有防御等待队列项')
+  assert(aliceHome.waitingBuildQueue.length === 2, '服务端没有保存防御等待队列项')
+
+  // 清理等待项，避免影响后续 tick 场景
+  aliceHome.waitingBuildQueue.splice(0, aliceHome.waitingBuildQueue.length)
 
   // Bob 收到的是 Alice 星球的公开视图变化（公开字段变了才推送）
   const aliceHomeRef = server.room.profileOf(alice.playerId)!.planets[0]

@@ -21,8 +21,9 @@ import * as gameLogic from '@/logic/gameLogic'
 import * as planetLogic from '@/logic/planetLogic'
 import * as fleetLogic from '@/logic/fleetLogic'
 import * as buildingLogic from '@/logic/buildingLogic'
+import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
 import type { Resources, FleetMission, Planet, NPC, DebrisField } from '@/types/game'
-import { BuildingType, MissionType, NPCAIType, OfficerType, ShipType } from '@/types/game'
+import { BuildingType, DefenseType, MissionType, NPCAIType, OfficerType, ShipType } from '@/types/game'
 
 const t = (key: string) => key
 let eventCount = 0
@@ -331,6 +332,64 @@ const runCommandScenario = async () => {
   })
   if (!shipBuilt.ok) fail(`场景 C：舰船建造失败（${shipBuilt.reason}）`)
   if (home.buildQueue.length !== 2) fail('场景 C：舰船建造未入队')
+
+  // 4.1) 舰船等待队列：资源不足时应允许排队，且不会在 tick 中被清除
+  home.resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
+  const shipWaiting = applyCommand(world, ctx, {
+    type: 'queue.addWaiting',
+    kind: 'ship',
+    planetId: home.id,
+    itemType: ShipType.LightFighter,
+    quantity: 1
+  })
+  if (!shipWaiting.ok) fail(`场景 C：舰船等待队列添加失败（${shipWaiting.reason}）`)
+  if (!home.waitingBuildQueue.some(item => item.type === 'ship' && item.quantity === 1)) {
+    fail('场景 C：舰船等待队列项未写入')
+  }
+
+  waitingQueueLogic.processPlanetWaitingQueue(home, player, player.officers)
+  if (!home.waitingBuildQueue.some(item => item.type === 'ship')) {
+    fail('场景 C：资源不足时舰船等待队列项被提前清除')
+  }
+
+  // 资源充足后，等待项应自动进入正式队列
+  home.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 1_000_000, energy: 0 }
+  waitingQueueLogic.processPlanetWaitingQueue(home, player, player.officers)
+  if (home.waitingBuildQueue.some(item => item.type === 'ship')) {
+    fail('场景 C：资源充足后舰船等待队列项未执行')
+  }
+  if (home.buildQueue.filter(item => item.type === 'ship').length !== 2) {
+    fail('场景 C：舰船等待队列项执行后未进入正式队列')
+  }
+
+  // 4.2) 防御等待队列同样必须经过命令层，且资源不足时保持等待
+  const defenseQueueBefore = home.buildQueue.filter(item => item.type === 'defense').length
+  home.resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
+  const defenseWaiting = applyCommand(world, ctx, {
+    type: 'queue.addWaiting',
+    kind: 'defense',
+    planetId: home.id,
+    itemType: DefenseType.RocketLauncher,
+    quantity: 1
+  })
+  if (!defenseWaiting.ok) fail(`场景 C：防御等待队列添加失败（${defenseWaiting.reason}）`)
+  if (!home.waitingBuildQueue.some(item => item.type === 'defense')) {
+    fail('场景 C：防御等待队列项未写入')
+  }
+
+  waitingQueueLogic.processPlanetWaitingQueue(home, player, player.officers)
+  if (!home.waitingBuildQueue.some(item => item.type === 'defense')) {
+    fail('场景 C：资源不足时防御等待队列项被提前清除')
+  }
+
+  home.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 1_000_000, energy: 0 }
+  waitingQueueLogic.processPlanetWaitingQueue(home, player, player.officers)
+  if (home.waitingBuildQueue.some(item => item.type === 'defense')) {
+    fail('场景 C：资源充足后防御等待队列项未执行')
+  }
+  if (home.buildQueue.filter(item => item.type === 'defense').length !== defenseQueueBefore + 1) {
+    fail('场景 C：防御等待队列项执行后未进入正式队列')
+  }
 
   // 5) 舰队派遣（扣除舰队与燃料）
   home.fleet.lightFighter = 10

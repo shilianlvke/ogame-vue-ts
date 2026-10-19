@@ -164,7 +164,7 @@ pnpm test          # 以上三项串起来
 | 传感器阵列 | `phalanx.scan` |
 | 军官 | `officer.hire`、`officer.renew`、`officer.dismiss` |
 | 星球 | `planet.abandon` |
-| 等待队列 | `queue.removeWaiting` |
+| 等待队列 | `queue.addWaiting`、`queue.removeWaiting` |
 
 配套改动：`PHALANX_SCAN_COST` 从 `GalaxyView` 硬编码移入 `core/commands.ts`，
 扫描扣费改由命令完成（服务端会重新校验余额）。
@@ -477,8 +477,9 @@ UI ──dispatchCommand──▶ runtime ──(联机)──▶ OnlineClient �
   服务端作为唯一仿真源时这不成问题；若将来要做「回放/确定性复现」，需要统一随机源。
 - 引擎仍是「单玩家视角」（`world.player`），服务端通过切换 `world.player` 串行推进；
   真正的事件级并发（多名玩家同一 tick 内互相攻击）没有做仲裁，属于阶段 3。
-- 等待队列的「添加」暂未命令化：它在执行时会重新走一遍资源/前置条件校验
-  （`waitingQueueLogic.processAllWaitingQueues`），因此不构成资源层面的信任漏洞。
+- 等待队列的「添加」已命令化（`queue.addWaiting`，覆盖建筑/研究/舰船/防御）；
+  执行时仍会重新走一遍资源/前置条件校验（`waitingQueueLogic.processAllWaitingQueues`），
+  因此不构成资源层面的信任漏洞。
 - 联机模式下 `dispatchCommand` 是「提交式」：本地返回 `{ ok: true }` 后等待服务端补丁，
   因此资源不足这类拒绝会晚一个 RTT 才提示（`reject` → toast），
   而不是像单机那样同步弹窗。UI 的按钮禁用仍按本地状态判断，正常流程无感。

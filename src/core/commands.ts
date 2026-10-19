@@ -43,6 +43,7 @@ import * as researchValidation from '@/logic/researchValidation'
 import * as shipLogic from '@/logic/shipLogic'
 import * as shipValidation from '@/logic/shipValidation'
 import * as fleetLogic from '@/logic/fleetLogic'
+import * as fleetStorageLogic from '@/logic/fleetStorageLogic'
 import * as missileLogic from '@/logic/missileLogic'
 import * as officerLogic from '@/logic/officerLogic'
 import * as planetLogic from '@/logic/planetLogic'
@@ -128,7 +129,10 @@ export type GameCommand =
   | { type: 'signal.collect'; systemId: string }
   | { type: 'signal.warp'; systemId: string }
   | { type: 'planet.rename'; planetId: string; name: string }
-  | { type: 'queue.addWaiting'; kind: 'building' | 'research'; planetId?: string; itemType: string; targetLevel: number }
+  | { type: 'queue.addWaiting'; kind: 'building'; planetId: string; itemType: BuildingType; targetLevel: number }
+  | { type: 'queue.addWaiting'; kind: 'research'; itemType: TechnologyType; targetLevel: number }
+  | { type: 'queue.addWaiting'; kind: 'ship'; planetId: string; itemType: ShipType; quantity: number }
+  | { type: 'queue.addWaiting'; kind: 'defense'; planetId: string; itemType: DefenseType; quantity: number }
   | { type: 'campaign.start'; questId: string }
   | { type: 'campaign.claim'; questId: string }
 
@@ -687,27 +691,57 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       return succeed()
     }
     case 'queue.addWaiting': {
+      if (command.kind === 'research') {
+        const item = waitingQueueLogic.createResearchWaitingItem(command.itemType, command.targetLevel)
+        const check = waitingQueueLogic.canAddToResearchWaitingQueue(player, item)
+        if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
+        waitingQueueLogic.addToResearchWaitingQueue(player, item)
+        return succeed()
+      }
+
+      const target = findOwnPlanet(world, command.planetId)
+      if (!target) return fail('errors.planetNotFound')
+
       if (command.kind === 'building') {
-        const target = player.planets.find(planet => planet.id === command.planetId)
-        if (!target) return fail('errors.requirementsNotMet')
-        const item = waitingQueueLogic.createBuildingWaitingItem(
-          command.itemType as BuildingType,
-          command.targetLevel,
-          target.id
-        )
+        const item = waitingQueueLogic.createBuildingWaitingItem(command.itemType, command.targetLevel, target.id)
         const check = waitingQueueLogic.canAddToBuildWaitingQueue(target, item, player.officers)
         if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
         waitingQueueLogic.addToBuildWaitingQueue(target, item)
         return succeed()
       }
 
-      const item = waitingQueueLogic.createResearchWaitingItem(
-        command.itemType as TechnologyType,
-        command.targetLevel
-      )
-      const check = waitingQueueLogic.canAddToResearchWaitingQueue(player, item)
+      if (command.quantity <= 0) return fail('errors.invalidQuantity')
+
+      if (command.kind === 'ship') {
+        // 等待队列只校验「能否排队」，资源不足正是排队的原因，因此不校验资源
+        if (!shipLogic.checkShipRequirements(command.itemType, target.buildings, player.technologies)) {
+          return fail('errors.requirementsNotMet')
+        }
+        if (!fleetStorageLogic.hasEnoughFleetStorage(target, command.itemType, command.quantity, player.technologies)) {
+          return fail('errors.insufficientFleetStorage')
+        }
+
+        const item = waitingQueueLogic.createShipWaitingItem(command.itemType, command.quantity, target.id)
+        const check = waitingQueueLogic.canAddToBuildWaitingQueue(target, item, player.officers)
+        if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
+        waitingQueueLogic.addToBuildWaitingQueue(target, item)
+        return succeed()
+      }
+
+      if (!shipLogic.checkDefenseRequirements(command.itemType, target.buildings, player.technologies)) {
+        return fail('errors.requirementsNotMet')
+      }
+      if (!shipLogic.checkShieldDomeLimit(command.itemType, target.defense, command.quantity)) {
+        return fail('errors.shieldDomeLimit')
+      }
+      if (!missileLogic.checkMissileSiloLimit(command.itemType, target.defense, target.buildings, command.quantity, target.buildQueue)) {
+        return fail('errors.missileSiloLimit')
+      }
+
+      const item = waitingQueueLogic.createDefenseWaitingItem(command.itemType, command.quantity, target.id)
+      const check = waitingQueueLogic.canAddToBuildWaitingQueue(target, item, player.officers)
       if (!check.canAdd) return fail(check.reason ?? 'errors.requirementsNotMet')
-      waitingQueueLogic.addToResearchWaitingQueue(player, item)
+      waitingQueueLogic.addToBuildWaitingQueue(target, item)
       return succeed()
     }
     case 'planet.rename': {
