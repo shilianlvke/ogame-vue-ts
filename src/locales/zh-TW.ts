@@ -173,6 +173,7 @@ export default {
     geoResearchStation: '地質研究站',
     deepDrillingFacility: '深層鑽探設施',
     university: '大學',
+    spaceport: '星球航空港',
     buildTime: '建造時間',
     build: '建造',
     production: '產量',
@@ -225,7 +226,8 @@ export default {
     planetDestroyerFactory: '建造能夠摧毀行星的終極武器',
     geoResearchStation: '研究地質結構，提高礦脈自然恢復速度。每級增加50%恢復速率',
     deepDrillingFacility: '',
-    university: '培養科研人員，加快研究速度。每級減少研究時間8%'
+    university: '培養科研人員，加快研究速度。每級減少研究時間8%',
+    spaceport: '星際商路的物流樞紐。與超時空轉移技術共同解鎖玩家交易，每級降低 2% 交易損耗'
   },
   ships: {
     lightFighter: '輕型戰鬥機',
@@ -329,7 +331,8 @@ export default {
     intergalacticResearchNetwork: '星際研究網絡',
     mineralResearch: '礦物研究',
     crystalResearch: '晶體研究',
-    fuelResearch: '燃料研究'
+    fuelResearch: '燃料研究',
+    hyperspaceTransfer: '超時空轉移技術'
   },
   technologyDescriptions: {
     energyTechnology: '提高能源利用效率',
@@ -355,7 +358,8 @@ export default {
     intergalacticResearchNetwork: '連接多個星球的研究實驗室，共享研究資源。每級可連接1個額外的研究實驗室',
     mineralResearch: '研究更高效的金屬提取技術，提升金屬礦產量。每級增加金屬產量2%',
     crystalResearch: '研究更高效的晶體提煉技術，提升晶體礦產量。每級增加晶體產量2%',
-    fuelResearch: '研究更高效的重氫合成技術，提升重氫產量。每級增加重氫產量2%'
+    fuelResearch: '研究更高效的重氫合成技術，提升重氫產量。每級增加重氫產量2%',
+    hyperspaceTransfer: '折疊局部航線，建立穩定的星際貨運通道。與星球航空港共同解鎖玩家交易，每級降低 2% 交易損耗'
   },
   officers: {
     commander: '指揮官',
@@ -876,7 +880,7 @@ export default {
     clearNPCActivity: 'NPC活動',
     clearGiftNotifications: '禮物通知',
     clearGiftRejected: '拒絕記錄',
-    clearTradeOffers: '貿易提議',
+    clearTradeOffers: 'NPC 貿易提議',
     clearIntelReports: '情報報告',
     clearJointAttackInvites: '聯合攻擊邀請',
     clearNow: '立即清空',
@@ -1450,12 +1454,12 @@ export default {
     },
     searchPlaceholder: '搜索NPC名稱...',
     notificationType: {
-      tradeOffer: '貿易提議',
+      tradeOffer: 'NPC 貿易提議',
       intelReport: '情報報告',
       jointAttack: '聯合攻擊邀請'
     },
     notificationBadge: {
-      trade: '貿易',
+      trade: 'NPC 貿易',
       intel: '情報',
       jointAttack: '邀請'
     },
@@ -2060,7 +2064,7 @@ export default {
     allyDefense: '盟友協防',
     allyDefenseDesc: '{npcName}派遣艦隊協助防禦你的星球',
     trade: {
-      title: '貿易提議',
+      title: 'NPC 貿易提議',
       from: '來自',
       offers: '提供',
       requests: '請求',
@@ -2206,6 +2210,12 @@ export default {
       choiceEffect: '對話選擇效果'
     },
     chapters: {
+      '7': {
+        title: '星際商路',
+        description: '建設航空港與轉移技術，開啟玩家貿易',
+        backgroundStory:
+          '躍遷之後，你發現真正連接銀河的不是星門，而是商路。只有掌握物流與超時空轉移，才能讓資源在文明之間流動。'
+      },
       '6': { title: '星海導航', description: '掌握星圖、掃描、命名與躍遷', backgroundStory: '星圖在你面前展開，新的航路等待命名。' },
       '1': {
         title: '起源之地',
@@ -2236,6 +2246,11 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: '星港啟航', description: '建造星球航空港到 1 級' },
+      '7_2': { title: '折疊航線', description: '研究超時空轉移技術到 1 級' },
+      '7_3': { title: '商路樞紐', description: '將星球航空港升級到 3 級' },
+      '7_4': { title: '航路穩定', description: '將超時空轉移技術研究到 3 級' },
+      '7_5': { title: '星際商隊', description: '航空港與轉移技術均達到 5 級，建立成熟的玩家貿易網路' },
       '6_1': { title: '星圖啟航', description: '打開 3D 星圖，掃描一個恆星系' },
       '6_2': { title: '命名權', description: '為你的發現取一個名字' },
       '6_3': { title: '遺跡迴聲', description: '回收一個未知信號' },
@@ -2378,6 +2393,8 @@ export default {
       ancientGuardian: '遠古守護者'
     },
     objectiveDescriptions: {
+      buildSpaceport: '建造星球航空港到指定等級',
+      researchHyperspaceTransfer: '研究超時空轉移技術到指定等級',
       scanSystem: '掃描 1 個恆星系',
       nameSystem: '命名 1 個恆星系',
       collectSignal: '回收 1 個未知信號',
@@ -2435,6 +2452,14 @@ export default {
       continueDevelopment: '繼續發展'
     },
     dialogues: {
+      '7_1': { prologue_1: '躍遷後的第一件事，是在新星球上建起一座航空港。' },
+      '7_2': { prologue_1: '古老的航線資料指向一種折疊空間的方法……' },
+      '7_3': { prologue_1: '商隊越來越頻繁，現有港口已經不夠用了。' },
+      '7_4': { prologue_1: '讓轉移技術穩定下來，才能承受更大的貨運量。' },
+      '7_5': {
+        prologue_1: '航線已經貫通，現在是時候讓整個銀河聽到你的名字。',
+        epilogue_1: '商路取代了戰爭的硝煙。你的帝國，終於成為群星之間的橋樑。'
+      },
       '6_1': { prologue_1: '打開 3D 星圖，先掃描最近的恆星系。' },
       '6_2': { prologue_1: '給這片星空留下你的名字。' },
       '6_3': { prologue_1: '掃描到的信號裡藏著舊時代的殘骸。' },
@@ -2554,9 +2579,15 @@ export default {
     send: '發送',
     points: '積分',
     planets: '星球',
-    tradeTitle: '交易',
-    tradeDetails: '交易詳情',
-    tradeWith: '與 {name} 交易',
+    tradeTitle: '玩家交易',
+    tradeDetails: '玩家交易詳情',
+    tradeWith: '與 {name} 進行玩家交易',
+    tradeLocked: '需要先建造星球航空港並研究超時空轉移技術',
+    tradeTargetLocked: '對方尚未解鎖玩家交易',
+    tradeLockedHint: '需要 {building} 1 級 + {tech} 1 級',
+    tradeTargetLockedHint: '{name} 尚未解鎖玩家交易',
+    tradeLossLabel: '交易損耗',
+    tradeLossHint: '目前航空港 {building} 級、轉移技術 {tech} 級；最終損耗按雙方較高值結算。',
     tradeViewDetails: '查看詳情',
     tradePendingIncoming: '待你處理',
     tradePendingOutgoing: '等待對方',

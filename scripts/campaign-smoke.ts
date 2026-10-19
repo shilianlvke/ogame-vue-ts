@@ -1,10 +1,18 @@
 /**
- * 战役集成测试：第 6 章「星海导航」的五个新目标能否被真实玩法推进
+ * 战役集成测试：第 6/7 章与旧存档迁移
  */
 import assert from 'node:assert/strict'
 import { createWorld } from '@/core/world'
-import { initializeCampaignProgress, startQuest, updateQuestProgress } from '@/logic/campaignLogic'
-import { getQuestsByChapter } from '@/config/campaignConfig'
+import {
+  CAMPAIGN_PROGRESS_VERSION,
+  checkObjectiveProgress,
+  claimQuestRewards,
+  initializeCampaignProgress,
+  startQuest,
+  updateQuestProgress
+} from '@/logic/campaignLogic'
+import { getAllQuests, getQuestsByChapter } from '@/config/campaignConfig'
+import { BuildingType, TechnologyType, QuestStatus } from '@/types/game'
 import { initializePlayer } from '@/logic/gameLogic'
 import { createInitialPlanet } from '@/logic/planetLogic'
 import { DEFAULT_LAYOUT_SEED } from '@/config/galaxyConfig'
@@ -17,6 +25,56 @@ const main = async () => {
     chapter6.map(quest => quest.id),
     ['quest_6_1', 'quest_6_2', 'quest_6_3', 'quest_6_4', 'quest_6_5']
   )
+  assert.deepEqual(
+    chapter6.map(quest => quest.requiredQuestIds),
+    [['quest_5_5'], ['quest_6_1'], ['quest_6_2'], ['quest_6_3'], ['quest_6_4']],
+    '第 6 章任务链未正确接入第 5 章'
+  )
+
+  const chapter7 = getQuestsByChapter(7)
+  assert.equal(chapter7.length, 5, '第 7 章应有 5 个任务')
+  assert.deepEqual(
+    chapter7.map(quest => quest.id),
+    ['quest_7_1', 'quest_7_2', 'quest_7_3', 'quest_7_4', 'quest_7_5']
+  )
+
+  // 旧版存档已通关旧主线，并错误带有第 7 章完成状态：迁移必须清除，只解锁 7_1
+  const legacy = initializePlayer('p_legacy', 'Legacy')
+  const legacyPlanet = createInitialPlanet('p_legacy', 'Legacy')
+  legacy.planets = [legacyPlanet]
+  const oldQuestIds = getAllQuests().filter(quest => quest.chapter <= 6).map(quest => quest.id)
+  legacy.campaignProgress = {
+    campaignId: 'main_campaign',
+    version: 1,
+    currentChapter: 6,
+    questProgress: {
+      quest_7_1: { questId: 'quest_7_1', status: QuestStatus.Completed, objectives: {} },
+      quest_7_2: { questId: 'quest_7_2', status: QuestStatus.Completed, objectives: {} }
+    },
+    completedQuests: [...oldQuestIds, 'quest_7_1', 'quest_7_2'],
+    unlockedQuests: ['quest_7_1', 'quest_7_2'],
+    branchChoices: {}
+  }
+  const migrated = initializeCampaignProgress(legacy)
+  assert.equal(migrated.version, CAMPAIGN_PROGRESS_VERSION, '旧存档战役版本未升级')
+  assert(!migrated.completedQuests.includes('quest_7_1'), '旧存档错误继承了第 7 章完成状态')
+  assert(!migrated.completedQuests.includes('quest_7_2'), '旧存档错误继承了第 7 章完成状态')
+  assert(migrated.unlockedQuests.includes('quest_7_1'), '旧存档应解锁第 7 章第一关')
+  assert(!migrated.unlockedQuests.includes('quest_7_2'), '第 7 章第二关不应被提前解锁')
+  assert.equal(migrated.currentChapter, 7, '迁移后应进入第 7 章')
+  console.log('[campaign] 旧存档迁移：清除第 7 章错误完成状态，仅解锁 7_1')
+
+  // 新建筑/科技可被战役目标检查识别
+  legacyPlanet.buildings[BuildingType.Spaceport] = 1
+  legacy.technologies[TechnologyType.HyperspaceTransfer] = 1
+  assert.equal(checkObjectiveProgress(legacy, chapter7[0]!.objectives[0]!, []), 1, '航空港目标未识别')
+  assert.equal(checkObjectiveProgress(legacy, chapter7[1]!.objectives[0]!, []), 1, '转移技术目标未识别')
+
+  assert.equal(startQuest(legacy, 'quest_7_1').success, true, '应能接取 7_1')
+  assert.equal(updateQuestProgress(legacy, 'quest_7_1', [], undefined).questCompleted, true, '7_1 应完成')
+  assert.equal(claimQuestRewards(legacy, 'quest_7_1').success, true, '7_1 奖励应可领取')
+  assert.equal(startQuest(legacy, 'quest_7_2').success, true, '领取 7_1 后应解锁 7_2')
+  console.log('[campaign] 第 7 章航空港/转移技术任务链正常')
 
   const player = initializePlayer('p_campaign', 'Campaigner')
   const planet = createInitialPlanet('p_campaign', 'Camp')

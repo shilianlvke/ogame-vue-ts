@@ -519,6 +519,7 @@ const main = async () => {
     alicePlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
     bobPlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
 
+    // 未建造航空港/研究转移技术时，交易必须被拒绝
     alice.client.send({
       t: 'cmd',
       seq: 5,
@@ -529,38 +530,67 @@ const main = async () => {
         request: { metal: 0, crystal: 500, deuterium: 0 }
       }
     })
-    await alice.client.next(m => m.t === 'ack' && m.seq === 5, 5000, '交易创建 ack')
+    const lockedReject = (await alice.client.next(
+      m => m.t === 'reject' && m.seq === 5,
+      5000,
+      '未解锁交易'
+    )) as Extract<ServerMessage, { t: 'reject' }>
+    assert(lockedReject.reason === 'players.tradeLocked', '未解锁交易未返回正确原因')
+
+    // 双方 5 级航空港 + 5 级转移技术：损耗降至最低 4%
+    alicePlanet.buildings[BuildingType.Spaceport] = 5
+    bobPlanet.buildings[BuildingType.Spaceport] = 5
+    alicePlayer.technologies[TechnologyType.HyperspaceTransfer] = 5
+    bobPlayer.technologies[TechnologyType.HyperspaceTransfer] = 5
+    const bobProfile = server.room
+      .snapshotFor(alice.playerId)!
+      .players.find(profile => profile.id === bob.playerId)
+    assert(bobProfile?.tradeUnlocked === true, '玩家档案未同步交易解锁状态')
+    assert(bobProfile?.tradeLossPercent === 4, '玩家档案未同步交易损耗')
+
+    alice.client.send({
+      t: 'cmd',
+      seq: 6,
+      command: {
+        type: 'player.trade.create',
+        toPlayerId: bob.playerId,
+        offer: { metal: 1_000, crystal: 0, deuterium: 0 },
+        request: { metal: 0, crystal: 500, deuterium: 0 }
+      }
+    })
+    await alice.client.next(m => m.t === 'ack' && m.seq === 6, 5000, '交易创建 ack')
     assert((alicePlayer.playerTrades?.length ?? 0) === 1, '发起方没有交易提议')
     assert((bobPlayer.playerTrades?.length ?? 0) === 1, '接收方没有交易提议')
     const tradeId = alicePlayer.playerTrades![0]!.id
+    assert(alicePlayer.playerTrades![0]!.lossPercent === 4, '交易损耗没有按双方设施计算')
 
-    bob.client.send({
-      t: 'cmd',
-      seq: 6,
-      command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
-    })
-    await bob.client.next(m => m.t === 'ack' && m.seq === 6, 5000, '交易接受 ack')
-    assert((alicePlayer.playerTrades?.length ?? 0) === 1, '接受后发起方交易卡片丢失')
-    assert((bobPlayer.playerTrades?.length ?? 0) === 1, '接受后接收方交易卡片丢失')
-    assert(alicePlayer.playerTrades![0]!.status === 'accepted', '发起方交易状态未更新为 accepted')
-    assert(bobPlayer.playerTrades![0]!.status === 'accepted', '接收方交易状态未更新为 accepted')
-    assert(
-      alicePlanet.resources.metal === 9_000 && alicePlanet.resources.crystal === 10_500,
-      '接受交易后发起方资源不正确'
-    )
-    assert(
-      bobPlanet.resources.metal === 11_000 && bobPlanet.resources.crystal === 9_500,
-      '接受交易后接收方资源不正确'
-    )
-
-    // 重复接受必须被拒绝，且不能把已接受状态覆盖成 expired
     bob.client.send({
       t: 'cmd',
       seq: 7,
       command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
     })
+    await bob.client.next(m => m.t === 'ack' && m.seq === 7, 5000, '交易接受 ack')
+    assert((alicePlayer.playerTrades?.length ?? 0) === 1, '接受后发起方交易卡片丢失')
+    assert((bobPlayer.playerTrades?.length ?? 0) === 1, '接受后接收方交易卡片丢失')
+    assert(alicePlayer.playerTrades![0]!.status === 'accepted', '发起方交易状态未更新为 accepted')
+    assert(bobPlayer.playerTrades![0]!.status === 'accepted', '接收方交易状态未更新为 accepted')
+    assert(
+      alicePlanet.resources.metal === 9_000 && alicePlanet.resources.crystal === 10_480,
+      '接受交易后发起方资源未扣除 4% 损耗'
+    )
+    assert(
+      bobPlanet.resources.metal === 10_960 && bobPlanet.resources.crystal === 9_500,
+      '接受交易后接收方资源未扣除 4% 损耗'
+    )
+
+    // 重复接受必须被拒绝，且不能把已接受状态覆盖成 expired
+    bob.client.send({
+      t: 'cmd',
+      seq: 8,
+      command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
+    })
     const duplicateReject = (await bob.client.next(
-      m => m.t === 'reject' && m.seq === 7,
+      m => m.t === 'reject' && m.seq === 8,
       5000,
       '重复接受交易'
     )) as Extract<ServerMessage, { t: 'reject' }>

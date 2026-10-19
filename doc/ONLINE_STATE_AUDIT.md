@@ -13,7 +13,9 @@
 | 消息中心删除 / 清空 / 标记已读 | `messages.clear` / `messages.delete` / `messages.markRead` 命令 |
 | 外交通知标记已读（含来袭警报） | `messages.markRead` 命令 |
 | 礼物接受 / 拒绝 | `diplomacy.respond`（`kind: 'gift'`） |
-| 贸易提议接受 / 拒绝 | `diplomacy.respond`（`kind: 'trade'`） |
+| NPC 贸易提议接受 / 拒绝 | `diplomacy.respond`（`kind: 'trade'`） |
+| 玩家交易创建 / 接受 / 拒绝 / 撤回 | `player.trade.create` / `player.trade.respond` / `player.trade.cancel` |
+| 玩家在线状态 / 交易解锁状态 | 服务端 `players` 档案实时下发 |
 | 联合攻击邀请接受 / 拒绝 | `diplomacy.respond`（`kind: 'jointAttack'`） |
 | 舰队任务终止（返航 / 已到达） | `fleet.abort` 命令 |
 | 战役对话声望 / 分支解锁 | `campaign.choice` 命令 |

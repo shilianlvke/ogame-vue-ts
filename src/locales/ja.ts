@@ -183,6 +183,7 @@ export default {
     geoResearchStation: '地質研究所',
     deepDrillingFacility: '深部掘削施設',
     university: '大学',
+    spaceport: '惑星宇宙港',
     buildTime: '建設時間',
     build: '建設',
     production: '生産量',
@@ -235,7 +236,8 @@ export default {
     planetDestroyerFactory: '惑星を破壊できる究極兵器を建造',
     geoResearchStation: '地質構造を研究し、鉱脈の自然回復速度を向上。レベル毎に回復速度10%増加',
     deepDrillingFacility: '',
-    university: '研究者を育成し、研究速度を加速。レベル毎に研究時間-8%'
+    university: '研究者を育成し、研究速度を加速。レベル毎に研究時間-8%',
+    spaceport: '星間交易路の物流拠点。超時空転送技術と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減'
   },
   ships: {
     lightFighter: '軽戦闘機',
@@ -347,7 +349,8 @@ export default {
     intergalacticResearchNetwork: '銀河間研究ネットワーク',
     mineralResearch: '鉱物研究',
     crystalResearch: 'クリスタル研究',
-    fuelResearch: '燃料研究'
+    fuelResearch: '燃料研究',
+    hyperspaceTransfer: '超時空転送技術'
   },
   technologyDescriptions: {
     energyTechnology: 'エネルギー利用効率を向上',
@@ -373,7 +376,8 @@ export default {
     intergalacticResearchNetwork: '複数の惑星の研究所を連結。レベル毎に追加1研究所を接続',
     mineralResearch: 'より効率的な金属抽出技術を研究。レベル毎に金属生産+2%',
     crystalResearch: 'より効率的なクリスタル精製技術を研究。レベル毎にクリスタル生産+2%',
-    fuelResearch: 'より効率的な重水素合成技術を研究。レベル毎に重水素生産+2%'
+    fuelResearch: 'より効率的な重水素合成技術を研究。レベル毎に重水素生産+2%',
+    hyperspaceTransfer: '局所航路を折り畳み、安定した星間貨物路を構築。惑星宇宙港と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減'
   },
   officers: {
     commander: '司令官',
@@ -2116,6 +2120,12 @@ export default {
       choiceEffect: '選択肢の効果'
     },
     chapters: {
+      '7': {
+        title: '星間交易路',
+        description: '宇宙港と転送技術を建設し、プレイヤー取引を解放する',
+        backgroundStory:
+          '転送後のあなたは知る。銀河を本当につなぐのは星門ではなく交易路だ。物流と超時空転送だけが、文明間の資源の流れを生む。'
+      },
       '6': { title: '星海ナビゲーション', description: '星図・スキャン・命名・ジャンプを学ぶ', backgroundStory: '星図が目の前に広がり、新しい航路が名を待っている。' },
       '1': {
         title: '起源',
@@ -2149,6 +2159,14 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: '宇宙港出発', description: '惑星宇宙港をレベル1まで建設する' },
+      '7_2': { title: '折り畳まれた航路', description: '超時空転送技術をレベル1まで研究する' },
+      '7_3': { title: '交易ハブ', description: '惑星宇宙港をレベル3まで強化する' },
+      '7_4': { title: '安定航路', description: '超時空転送技術をレベル3まで研究する' },
+      '7_5': {
+        title: '星間商隊',
+        description: '宇宙港と転送技術を共にレベル5にし、成熟したプレイヤー交易網を築く'
+      },
       '6_1': { title: '星図の航海', description: '3D 星図を開き、星系をスキャンする' },
       '6_2': { title: '命名権', description: '発見に名前を付ける' },
       '6_3': { title: '遺跡の残響', description: '未知の信号を回収する' },
@@ -2216,6 +2234,8 @@ export default {
       ancientGuardian: '古代の守護者'
     },
     objectiveDescriptions: {
+      buildSpaceport: '惑星宇宙港を指定レベルまで建設する',
+      researchHyperspaceTransfer: '超時空転送技術を指定レベルまで研究する',
       scanSystem: '星系を 1 つスキャン',
       nameSystem: '星系を 1 つ命名',
       collectSignal: '未知の信号を 1 つ回収',
@@ -2273,6 +2293,14 @@ export default {
       continueDevelopment: '発展を継続'
     },
     dialogues: {
+      '7_1': { prologue_1: '転送後の最初の仕事は、新しい星に宇宙港を建てることだ。' },
+      '7_2': { prologue_1: '古い航路データは、空間を折り畳む方法を示している……' },
+      '7_3': { prologue_1: '商隊が増え、今の港では足りなくなってきた。' },
+      '7_4': { prologue_1: 'より大きな貨物に耐えられるよう、転送技術を安定させよう。' },
+      '7_5': {
+        prologue_1: '航路は開いた。銀河にあなたの名を知らせる時だ。',
+        epilogue_1: '戦争の煙に代わり、交易が流れる。あなたの帝国は星々の橋となった。'
+      },
       '6_1': { prologue_1: '3D 星図を開き、近くの星系をスキャンしよう。' },
       '6_2': { prologue_1: 'この星空に君の名を残そう。' },
       '6_3': { prologue_1: '信号には旧時代の残骸が隠れている。' },
@@ -2374,9 +2402,15 @@ export default {
     send: '送信',
     points: 'ポイント',
     planets: '惑星',
-    tradeTitle: '取引',
-    tradeDetails: '取引の詳細',
+    tradeTitle: 'プレイヤー取引',
+    tradeDetails: 'プレイヤー取引の詳細',
     tradeWith: '{name} と取引',
+    tradeLocked: '先に惑星宇宙港を建設し、超時空転送技術を研究してください',
+    tradeTargetLocked: '相手はまだプレイヤー取引を解放していません',
+    tradeLockedHint: '{building} Lv.1 + {tech} Lv.1 が必要',
+    tradeTargetLockedHint: '{name} はまだプレイヤー取引を解放していません',
+    tradeLossLabel: '取引損失',
+    tradeLossHint: '宇宙港 Lv.{building}、転送技術 Lv.{tech}。双方の高い方の損失が適用されます。',
     tradeViewDetails: '詳細を見る',
     tradePendingIncoming: 'あなたの返答待ち',
     tradePendingOutgoing: '相手の返答待ち',

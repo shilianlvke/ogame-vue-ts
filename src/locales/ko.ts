@@ -171,6 +171,7 @@ export default {
     geoResearchStation: '지질 연구소',
     deepDrillingFacility: '심층 시추 시설',
     university: '대학',
+    spaceport: '행성 우주항',
     buildTime: '건설 시간',
     build: '건설',
     production: '생산량',
@@ -219,7 +220,8 @@ export default {
     planetDestroyerFactory: '행성을 파괴할 수 있는 궁극 병기 건조',
     geoResearchStation: '지질 구조를 연구하여 광맥 자연 회복 속도를 높입니다. 레벨당 회복 속도 10% 증가',
     deepDrillingFacility: '',
-    university: '연구원을 양성하여 연구 속도를 가속합니다. 레벨당 연구 시간 -8%'
+    university: '연구원을 양성하여 연구 속도를 가속합니다. 레벨당 연구 시간 -8%',
+    spaceport: '성간 무역로의 물류 거점. 초시공간 전송 기술과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다'
   },
   ships: {
     lightFighter: '경전투기',
@@ -324,7 +326,8 @@ export default {
     intergalacticResearchNetwork: '은하간 연구 네트워크',
     mineralResearch: '광물 연구',
     crystalResearch: '크리스탈 연구',
-    fuelResearch: '연료 연구'
+    fuelResearch: '연료 연구',
+    hyperspaceTransfer: '초시공간 전송 기술'
   },
   technologyDescriptions: {
     energyTechnology: '에너지 이용 효율 향상',
@@ -350,7 +353,8 @@ export default {
     intergalacticResearchNetwork: '여러 행성의 연구소를 연결합니다. 레벨당 1개 추가 연구소 연결',
     mineralResearch: '더 효율적인 금속 추출 기술 연구. 레벨당 금속 생산 +2%',
     crystalResearch: '더 효율적인 크리스탈 정제 기술 연구. 레벨당 크리스탈 생산 +2%',
-    fuelResearch: '더 효율적인 중수소 합성 기술 연구. 레벨당 중수소 생산 +2%'
+    fuelResearch: '더 효율적인 중수소 합성 기술 연구. 레벨당 중수소 생산 +2%',
+    hyperspaceTransfer: '국소 항로를 접어 안정적인 성간 화물로를 구축합니다. 행성 우주항과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다'
   },
   officers: {
     commander: '사령관',
@@ -2057,6 +2061,12 @@ export default {
       choiceEffect: '선택지 효과'
     },
     chapters: {
+      '7': {
+        title: '성간 무역로',
+        description: '우주항과 전송 기술을 건설하여 플레이어 거래를 해금하세요',
+        backgroundStory:
+          '도약 후 당신은 깨닫습니다. 은하를 진정으로 잇는 것은 성문이 아니라 무역로입니다. 물류와 초시공간 전송만이 문명 사이로 자원을 흐르게 합니다.'
+      },
       '6': { title: '성해 항법', description: '성도, 스캔, 명명, 점프를 익힌다', backgroundStory: '성도가 눈앞에 펼쳐지고 새로운 항로가 이름을 기다린다.' },
       '1': {
         title: '기원',
@@ -2090,6 +2100,14 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: '우주항 출발', description: '행성 우주항을 레벨 1까지 건설' },
+      '7_2': { title: '접힌 항로', description: '초시공간 전송 기술을 레벨 1까지 연구' },
+      '7_3': { title: '무역 허브', description: '행성 우주항을 레벨 3까지 업그레이드' },
+      '7_4': { title: '안정된 항로', description: '초시공간 전송 기술을 레벨 3까지 연구' },
+      '7_5': {
+        title: '성간 상단',
+        description: '우주항과 전송 기술을 모두 레벨 5로 올려 성숙한 플레이어 거래망을 구축'
+      },
       '6_1': { title: '성도 항해', description: '3D 성도를 열고 항성계를 스캔' },
       '6_2': { title: '명명권', description: '발견에 이름을 붙이기' },
       '6_3': { title: '유적의 메아리', description: '미확인 신호 회수' },
@@ -2157,6 +2175,8 @@ export default {
       ancientGuardian: '고대의 수호자'
     },
     objectiveDescriptions: {
+      buildSpaceport: '행성 우주항을 지정 레벨까지 건설',
+      researchHyperspaceTransfer: '초시공간 전송 기술을 지정 레벨까지 연구',
       scanSystem: '항성계 1개 스캔',
       nameSystem: '항성계 1개 명명',
       collectSignal: '미확인 신호 1개 회수',
@@ -2214,6 +2234,14 @@ export default {
       continueDevelopment: '개발 계속'
     },
     dialogues: {
+      '7_1': { prologue_1: '도약 후 가장 먼저 할 일은 새 행성에 우주항을 세우는 것입니다.' },
+      '7_2': { prologue_1: '고대 항로 데이터가 공간을 접는 방법을 가리킵니다...' },
+      '7_3': { prologue_1: '상단이 늘어나 지금의 항구로는 부족합니다.' },
+      '7_4': { prologue_1: '더 큰 화물을 견디도록 전송 기술을 안정화하세요.' },
+      '7_5': {
+        prologue_1: '항로가 열렸습니다. 이제 은하가 당신의 이름을 들을 차례입니다.',
+        epilogue_1: '전쟁의 연기 대신 무역이 흐릅니다. 당신의 제국은 별들 사이의 다리가 되었습니다.'
+      },
       '6_1': { prologue_1: '3D 성도를 열고 가까운 항성계를 스캔하세요.' },
       '6_2': { prologue_1: '이 별자리에 당신의 이름을 남기세요.' },
       '6_3': { prologue_1: '신호에는 몰락한 시대의 잔해가 숨어 있습니다.' },
@@ -2316,9 +2344,15 @@ export default {
     send: '보내기',
     points: '점수',
     planets: '행성',
-    tradeTitle: '거래',
-    tradeDetails: '거래 상세',
+    tradeTitle: '플레이어 거래',
+    tradeDetails: '플레이어 거래 상세',
     tradeWith: '{name}와 거래',
+    tradeLocked: '먼저 행성 우주항을 건설하고 초시공간 전송 기술을 연구하세요',
+    tradeTargetLocked: '상대방이 아직 플레이어 거래를 해금하지 않았습니다',
+    tradeLockedHint: '{building} Lv.1 + {tech} Lv.1 필요',
+    tradeTargetLockedHint: '{name}이(가) 아직 플레이어 거래를 해금하지 않았습니다',
+    tradeLossLabel: '거래 손실',
+    tradeLossHint: '우주항 Lv.{building}, 전송 기술 Lv.{tech}. 양측 중 높은 손실률이 적용됩니다.',
     tradeViewDetails: '상세 보기',
     tradePendingIncoming: '응답 대기 중',
     tradePendingOutgoing: '상대방 응답 대기 중',

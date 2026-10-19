@@ -566,6 +566,7 @@
     Scroll
   } from 'lucide-vue-next'
   import * as gameLogic from '@/logic/gameLogic'
+  import * as campaignLogic from '@/logic/campaignLogic'
   import * as planetLogic from '@/logic/planetLogic'
   import * as officerLogic from '@/logic/officerLogic'
   import * as resourceLogic from '@/logic/resourceLogic'
@@ -901,6 +902,9 @@
         gameStore.player.bonusPoints = Math.max(0, gameStore.player.points - basePoints)
       }
 
+      // 迁移旧存档的战役进度（新增章节、旧版本任务状态修复）
+      gameStore.player.campaignProgress = campaignLogic.initializeCampaignProgress(gameStore.player)
+
       // 初始化或更新玩家积分
       gameStore.player.points = publicLogic.calculatePlayerPoints(gameStore.player)
 
@@ -910,6 +914,7 @@
     const initialPlanet = planetLogic.createInitialPlanet(gameStore.player.id, t('planet.homePlanet'))
     gameStore.player.planets = [initialPlanet]
     gameStore.currentPlanetId = initialPlanet.id
+    gameStore.player.campaignProgress = campaignLogic.initializeCampaignProgress(gameStore.player)
     // 新玩家初始化时生成NPC星球
     generateNPCPlanets()
     // 初始化玩家积分

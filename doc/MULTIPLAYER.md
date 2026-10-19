@@ -166,7 +166,7 @@ pnpm test          # 以上三项串起来
 | 星球 | `planet.abandon` |
 | 等待队列 | `queue.addWaiting`、`queue.removeWaiting` |
 | 消息 / 通知 | `messages.clear`、`messages.delete`、`messages.markRead` |
-| 外交响应 | `diplomacy.respond`（礼物 / 贸易 / 联合攻击） |
+| 外交响应 | `diplomacy.respond`（礼物 / NPC 贸易 / 联合攻击） |
 | 玩家交互 | `player.trade.create`、`player.trade.respond`、`player.trade.cancel` |
 | 战役 | `campaign.start`、`campaign.claim`、`campaign.choice` |
 
@@ -227,6 +227,17 @@ pnpm test               # 类型检查 + 引擎冒烟 + 服务端冒烟
 运维接口：`GET /health`、`GET /api/info`；游戏入口：`ws://<host>:<port>/ws`。
 玩家档案 `players` 中的 `online` / `lastSeenAt` 由服务端会话实时维护；
 玩家页通过 `patch.players` 实时更新所有玩家的在线状态。
+
+### 玩家交易解锁与损耗
+
+- 解锁条件：星球航空港 1 级 + 超时空转移技术 1 级；
+- 星球航空港前置：船坞 6、机器人工厂 5、研究实验室 4、计算机技术 3；
+- 超时空转移技术前置：研究实验室 7、超空间技术 4、能源技术 6、计算机技术 4；
+- 交易双方都必须解锁；
+- 损耗公式：`max(4, 20 - 2 × 航空港等级 - 2 × 转移技术等级)`，双方取较高值；
+- 损耗在结算时分别作用于双方送出的资源，运输途中损失不进入任何一方库存；
+- 交易有效期 30 分钟，历史卡片最多保留 50 条；
+- NPC 贸易使用独立的 `tradeOffers` 和 `diplomacy.respond`，与玩家交易的 `playerTrades` 不要混淆。
 
 ### 进程内结构
 
@@ -407,7 +418,7 @@ UI ──dispatchCommand──▶ runtime ──(联机)──▶ OnlineClient �
 
 1. 先过滤出与自己**敌对**的玩家；
 2. 在候选里选**最近**的一个（跨星系距离权重最高，其次是星系内坐标）；
-3. 没有敌对关系时，在全部玩家里选最近的——贸易、情报、援助这些中立/友好行为
+3. 没有敌对关系时，在全部玩家里选最近的——NPC 贸易、情报、援助这些中立/友好行为
    会自然落到星系邻居身上。
 
 这样 NPC 的注意力按星系位置自然分布，而不是只盯着轮转到的那个玩家。

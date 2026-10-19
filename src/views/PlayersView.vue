@@ -151,6 +151,10 @@
                         <span class="text-muted-foreground">{{ t('players.tradeRequest') }}</span>
                         <span class="text-right">{{ resourceSummary(item.trade.request) }}</span>
                       </div>
+                      <div class="flex justify-between gap-2 text-[10px] text-muted-foreground">
+                        <span>{{ t('players.tradeLossLabel') }}</span>
+                        <span class="text-amber-600 dark:text-amber-400">{{ item.trade.lossPercent ?? 0 }}%</span>
+                      </div>
                     </div>
 
                     <div class="mt-2 flex items-center justify-between gap-2">
@@ -167,11 +171,17 @@
                           size="sm"
                           variant="outline"
                           class="h-7 flex-1 px-2 text-[11px]"
+                          :disabled="!myTradeStatus.unlocked"
                           @click.stop="respondTrade(item.trade, 'decline')"
                         >
                           {{ t('players.tradeDecline') }}
                         </Button>
-                        <Button size="sm" class="h-7 flex-1 px-2 text-[11px]" @click.stop="respondTrade(item.trade, 'accept')">
+                        <Button
+                          size="sm"
+                          class="h-7 flex-1 px-2 text-[11px]"
+                          :disabled="!myTradeStatus.unlocked"
+                          @click.stop="respondTrade(item.trade, 'accept')"
+                        >
                           {{ t('players.tradeAccept') }}
                         </Button>
                       </template>
@@ -204,11 +214,22 @@
                 size="sm"
                 class="h-8 gap-1.5 px-2 text-xs"
                 :title="t('players.tradeTitle')"
+                :disabled="!tradeAvailable"
                 @click="openTradeDialog"
               >
                 <ArrowLeftRight class="h-4 w-4" />
                 {{ t('players.tradeTitle') }}
               </Button>
+              <span v-if="selectedPeer && !tradeAvailable" class="text-[10px] text-amber-600 dark:text-amber-400">
+                {{
+                  !myTradeStatus.unlocked
+                    ? t('players.tradeLockedHint', {
+                        building: t('buildings.spaceport'),
+                        tech: t('technologies.hyperspaceTransfer')
+                      })
+                    : t('players.tradeTargetLockedHint', { name: selectedPeer.name })
+                }}
+              </span>
             </div>
             <div class="flex gap-2 p-3 pt-2">
               <Input
@@ -273,6 +294,16 @@
               </div>
             </div>
           </div>
+
+          <div class="space-y-1 rounded-lg bg-muted/50 p-3 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-muted-foreground">{{ t('players.tradeLossLabel') }}</span>
+              <span class="font-medium text-amber-600 dark:text-amber-400">{{ tradeLossPercent }}%</span>
+            </div>
+            <p class="text-[11px] text-muted-foreground">
+              {{ t('players.tradeLossHint', { building: myTradeStatus.spaceportLevel, tech: myTradeStatus.techLevel }) }}
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
@@ -310,6 +341,12 @@
               <div class="mb-1 text-muted-foreground">{{ t('players.tradeRequest') }}</div>
               <div>{{ resourceSummary(selectedTrade.request) }}</div>
             </div>
+            <div class="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-xs">
+              <span class="text-muted-foreground">{{ t('players.tradeLossLabel') }}</span>
+              <span class="font-medium text-amber-600 dark:text-amber-400">
+                {{ selectedTrade.lossPercent ?? 0 }}%
+              </span>
+            </div>
           </div>
 
           <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -328,10 +365,16 @@
         <DialogFooter class="flex-wrap">
           <Button variant="outline" @click="tradeDetailOpen = false">{{ t('common.close') }}</Button>
           <template v-if="selectedTrade && isIncomingPending(selectedTrade)">
-            <Button variant="outline" @click="respondTrade(selectedTrade, 'decline')">
+            <Button
+              variant="outline"
+              :disabled="!myTradeStatus.unlocked"
+              @click="respondTrade(selectedTrade, 'decline')"
+            >
               {{ t('players.tradeDecline') }}
             </Button>
-            <Button @click="respondTrade(selectedTrade, 'accept')">{{ t('players.tradeAccept') }}</Button>
+            <Button :disabled="!myTradeStatus.unlocked" @click="respondTrade(selectedTrade, 'accept')">
+              {{ t('players.tradeAccept') }}
+            </Button>
           </template>
           <Button
             v-else-if="selectedTrade && isOutgoingPending(selectedTrade)"
@@ -369,7 +412,7 @@
   import { useI18n } from '@/composables/useI18n'
   import { dispatchCommand } from '@/core/runtime'
   import { MAX_CHAT_LENGTH } from '@/core/commands'
-  import { emptyTradeResources } from '@/logic/playerTradeLogic'
+  import { emptyTradeResources, getPlayerTradeStatus } from '@/logic/playerTradeLogic'
   import { formatNumber } from '@/utils/format'
   import { toast } from 'vue-sonner'
   import type { PlayerPublicProfile } from '@/core/protocol'
@@ -410,6 +453,13 @@
   })
 
   const selectedPeer = computed(() => players.value.find(player => player.id === selectedPeerId.value) ?? null)
+  const myTradeStatus = computed(() => getPlayerTradeStatus(gameStore.player))
+  const tradeAvailable = computed(
+    () => myTradeStatus.value.unlocked && selectedPeer.value?.tradeUnlocked === true
+  )
+  const tradeLossPercent = computed(() =>
+    Math.max(myTradeStatus.value.lossPercent, selectedPeer.value?.tradeLossPercent ?? 0)
+  )
   const chatMessages = computed(() => gameStore.player.chatMessages ?? [])
   const playerTrades = computed(() => gameStore.player.playerTrades ?? [])
 
@@ -540,6 +590,14 @@
 
   const openTradeDialog = (): void => {
     if (!selectedPeer.value) return
+    if (!myTradeStatus.value.unlocked) {
+      toast.error(t('players.tradeLocked'))
+      return
+    }
+    if (selectedPeer.value.tradeUnlocked !== true) {
+      toast.error(t('players.tradeTargetLocked'))
+      return
+    }
     Object.assign(tradeOffer, emptyTradeResources())
     Object.assign(tradeRequest, emptyTradeResources())
     tradeDialogOpen.value = true
@@ -556,6 +614,10 @@
   const sendTradeOffer = (): void => {
     const peer = selectedPeer.value
     if (!peer || !tradeFormValid.value) return
+    if (!tradeAvailable.value) {
+      toast.error(t('players.tradeLocked'))
+      return
+    }
 
     const result = dispatchCommand({
       type: 'player.trade.create',

@@ -538,7 +538,8 @@ import { applyMaxAccount } from '@/logic/devAccount'
           [BuildingType.PlanetDestroyerFactory]: 3,
           [BuildingType.GeoResearchStation]: 10,
           [BuildingType.DeepDrillingFacility]: 10,
-          [BuildingType.University]: 10
+          [BuildingType.University]: 10,
+          [BuildingType.Spaceport]: 5
         }
         section.items.forEach((item: string) => {
           section.setValue(item, explicitMax[item] || 50)
@@ -552,7 +553,8 @@ import { applyMaxAccount } from '@/logic/devAccount'
           [TechnologyType.IntergalacticResearchNetwork]: 10,
           [TechnologyType.MineralResearch]: 20,
           [TechnologyType.CrystalResearch]: 20,
-          [TechnologyType.FuelResearch]: 20
+          [TechnologyType.FuelResearch]: 20,
+          [TechnologyType.HyperspaceTransfer]: 5
         }
         section.items.forEach((item: string) => {
           section.setValue(item, explicitMax[item] || 100)

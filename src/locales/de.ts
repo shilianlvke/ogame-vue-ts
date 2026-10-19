@@ -171,6 +171,7 @@ export default {
     geoResearchStation: 'Geologische Forschungsstation',
     deepDrillingFacility: 'Tiefbohranlage',
     university: 'Universität',
+    spaceport: 'Planetarer Raumhafen',
     buildTime: 'Bauzeit',
     build: 'Bauen',
     production: 'Produktion',
@@ -224,7 +225,8 @@ export default {
     geoResearchStation:
       'Erforscht geologische Strukturen und erhöht die natürliche Erzvorkommen-Regenerationsrate. +10% Regeneration pro Stufe',
     deepDrillingFacility: '',
-    university: 'Bildet Forscher aus, um die Forschungsgeschwindigkeit zu beschleunigen. -8% Forschungszeit pro Stufe'
+    university: 'Bildet Forscher aus, um die Forschungsgeschwindigkeit zu beschleunigen. -8% Forschungszeit pro Stufe',
+    spaceport: 'Logistikzentrum für interstellare Handelsrouten. Schaltet den Spielerhandel mit der Hyperraum-Transfertechnologie frei und senkt den Handelsverlust pro Stufe um 2%'
   },
   ships: {
     lightFighter: 'Leichter Jäger',
@@ -335,7 +337,8 @@ export default {
     intergalacticResearchNetwork: 'Intergalaktisches Forschungsnetzwerk',
     mineralResearch: 'Mineralforschung',
     crystalResearch: 'Kristallforschung',
-    fuelResearch: 'Treibstoffforschung'
+    fuelResearch: 'Treibstoffforschung',
+    hyperspaceTransfer: 'Hyperraum-Transfertechnologie'
   },
   technologyDescriptions: {
     energyTechnology: 'Verbessert Energieeffizienz',
@@ -361,7 +364,8 @@ export default {
     intergalacticResearchNetwork: 'Verbindet mehrere Forschungslabore über Planeten hinweg. Jede Stufe verbindet 1 zusätzliches Labor',
     mineralResearch: 'Erforscht effizientere Metallextraktionstechniken. +2% Metallproduktion pro Stufe',
     crystalResearch: 'Erforscht effizientere Kristallveredelungstechniken. +2% Kristallproduktion pro Stufe',
-    fuelResearch: 'Erforscht effizientere Deuterium-Synthesetechniken. +2% Deuteriumproduktion pro Stufe'
+    fuelResearch: 'Erforscht effizientere Deuterium-Synthesetechniken. +2% Deuteriumproduktion pro Stufe',
+    hyperspaceTransfer: 'Faltet lokale Routen zu stabilen interstellaren Frachtwegen. Schaltet den Spielerhandel mit dem Planetaren Raumhafen frei und senkt den Handelsverlust pro Stufe um 2%'
   },
   officers: {
     commander: 'Kommandant',
@@ -2112,6 +2116,12 @@ export default {
       choiceEffect: 'Dialogauswahl-Effekt'
     },
     chapters: {
+      '7': {
+        title: 'Interstellarer Handelsweg',
+        description: 'Baue einen Raumhafen und die Transfertechnologie, um den Spielerhandel freizuschalten',
+        backgroundStory:
+          'Nach dem Sprung erkennst du: Was die Galaxie wirklich verbindet, sind nicht die Tore, sondern Handelswege. Logistik und Hyperraumtransfer lassen Ressourcen zwischen Zivilisationen fließen.'
+      },
       '6': { title: 'Sternennavigation', description: 'Sternenkarte, Scan, Benennung und Sprung', backgroundStory: 'Die Sternenkarte entfaltet sich; neue Routen warten auf Namen.' },
       '1': {
         title: 'Ursprung',
@@ -2145,6 +2155,14 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: 'Raumhafen-Aufbruch', description: 'Baue den planetaren Raumhafen auf Stufe 1' },
+      '7_2': { title: 'Gefaltete Route', description: 'Erforsche die Hyperraum-Transfertechnologie auf Stufe 1' },
+      '7_3': { title: 'Handelsdrehkreuz', description: 'Baue den planetaren Raumhafen auf Stufe 3 aus' },
+      '7_4': { title: 'Stabile Lane', description: 'Erforsche die Hyperraum-Transfertechnologie auf Stufe 3' },
+      '7_5': {
+        title: 'Interstellare Karawane',
+        description: 'Erreiche Stufe 5 bei Raumhafen und Transfertechnologie für ein ausgereiftes Spielerhandelsnetz'
+      },
       '6_1': { title: 'Kurs auf die Sterne', description: '3D-Sternenkarte öffnen und ein System scannen' },
       '6_2': { title: 'Das Recht zu benennen', description: 'Deiner Entdeckung einen Namen geben' },
       '6_3': { title: 'Echos der Ruinen', description: 'Ein unbekanntes Signal bergen' },
@@ -2212,6 +2230,8 @@ export default {
       ancientGuardian: 'Antiker Wächter'
     },
     objectiveDescriptions: {
+      buildSpaceport: 'Baue den planetaren Raumhafen auf die geforderte Stufe',
+      researchHyperspaceTransfer: 'Erforsche die Hyperraum-Transfertechnologie auf die geforderte Stufe',
       scanSystem: '1 System scannen',
       nameSystem: '1 System benennen',
       collectSignal: '1 Signal bergen',
@@ -2269,6 +2289,14 @@ export default {
       continueDevelopment: 'Setze Entwicklung fort'
     },
     dialogues: {
+      '7_1': { prologue_1: 'Nach dem Sprung baust du zuerst einen Raumhafen auf der neuen Welt.' },
+      '7_2': { prologue_1: 'Alte Routendaten weisen auf eine Methode zur Raumfaltung hin...' },
+      '7_3': { prologue_1: 'Die Karawanen werden häufiger; der aktuelle Hafen reicht nicht mehr.' },
+      '7_4': { prologue_1: 'Stabilisiere die Transfertechnologie, bevor sie größere Frachten tragen kann.' },
+      '7_5': {
+        prologue_1: 'Die Route ist offen. Nun soll die Galaxie deinen Namen hören.',
+        epilogue_1: 'Handel ersetzt den Rauch des Krieges. Dein Imperium ist eine Brücke zwischen den Sternen.'
+      },
       '6_1': { prologue_1: 'Öffne die 3D-Sternenkarte und scanne ein System.' },
       '6_2': { prologue_1: 'Hinterlasse deinen Namen an diesem Himmel.' },
       '6_3': { prologue_1: 'Die Signale bergen Relikte einer gefallenen Ära.' },
@@ -2391,9 +2419,15 @@ export default {
     send: 'Senden',
     points: 'Punkte',
     planets: 'Planeten',
-    tradeTitle: 'Handel',
-    tradeDetails: 'Handelsdetails',
-    tradeWith: 'Handeln mit {name}',
+    tradeTitle: 'Spielerhandel',
+    tradeDetails: 'Spielerhandelsdetails',
+    tradeWith: 'Mit {name} handeln',
+    tradeLocked: 'Baue zuerst einen planetaren Raumhafen und erforsche die Hyperraum-Transfertechnologie',
+    tradeTargetLocked: 'Dieser Spieler hat den Spielerhandel noch nicht freigeschaltet',
+    tradeLockedHint: 'Benötigt {building} Stufe 1 + {tech} Stufe 1',
+    tradeTargetLockedHint: '{name} hat den Spielerhandel noch nicht freigeschaltet',
+    tradeLossLabel: 'Handelsverlust',
+    tradeLossHint: 'Raumhafen Stufe {building}, Transfertechnik Stufe {tech}; der höhere Verlust beider Seiten zählt.',
     tradeViewDetails: 'Details anzeigen',
     tradePendingIncoming: 'Wartet auf deine Antwort',
     tradePendingOutgoing: 'Wartet auf den anderen Spieler',

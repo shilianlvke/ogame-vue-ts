@@ -57,7 +57,9 @@ export const BuildingType = {
   GeoResearchStation: 'geoResearchStation', // 地质研究站（影响矿脉恢复速度）
   DeepDrillingFacility: 'deepDrillingFacility', // 深层钻探设施（提升矿脉上限）
   // 2moons新增建筑
-  University: 'university' // 大学（加速研究）
+  University: 'university', // 大学（加速研究）
+  // 玩家贸易物流建筑
+  Spaceport: 'spaceport' // 星球航空港（解锁玩家交易并降低交易损耗）
 } as const
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType]
@@ -110,7 +112,9 @@ export const TechnologyType = {
   IntergalacticResearchNetwork: 'intergalacticResearchNetwork', // 星际研究网络（连接多个研究实验室）
   MineralResearch: 'mineralResearch', // 矿物研究（提升金属产量）
   CrystalResearch: 'crystalResearch', // 晶体研究（提升晶体产量）
-  FuelResearch: 'fuelResearch' // 燃料研究（提升重氢产量）
+  FuelResearch: 'fuelResearch', // 燃料研究（提升重氢产量）
+  // 玩家贸易物流科技
+  HyperspaceTransfer: 'hyperspaceTransfer' // 超时空转移技术（降低交易损耗）
 } as const
 
 export type TechnologyType = (typeof TechnologyType)[keyof typeof TechnologyType]
@@ -814,6 +818,8 @@ export interface PlayerTradeOffer {
   status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired'
   createdAt: number
   expiresAt: number
+  /** 本次交易的损耗百分比（发起/接受时按双方较高损耗计算） */
+  lossPercent?: number
 }
 
 // 玩家
@@ -1295,6 +1301,8 @@ export interface QuestProgress {
 // 玩家战役进度
 export interface PlayerCampaignProgress {
   campaignId: string
+  /** 战役内容版本；用于旧存档迁移与新章节初始化 */
+  version?: number
   currentChapter: number
   currentQuestId?: string
   questProgress: Record<string, QuestProgress>

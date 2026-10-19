@@ -22,19 +22,117 @@ import { MAIN_CAMPAIGN, getAllQuests, getQuestById, getQuestsByChapter } from '@
 import { generateId } from '@/utils/id'
 import * as resourceLogic from './resourceLogic'
 
+/** 战役内容版本：新增章节/任务后递增，用于迁移旧存档 */
+export const CAMPAIGN_PROGRESS_VERSION = 2
+
+const createQuestProgress = (
+  quest: { id: string; objectives: Array<{ id: string }> },
+  status: QuestStatus
+): PlayerCampaignProgress['questProgress'][string] => {
+  const progress: PlayerCampaignProgress['questProgress'][string] = {
+    questId: quest.id,
+    status,
+    objectives: {}
+  }
+  quest.objectives.forEach(objective => {
+    progress.objectives[objective.id] = { current: 0, completed: false }
+  })
+  return progress
+}
+
+/**
+ * 迁移旧存档的战役进度
+ *
+ * 重点：v1 存档可能已经完成全部旧章节；新增的第七章任务绝不能被直接视为完成，
+ * 只能在旧最终任务 6_5 完成的前提下解锁 7_1，后续任务继续逐级解锁。
+ */
+const migrateCampaignProgress = (progress: PlayerCampaignProgress): PlayerCampaignProgress => {
+  const oldVersion = progress.version ?? 1
+  const allQuests = getAllQuests()
+  const validQuestIds = new Set(allQuests.map(quest => quest.id))
+
+  if (oldVersion < CAMPAIGN_PROGRESS_VERSION) {
+    // 清除旧存档中不存在于旧版本的新增章节进度，防止“完成任务”状态被继承
+    const newChapterIds = new Set(getQuestsByChapter(7).map(quest => quest.id))
+    progress.completedQuests = (progress.completedQuests ?? []).filter(id => !newChapterIds.has(id))
+    progress.unlockedQuests = (progress.unlockedQuests ?? []).filter(id => !newChapterIds.has(id))
+    for (const id of newChapterIds) delete progress.questProgress?.[id]
+  }
+
+  progress.campaignId = progress.campaignId || MAIN_CAMPAIGN.id
+  progress.version = CAMPAIGN_PROGRESS_VERSION
+  progress.completedQuests = (progress.completedQuests ?? []).filter(id => validQuestIds.has(id))
+  progress.unlockedQuests = (progress.unlockedQuests ?? []).filter(id => validQuestIds.has(id))
+  progress.questProgress = progress.questProgress ?? {}
+  progress.branchChoices = progress.branchChoices ?? {}
+
+  for (const quest of allQuests) {
+    let questProgress = progress.questProgress[quest.id]
+    let completed = progress.completedQuests.includes(quest.id)
+    if (questProgress?.status === QuestStatus.Completed && !completed) {
+      completed = true
+      progress.completedQuests.push(quest.id)
+    }
+
+    if (completed) {
+      if (!questProgress) {
+        questProgress = createQuestProgress(quest, QuestStatus.Completed)
+        progress.questProgress[quest.id] = questProgress
+      } else {
+        questProgress.status = QuestStatus.Completed
+      }
+      continue
+    }
+
+    const prerequisites = quest.requiredQuestIds ?? []
+    const prerequisitesDone = prerequisites.every(id => progress.completedQuests.includes(id))
+    const unlocked = progress.unlockedQuests.includes(quest.id)
+
+    if (!unlocked && prerequisitesDone) {
+      progress.unlockedQuests.push(quest.id)
+      progress.questProgress[quest.id] = createQuestProgress(quest, QuestStatus.Available)
+      continue
+    }
+
+    if (unlocked && !questProgress) {
+      progress.questProgress[quest.id] = createQuestProgress(quest, QuestStatus.Available)
+    } else if (unlocked && questProgress?.status === QuestStatus.Locked) {
+      questProgress.status = QuestStatus.Available
+    }
+  }
+
+  // 以实际已解锁/进行中的最远章节为准，保证旧存档能进入新章节
+  let chapter = progress.currentChapter || 1
+  for (const quest of allQuests) {
+    const questProgress = progress.questProgress[quest.id]
+    const active =
+      progress.unlockedQuests.includes(quest.id) ||
+      progress.completedQuests.includes(quest.id) ||
+      questProgress?.status === QuestStatus.Active ||
+      questProgress?.status === QuestStatus.Available
+    if (active) chapter = Math.max(chapter, quest.chapter)
+  }
+  progress.currentChapter = chapter
+
+  return progress
+}
+
 /**
  * 初始化玩家战役进度
+ *
+ * 每次登录/读取存档都会经过这里：没有进度则创建，有进度则按版本迁移，
+ * 因此新增章节不会因为旧存档已完成旧主线而被错误跳过。
  */
 export const initializeCampaignProgress = (player: Player): PlayerCampaignProgress => {
-  // 如果已有进度，返回现有进度
   if (player.campaignProgress) {
-    return player.campaignProgress
+    return migrateCampaignProgress(player.campaignProgress)
   }
 
   // 创建初始进度，第一个任务默认解锁
   const firstQuest = getQuestsByChapter(1)[0]
   const progress: PlayerCampaignProgress = {
     campaignId: MAIN_CAMPAIGN.id,
+    version: CAMPAIGN_PROGRESS_VERSION,
     currentChapter: 1,
     currentQuestId: firstQuest?.id,
     questProgress: {},
@@ -43,23 +141,8 @@ export const initializeCampaignProgress = (player: Player): PlayerCampaignProgre
     branchChoices: {}
   }
 
-  // 初始化第一个任务为可接取状态
   if (firstQuest) {
-    progress.questProgress[firstQuest.id] = {
-      questId: firstQuest.id,
-      status: QuestStatus.Available,
-      objectives: {}
-    }
-    // 初始化目标进度
-    const questProgress = progress.questProgress[firstQuest.id]
-    if (questProgress) {
-      firstQuest.objectives.forEach(obj => {
-        questProgress.objectives[obj.id] = {
-          current: 0,
-          completed: false
-        }
-      })
-    }
+    progress.questProgress[firstQuest.id] = createQuestProgress(firstQuest, QuestStatus.Available)
   }
 
   return progress

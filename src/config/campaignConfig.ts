@@ -1,6 +1,6 @@
 /**
  * 战役配置 - 神秘探索主题
- * 包含5个章节，共25个任务
+ * 包含7个章节，共35个任务
  */
 
 import { BuildingType, TechnologyType, ShipType, ObjectiveType } from '@/types/game'
@@ -1030,6 +1030,7 @@ const chapter6Quests: CampaignQuestConfig[] = [
     order: 1,
     titleKey: 'campaign.quests.6_1.title',
     descriptionKey: 'campaign.quests.6_1.description',
+    requiredQuestIds: ['quest_5_5'],
     prologueDialogues: [
       { id: 'quest_6_1_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_1.prologue_1' }
     ],
@@ -1045,6 +1046,7 @@ const chapter6Quests: CampaignQuestConfig[] = [
     order: 2,
     titleKey: 'campaign.quests.6_2.title',
     descriptionKey: 'campaign.quests.6_2.description',
+    requiredQuestIds: ['quest_6_1'],
     prologueDialogues: [
       { id: 'quest_6_2_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_2.prologue_1' }
     ],
@@ -1060,6 +1062,7 @@ const chapter6Quests: CampaignQuestConfig[] = [
     order: 3,
     titleKey: 'campaign.quests.6_3.title',
     descriptionKey: 'campaign.quests.6_3.description',
+    requiredQuestIds: ['quest_6_2'],
     prologueDialogues: [
       { id: 'quest_6_3_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_3.prologue_1' }
     ],
@@ -1075,6 +1078,7 @@ const chapter6Quests: CampaignQuestConfig[] = [
     order: 4,
     titleKey: 'campaign.quests.6_4.title',
     descriptionKey: 'campaign.quests.6_4.description',
+    requiredQuestIds: ['quest_6_3'],
     prologueDialogues: [
       { id: 'quest_6_4_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_4.prologue_1' }
     ],
@@ -1090,6 +1094,7 @@ const chapter6Quests: CampaignQuestConfig[] = [
     order: 5,
     titleKey: 'campaign.quests.6_5.title',
     descriptionKey: 'campaign.quests.6_5.description',
+    requiredQuestIds: ['quest_6_4'],
     prologueDialogues: [
       { id: 'quest_6_5_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.6_5.prologue_1' }
     ],
@@ -1098,6 +1103,137 @@ const chapter6Quests: CampaignQuestConfig[] = [
     ],
     rewards: { resources: { metal: 15000, crystal: 7500, deuterium: 3000 }, darkMatter: 150, points: 300 },
     mapPosition: { x: 80, y: 80 }
+  }
+]
+
+// ==================== 第七章：星际商路 ====================
+// 将玩家交易内容接入主线：航空港 → 超时空转移 → 扩容 → 成熟的跨星系商路
+const chapter7Quests: CampaignQuestConfig[] = [
+  {
+    id: 'quest_7_1',
+    chapter: 7,
+    order: 1,
+    titleKey: 'campaign.quests.7_1.title',
+    descriptionKey: 'campaign.quests.7_1.description',
+    requiredQuestIds: ['quest_6_5'],
+    prologueDialogues: [
+      { id: 'quest_7_1_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.7_1.prologue_1' }
+    ],
+    objectives: [
+      {
+        id: 'obj_7_1_1',
+        type: ObjectiveType.BuildBuilding,
+        descriptionKey: 'campaign.objectiveDescriptions.buildSpaceport',
+        target: BuildingType.Spaceport,
+        targetSecondary: 1,
+        required: 1
+      }
+    ],
+    rewards: { resources: { metal: 20000, crystal: 12000, deuterium: 5000 }, darkMatter: 200, points: 400 },
+    mapPosition: { x: 20, y: 30 }
+  },
+  {
+    id: 'quest_7_2',
+    chapter: 7,
+    order: 2,
+    titleKey: 'campaign.quests.7_2.title',
+    descriptionKey: 'campaign.quests.7_2.description',
+    requiredQuestIds: ['quest_7_1'],
+    prologueDialogues: [
+      { id: 'quest_7_2_prologue_1', speaker: 'mysterious', speakerNameKey: 'campaign.speakers.ancientVoice', textKey: 'campaign.dialogues.7_2.prologue_1' }
+    ],
+    objectives: [
+      {
+        id: 'obj_7_2_1',
+        type: ObjectiveType.ResearchTech,
+        descriptionKey: 'campaign.objectiveDescriptions.researchHyperspaceTransfer',
+        target: TechnologyType.HyperspaceTransfer,
+        targetSecondary: 1,
+        required: 1
+      }
+    ],
+    rewards: { resources: { metal: 25000, crystal: 18000, deuterium: 8000 }, darkMatter: 250, points: 500 },
+    mapPosition: { x: 38, y: 25 }
+  },
+  {
+    id: 'quest_7_3',
+    chapter: 7,
+    order: 3,
+    titleKey: 'campaign.quests.7_3.title',
+    descriptionKey: 'campaign.quests.7_3.description',
+    requiredQuestIds: ['quest_7_2'],
+    prologueDialogues: [
+      { id: 'quest_7_3_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.7_3.prologue_1' }
+    ],
+    objectives: [
+      {
+        id: 'obj_7_3_1',
+        type: ObjectiveType.BuildBuilding,
+        descriptionKey: 'campaign.objectiveDescriptions.buildSpaceport',
+        target: BuildingType.Spaceport,
+        targetSecondary: 3,
+        required: 1
+      }
+    ],
+    rewards: { resources: { metal: 40000, crystal: 28000, deuterium: 12000 }, darkMatter: 350, points: 700 },
+    mapPosition: { x: 56, y: 30 }
+  },
+  {
+    id: 'quest_7_4',
+    chapter: 7,
+    order: 4,
+    titleKey: 'campaign.quests.7_4.title',
+    descriptionKey: 'campaign.quests.7_4.description',
+    requiredQuestIds: ['quest_7_3'],
+    prologueDialogues: [
+      { id: 'quest_7_4_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.7_4.prologue_1' }
+    ],
+    objectives: [
+      {
+        id: 'obj_7_4_1',
+        type: ObjectiveType.ResearchTech,
+        descriptionKey: 'campaign.objectiveDescriptions.researchHyperspaceTransfer',
+        target: TechnologyType.HyperspaceTransfer,
+        targetSecondary: 3,
+        required: 1
+      }
+    ],
+    rewards: { resources: { metal: 60000, crystal: 42000, deuterium: 18000 }, darkMatter: 500, points: 1000 },
+    mapPosition: { x: 70, y: 45 }
+  },
+  {
+    id: 'quest_7_5',
+    chapter: 7,
+    order: 5,
+    titleKey: 'campaign.quests.7_5.title',
+    descriptionKey: 'campaign.quests.7_5.description',
+    requiredQuestIds: ['quest_7_4'],
+    prologueDialogues: [
+      { id: 'quest_7_5_prologue_1', speaker: 'narrator', textKey: 'campaign.dialogues.7_5.prologue_1' }
+    ],
+    epilogueDialogues: [
+      { id: 'quest_7_5_epilogue_1', speaker: 'mysterious', speakerNameKey: 'campaign.speakers.ancientVoice', textKey: 'campaign.dialogues.7_5.epilogue_1' }
+    ],
+    objectives: [
+      {
+        id: 'obj_7_5_1',
+        type: ObjectiveType.BuildBuilding,
+        descriptionKey: 'campaign.objectiveDescriptions.buildSpaceport',
+        target: BuildingType.Spaceport,
+        targetSecondary: 5,
+        required: 1
+      },
+      {
+        id: 'obj_7_5_2',
+        type: ObjectiveType.ResearchTech,
+        descriptionKey: 'campaign.objectiveDescriptions.researchHyperspaceTransfer',
+        target: TechnologyType.HyperspaceTransfer,
+        targetSecondary: 5,
+        required: 1
+      }
+    ],
+    rewards: { resources: { metal: 120000, crystal: 90000, deuterium: 50000 }, darkMatter: 1000, points: 2500 },
+    mapPosition: { x: 80, y: 70 }
   }
 ]
 
@@ -1149,6 +1285,14 @@ const chapters: CampaignChapterConfig[] = [
     descriptionKey: 'campaign.chapters.6.description',
     backgroundStoryKey: 'campaign.chapters.6.backgroundStory',
     quests: chapter6Quests
+  },
+  {
+    id: 'chapter_7',
+    number: 7,
+    titleKey: 'campaign.chapters.7.title',
+    descriptionKey: 'campaign.chapters.7.description',
+    backgroundStoryKey: 'campaign.chapters.7.backgroundStory',
+    quests: chapter7Quests
   }
 ]
 

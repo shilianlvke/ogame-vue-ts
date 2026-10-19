@@ -44,7 +44,8 @@ export const useGameConfig = () => {
     [BuildingType.PlanetDestroyerFactory]: 'planetDestroyerFactory',
     [BuildingType.GeoResearchStation]: 'geoResearchStation',
     [BuildingType.DeepDrillingFacility]: 'deepDrillingFacility',
-    [BuildingType.University]: 'university'
+    [BuildingType.University]: 'university',
+    [BuildingType.Spaceport]: 'spaceport'
   }
 
   // 舰船类型枚举值到翻译键的映射
@@ -105,7 +106,8 @@ export const useGameConfig = () => {
     [TechnologyType.IntergalacticResearchNetwork]: 'intergalacticResearchNetwork',
     [TechnologyType.MineralResearch]: 'mineralResearch',
     [TechnologyType.CrystalResearch]: 'crystalResearch',
-    [TechnologyType.FuelResearch]: 'fuelResearch'
+    [TechnologyType.FuelResearch]: 'fuelResearch',
+    [TechnologyType.HyperspaceTransfer]: 'hyperspaceTransfer'
   }
 
   // 军官类型枚举值到翻译键的映射

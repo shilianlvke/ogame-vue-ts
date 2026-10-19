@@ -190,11 +190,9 @@ import { dispatchCommand } from '@/core/runtime'
   const gameStore = useGameStore()
   const npcStore = useNPCStore()
 
-  // 初始化战役进度
+  // 初始化/迁移战役进度（新增章节需要修复旧存档）
   onMounted(() => {
-    if (!gameStore.player.campaignProgress) {
-      gameStore.player.campaignProgress = campaignLogic.initializeCampaignProgress(gameStore.player)
-    }
+    gameStore.player.campaignProgress = campaignLogic.initializeCampaignProgress(gameStore.player)
   })
 
   // 响应式状态

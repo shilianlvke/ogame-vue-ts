@@ -183,6 +183,7 @@ export default {
     geoResearchStation: '地质研究站',
     deepDrillingFacility: '深层钻探设施',
     university: '大学',
+    spaceport: '星球航空港',
     buildTime: '建造时间',
     production: '产量',
     consumption: '消耗',
@@ -232,7 +233,8 @@ export default {
     planetDestroyerFactory: '建造能够摧毁行星的终极武器',
     geoResearchStation: '研究地质结构，提高矿脉自然恢复速度。每级增加10%恢复速率',
     deepDrillingFacility: '深入地壳钻探，解锁更深层的矿脉储量。每级增加20%矿脉上限',
-    university: '培养科研人员，加快研究速度。每级减少研究时间8%（与星际研究网络叠加）'
+    university: '培养科研人员，加快研究速度。每级减少研究时间8%（与星际研究网络叠加）',
+    spaceport: '星际商路的物流枢纽。与超时空转移技术共同解锁玩家交易，每级降低 2% 交易损耗'
   },
   ships: {
     lightFighter: '轻型战斗机',
@@ -336,7 +338,8 @@ export default {
     intergalacticResearchNetwork: '星际研究网络',
     mineralResearch: '矿物研究',
     crystalResearch: '晶体研究',
-    fuelResearch: '燃料研究'
+    fuelResearch: '燃料研究',
+    hyperspaceTransfer: '超时空转移技术'
   },
   technologyDescriptions: {
     energyTechnology: '提高能源利用效率',
@@ -362,7 +365,8 @@ export default {
     intergalacticResearchNetwork: '连接多个星球的研究实验室，共享研究资源。每级可连接1个额外的研究实验室（取等级最高的N个实验室）',
     mineralResearch: '研究更高效的金属提取技术，提升金属矿产量。每级增加金属产量2%',
     crystalResearch: '研究更高效的晶体提炼技术，提升晶体矿产量。每级增加晶体产量2%',
-    fuelResearch: '研究更高效的重氢合成技术，提升重氢产量。每级增加重氢产量2%'
+    fuelResearch: '研究更高效的重氢合成技术，提升重氢产量。每级增加重氢产量2%',
+    hyperspaceTransfer: '折叠局部航线，建立稳定的星际货运通道。与星球航空港共同解锁玩家交易，每级降低 2% 交易损耗'
   },
   officers: {
     commander: '指挥官',
@@ -873,7 +877,7 @@ export default {
     clearNPCActivity: 'NPC活动',
     clearGiftNotifications: '礼物通知',
     clearGiftRejected: '拒绝记录',
-    clearTradeOffers: '贸易提议',
+    clearTradeOffers: 'NPC 贸易提议',
     clearIntelReports: '情报报告',
     clearJointAttackInvites: '联合攻击邀请',
     clearNow: '立即清空',
@@ -1439,13 +1443,13 @@ export default {
     },
     // 通知类型
     notificationType: {
-      tradeOffer: '贸易提议',
+      tradeOffer: 'NPC 贸易提议',
       intelReport: '情报报告',
       jointAttack: '联合攻击邀请'
     },
     // 通知徽章
     notificationBadge: {
-      trade: '贸易',
+      trade: 'NPC 贸易',
       intel: '情报',
       jointAttack: '邀请'
     },
@@ -1511,8 +1515,8 @@ export default {
   // NPC增强行为通知
   npcBehavior: {
     // 中立NPC行为
-    tradeOfferReceived: '收到贸易提议',
-    tradeOfferDesc: '{npcName}向你发来了贸易提议',
+    tradeOfferReceived: '收到 NPC 贸易提议',
+    tradeOfferDesc: '{npcName} 向你发来了 NPC 贸易提议',
     attitudeChanged: 'NPC态度变化',
     becameFriendly: '{npcName}对你的态度变得友好了',
     becameHostile: '{npcName}对你的态度变得敌对了',
@@ -1527,7 +1531,7 @@ export default {
     allyDefenseDesc: '{npcName}派遣舰队协助防御你的星球',
     // 贸易相关
     trade: {
-      title: '贸易提议',
+      title: 'NPC 贸易提议',
       from: '来自',
       offers: '提供',
       requests: '请求',
@@ -2028,6 +2032,12 @@ export default {
       choiceEffect: '对话选择效果'
     },
     chapters: {
+      '7': {
+        title: '星际商路',
+        description: '建设航空港与转移技术，开启玩家贸易',
+        backgroundStory:
+          '跃迁之后，你发现真正连接银河的不是星门，而是商路。只有掌握物流与超时空转移，才能让资源在文明之间流动。'
+      },
       '6': { title: '星海导航', description: '掌握星图、扫描、命名与跃迁', backgroundStory: '星图在你面前展开，新的航路等待命名。' },
       '1': {
         title: '起源之地',
@@ -2058,6 +2068,11 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: '星港启航', description: '建造星球航空港到 1 级' },
+      '7_2': { title: '折叠航线', description: '研究超时空转移技术到 1 级' },
+      '7_3': { title: '商路枢纽', description: '将星球航空港升级到 3 级' },
+      '7_4': { title: '航路稳定', description: '将超时空转移技术研究到 3 级' },
+      '7_5': { title: '星际商队', description: '航空港与转移技术均达到 5 级，建立成熟的玩家贸易网络' },
       '6_1': { title: '星图启航', description: '打开 3D 星图，扫描一个恒星系' },
       '6_2': { title: '命名权', description: '为你的发现取一个名字' },
       '6_3': { title: '遗迹回声', description: '回收一个未知信号' },
@@ -2254,9 +2269,19 @@ export default {
       defeatBoss: '击败古代守护者',
       colonizeSpecial: '殖民特殊位置',
       accumulateWealth: '积累总资源达到100万',
-      continueDevelopment: '继续发展'
+      continueDevelopment: '继续发展',
+      buildSpaceport: '建造星球航空港到指定等级',
+      researchHyperspaceTransfer: '研究超时空转移技术到指定等级'
     },
     dialogues: {
+      '7_1': { prologue_1: '跃迁后的第一件事，是在新星球上建起一座航空港。' },
+      '7_2': { prologue_1: '古老的航线数据指向一种折叠空间的方法……' },
+      '7_3': { prologue_1: '商队越来越频繁，现有港口已经不够用了。' },
+      '7_4': { prologue_1: '让转移技术稳定下来，才能承受更大的货运量。' },
+      '7_5': {
+        prologue_1: '航线已经贯通，现在是时候让整个银河听到你的名字。',
+        epilogue_1: '商路取代了战争的硝烟。你的帝国，终于成为群星之间的桥梁。'
+      },
       '6_1': { prologue_1: '打开 3D 星图，先扫描最近的恒星系。' },
       '6_2': { prologue_1: '给这片星空留下你的名字。' },
       '6_3': { prologue_1: '扫描到的信号里藏着旧时代的残骸。' },
@@ -2402,9 +2427,15 @@ export default {
     send: '发送',
     points: '积分',
     planets: '星球',
-    tradeTitle: '交易',
-    tradeDetails: '交易详情',
-    tradeWith: '与 {name} 交易',
+    tradeTitle: '玩家交易',
+    tradeDetails: '玩家交易详情',
+    tradeWith: '与 {name} 进行玩家交易',
+    tradeLocked: '需要先建造星球航空港并研究超时空转移技术',
+    tradeTargetLocked: '对方尚未解锁玩家交易',
+    tradeLockedHint: '需要 {building} 1 级 + {tech} 1 级',
+    tradeTargetLockedHint: '{name} 尚未解锁玩家交易',
+    tradeLossLabel: '交易损耗',
+    tradeLossHint: '当前航空港 {building} 级、转移技术 {tech} 级；最终损耗按双方较高值结算。',
     tradeViewDetails: '查看详情',
     tradePendingIncoming: '待你处理',
     tradePendingOutgoing: '等待对方',

@@ -444,6 +444,30 @@ export const BUILDINGS: Record<BuildingType, BuildingConfig> = {
         [TechnologyType.ComputerTechnology]: 8
       }
     }
+  },
+  // 玩家贸易物流建筑
+  [BuildingType.Spaceport]: {
+    id: BuildingType.Spaceport,
+    name: '星球航空港',
+    description: '连接星际商路的物流枢纽。与超时空转移技术共同解锁玩家交易，每级降低 2% 交易损耗',
+    baseCost: { metal: 120000, crystal: 80000, deuterium: 40000, darkMatter: 0, energy: 0 },
+    baseTime: 180,
+    costMultiplier: 1.8,
+    spaceUsage: 6,
+    planetOnly: true,
+    maxLevel: 5,
+    requirements: {
+      [BuildingType.Shipyard]: 6,
+      [BuildingType.RoboticsFactory]: 5,
+      [BuildingType.ResearchLab]: 4,
+      [TechnologyType.ComputerTechnology]: 3
+    },
+    levelRequirements: {
+      2: { [TechnologyType.HyperspaceTransfer]: 1 },
+      3: { [TechnologyType.HyperspaceTransfer]: 2, [BuildingType.Shipyard]: 8 },
+      4: { [TechnologyType.HyperspaceTransfer]: 3, [BuildingType.NaniteFactory]: 1 },
+      5: { [TechnologyType.HyperspaceTransfer]: 4, [BuildingType.NaniteFactory]: 2 }
+    }
   }
 }
 
@@ -858,6 +882,40 @@ export const TECHNOLOGIES: Record<TechnologyType, TechnologyConfig> = {
         [BuildingType.ResearchLab]: 12,
         [BuildingType.NaniteFactory]: 2,
         [TechnologyType.PlasmaTechnology]: 5
+      }
+    }
+  },
+  // 玩家贸易物流科技
+  [TechnologyType.HyperspaceTransfer]: {
+    id: TechnologyType.HyperspaceTransfer,
+    name: '超时空转移技术',
+    description: '折叠局部航线，建立稳定的星际货运通道。与星球航空港共同解锁玩家交易，每级降低 2% 交易损耗',
+    baseCost: { metal: 0, crystal: 60000, deuterium: 40000, darkMatter: 0, energy: 0 },
+    baseTime: 240,
+    costMultiplier: 2,
+    maxLevel: 5,
+    requirements: {
+      [BuildingType.ResearchLab]: 7,
+      [TechnologyType.HyperspaceTechnology]: 4,
+      [TechnologyType.EnergyTechnology]: 6,
+      [TechnologyType.ComputerTechnology]: 4
+    },
+    levelRequirements: {
+      2: { [BuildingType.ResearchLab]: 8, [TechnologyType.HyperspaceTechnology]: 5 },
+      3: {
+        [BuildingType.ResearchLab]: 10,
+        [TechnologyType.HyperspaceTechnology]: 7,
+        [BuildingType.Spaceport]: 2
+      },
+      4: {
+        [BuildingType.ResearchLab]: 12,
+        [BuildingType.NaniteFactory]: 1,
+        [BuildingType.Spaceport]: 3
+      },
+      5: {
+        [BuildingType.ResearchLab]: 14,
+        [BuildingType.NaniteFactory]: 3,
+        [BuildingType.Spaceport]: 4
       }
     }
   }
@@ -1418,6 +1476,22 @@ export const FLEET_STORAGE_CONFIG = {
   shipyardBonus: 1000, // 每级造船厂增加的仓储
   computerTechBonus: 500 // 每级计算机技术全局增加的仓储
 }
+
+// 玩家间交易配置
+export const PLAYER_TRADE_CONFIG = {
+  ENABLED: true,
+  // 解锁条件：星球航空港与超时空转移技术各 1 级
+  REQUIRED_SPACEPORT_LEVEL: 1,
+  REQUIRED_TECH_LEVEL: 1,
+  // 基础损耗；航空港与转移技术每级各降低 2%，最低 4%
+  BASE_LOSS_PERCENT: 20,
+  LOSS_REDUCTION_PER_SPACEPORT_LEVEL: 2,
+  LOSS_REDUCTION_PER_TECH_LEVEL: 2,
+  MIN_LOSS_PERCENT: 4,
+  // 交易有效期与历史容量
+  EXPIRY_MS: 30 * 60 * 1000,
+  MAX_HISTORY: 50
+} as const
 
 // 外交系统配置
 export const DIPLOMATIC_CONFIG = {

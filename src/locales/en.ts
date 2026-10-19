@@ -182,6 +182,7 @@ export default {
     geoResearchStation: 'Geological Research Station',
     deepDrillingFacility: 'Deep Drilling Facility',
     university: 'University',
+    spaceport: 'Planetary Spaceport',
     buildTime: 'Build Time',
     production: 'Production',
     consumption: 'Consumption',
@@ -231,7 +232,8 @@ export default {
     planetDestroyerFactory: 'Constructs ultimate weapons capable of destroying planets',
     geoResearchStation: 'Researches geological structures and increases ore deposit regeneration rate. +10% regeneration per level',
     deepDrillingFacility: 'Drills deep into the crust to access deeper ore veins. +20% ore deposit capacity per level',
-    university: 'Trains researchers to accelerate research speed. -8% research time per level (stacks with Intergalactic Research Network)'
+    university: 'Trains researchers to accelerate research speed. -8% research time per level (stacks with Intergalactic Research Network)',
+    spaceport: 'A logistics hub for interstellar trade routes. Unlocks player trade with Hyperspace Transfer Technology and reduces trade loss by 2% per level'
   },
   ships: {
     lightFighter: 'Light Fighter',
@@ -335,7 +337,8 @@ export default {
     intergalacticResearchNetwork: 'Intergalactic Research Network',
     mineralResearch: 'Mineral Research',
     crystalResearch: 'Crystal Research',
-    fuelResearch: 'Fuel Research'
+    fuelResearch: 'Fuel Research',
+    hyperspaceTransfer: 'Hyperspace Transfer Technology'
   },
   technologyDescriptions: {
     energyTechnology: 'Improves energy efficiency',
@@ -361,7 +364,8 @@ export default {
     intergalacticResearchNetwork: 'Links multiple research labs across planets. Each level connects 1 additional lab (highest level labs are used)',
     mineralResearch: 'Research more efficient metal extraction techniques. +2% metal production per level',
     crystalResearch: 'Research more efficient crystal refinement techniques. +2% crystal production per level',
-    fuelResearch: 'Research more efficient deuterium synthesis techniques. +2% deuterium production per level'
+    fuelResearch: 'Research more efficient deuterium synthesis techniques. +2% deuterium production per level',
+    hyperspaceTransfer: 'Folds local routes into stable interstellar cargo lanes. Unlocks player trade with Planetary Spaceport and reduces trade loss by 2% per level'
   },
   officers: {
     commander: 'Commander',
@@ -886,7 +890,7 @@ export default {
     clearNPCActivity: 'NPC Activity',
     clearGiftNotifications: 'Gift Notifications',
     clearGiftRejected: 'Rejected Gifts',
-    clearTradeOffers: 'Trade Offers',
+    clearTradeOffers: 'NPC Trade Offers',
     clearIntelReports: 'Intel Reports',
     clearJointAttackInvites: 'Joint Attack Invitations',
     clearNow: 'Clear Now',
@@ -1471,13 +1475,13 @@ export default {
     },
     // Notification types
     notificationType: {
-      tradeOffer: 'Trade Offer',
+      tradeOffer: 'NPC Trade Offer',
       intelReport: 'Intel Report',
       jointAttack: 'Joint Attack Invitation'
     },
     // Notification badges
     notificationBadge: {
-      trade: 'Trade',
+      trade: 'NPC Trade',
       intel: 'Intel',
       jointAttack: 'Invite'
     },
@@ -2012,6 +2016,12 @@ export default {
       choiceEffect: 'Dialogue choice effect'
     },
     chapters: {
+      '7': {
+        title: 'Interstellar Trade Route',
+        description: 'Build a spaceport and transfer technology to unlock player trade',
+        backgroundStory:
+          'After the jump, you learn that what truly connects the galaxy is not the gates, but trade. Logistics and hyperspace transfer let resources flow between civilizations.'
+      },
       '6': { title: 'Star Navigation', description: 'Learn the star map, scanning, naming and jumping', backgroundStory: 'The star map unfolds before you; new routes await their names.' },
       '1': {
         title: 'Origin',
@@ -2045,6 +2055,14 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: 'Spaceport Departure', description: 'Build the Planetary Spaceport to level 1' },
+      '7_2': { title: 'Folded Route', description: 'Research Hyperspace Transfer Technology to level 1' },
+      '7_3': { title: 'Trade Hub', description: 'Upgrade the Planetary Spaceport to level 3' },
+      '7_4': { title: 'Stable Lane', description: 'Research Hyperspace Transfer Technology to level 3' },
+      '7_5': {
+        title: 'Interstellar Caravan',
+        description: 'Reach level 5 in both the spaceport and transfer technology to establish a mature player trade network'
+      },
       '6_1': { title: 'Charting the Stars', description: 'Open the 3D star map and scan a system' },
       '6_2': { title: 'The Right to Name', description: 'Give your discovery a name' },
       '6_3': { title: 'Echoes of Ruins', description: 'Salvage an unknown signal' },
@@ -2187,6 +2205,8 @@ export default {
       ancientGuardian: 'Ancient Guardian'
     },
     objectiveDescriptions: {
+      buildSpaceport: 'Build the Planetary Spaceport to the required level',
+      researchHyperspaceTransfer: 'Research Hyperspace Transfer Technology to the required level',
       scanSystem: 'Scan 1 star system',
       nameSystem: 'Name 1 star system',
       collectSignal: 'Salvage 1 unknown signal',
@@ -2244,6 +2264,14 @@ export default {
       continueDevelopment: 'Continue development'
     },
     dialogues: {
+      '7_1': { prologue_1: 'The first thing after the jump is to raise a spaceport on the new world.' },
+      '7_2': { prologue_1: 'Ancient route data points to a way of folding space...' },
+      '7_3': { prologue_1: 'Caravans grow frequent; the current port is no longer enough.' },
+      '7_4': { prologue_1: 'Stabilize the transfer technology before it can carry larger cargoes.' },
+      '7_5': {
+        prologue_1: 'The route is open. It is time for the galaxy to hear your name.',
+        epilogue_1: 'Trade has replaced the smoke of war. Your empire has become a bridge between the stars.'
+      },
       '6_1': { prologue_1: 'Open the 3D star map and scan a nearby system.' },
       '6_2': { prologue_1: 'Leave your name on this patch of sky.' },
       '6_3': { prologue_1: 'The signals hide relics of a fallen age.' },
@@ -2356,8 +2384,8 @@ export default {
   // NPC Enhanced Behavior Notifications
   npcBehavior: {
     // Neutral NPC behavior
-    tradeOfferReceived: 'Trade Offer Received',
-    tradeOfferDesc: '{npcName} has sent you a trade offer',
+    tradeOfferReceived: 'NPC Trade Offer Received',
+    tradeOfferDesc: '{npcName} has sent you an NPC trade offer',
     attitudeChanged: 'NPC Attitude Changed',
     becameFriendly: '{npcName} has become friendly towards you',
     becameHostile: '{npcName} has become hostile towards you',
@@ -2372,7 +2400,7 @@ export default {
     allyDefenseDesc: '{npcName} is sending a fleet to help defend your planet',
     // Trade related
     trade: {
-      title: 'Trade Offers',
+      title: 'NPC Trade Offers',
       from: 'From',
       offers: 'Offers',
       requests: 'Requests',
@@ -2502,9 +2530,15 @@ export default {
     send: 'Send',
     points: 'Points',
     planets: 'Planets',
-    tradeTitle: 'Trade',
-    tradeDetails: 'Trade details',
+    tradeTitle: 'Player trade',
+    tradeDetails: 'Player trade details',
     tradeWith: 'Trade with {name}',
+    tradeLocked: 'Build a Planetary Spaceport and research Hyperspace Transfer Technology first',
+    tradeTargetLocked: 'This player has not unlocked player trade yet',
+    tradeLockedHint: 'Requires {building} Lv.1 + {tech} Lv.1',
+    tradeTargetLockedHint: '{name} has not unlocked player trade yet',
+    tradeLossLabel: 'Trade loss',
+    tradeLossHint: 'Spaceport Lv.{building}, transfer tech Lv.{tech}; the higher loss of both sides applies.',
     tradeViewDetails: 'View details',
     tradePendingIncoming: 'Waiting for your response',
     tradePendingOutgoing: 'Waiting for the other player',

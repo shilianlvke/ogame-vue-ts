@@ -925,6 +925,11 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       if (!target || target.id === player.id) return fail('errors.requirementsNotMet')
       if (!player.planets.length || !target.planets.length) return fail('errors.planetNotFound')
 
+      const senderTrade = playerTradeLogic.getPlayerTradeStatus(player)
+      const targetTrade = playerTradeLogic.getPlayerTradeStatus(target)
+      if (!senderTrade.unlocked) return fail('players.tradeLocked')
+      if (!targetTrade.unlocked) return fail('players.tradeTargetLocked')
+
       const offer = playerTradeLogic.normalizeTradeResources(command.offer)
       const request = playerTradeLogic.normalizeTradeResources(command.request)
       const invalid = playerTradeLogic.validateTradeResources(offer, request)
@@ -956,10 +961,15 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
         return fail('npcBehavior.trade.expired')
       }
 
+      const senderTrade = playerTradeLogic.getPlayerTradeStatus(from)
+      const receiverTrade = playerTradeLogic.getPlayerTradeStatus(player)
+      if (!senderTrade.unlocked || !receiverTrade.unlocked) return fail('players.tradeLocked')
+
       if (command.action === 'accept') {
-        const settled = playerTradeLogic.settlePlayerTrade(from, player, trade)
+        const lossPercent = playerTradeLogic.getCombinedTradeLossPercent(senderTrade, receiverTrade)
+        const settled = playerTradeLogic.settlePlayerTrade(from, player, trade, lossPercent)
         if (!settled.ok) return fail(settled.reason ?? 'errors.insufficientResources')
-        playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'accepted')
+        playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'accepted', lossPercent)
       } else {
         playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'declined')
       }

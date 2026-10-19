@@ -26,6 +26,7 @@ import type { EngineEvent, World } from './types'
 import type { GameCommand } from './commands'
 import { allPlayers, inCurrentCycle, positionKey } from './world'
 import { calculateNPCScores, calculatePlayerScores } from '@/logic/rankingLogic'
+import { getPlayerTradeStatus } from '@/logic/playerTradeLogic'
 
 /** 协议版本：客户端与服务端不一致时拒绝连接 */
 export const PROTOCOL_VERSION = 3
@@ -49,6 +50,10 @@ export interface PlayerPublicProfile {
   online: boolean
   /** 最近一次离线/上线时间 */
   lastSeenAt?: number
+  /** 是否已解锁玩家交易（星球航空港 + 超时空转移技术） */
+  tradeUnlocked: boolean
+  /** 当前交易损耗百分比（双方取较高值后生效） */
+  tradeLossPercent: number
 }
 
 /* -------------------------------------------------------------------------- */
@@ -293,15 +298,20 @@ export const collectVisiblePlanets = (world: World, viewer: Player): Record<stri
 /** 公开玩家档案列表；onlineIds 由服务端会话列表提供 */
 export const collectPlayerProfiles = (world: World, onlineIds?: readonly string[]): PlayerPublicProfile[] => {
   const onlineSet = new Set(onlineIds ?? [])
-  return allPlayers(world).map(player => ({
-    id: player.id,
-    name: player.name,
-    points: player.points,
-    planetCount: player.planets.length,
-    scores: calculatePlayerScores(player),
-    online: onlineSet.has(player.id),
-    lastSeenAt: player.lastSeenAt
-  }))
+  return allPlayers(world).map(player => {
+    const trade = getPlayerTradeStatus(player)
+    return {
+      id: player.id,
+      name: player.name,
+      points: player.points,
+      planetCount: player.planets.length,
+      scores: calculatePlayerScores(player),
+      online: onlineSet.has(player.id),
+      lastSeenAt: player.lastSeenAt,
+      tradeUnlocked: trade.unlocked,
+      tradeLossPercent: trade.lossPercent
+    }
+  })
 }
 
 /* -------------------------------------------------------------------------- */

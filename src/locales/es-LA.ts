@@ -170,6 +170,7 @@ export default {
     geoResearchStation: 'Estación de Investigación Geológica',
     deepDrillingFacility: 'Instalación de Perforación Profunda',
     university: 'Universidad',
+    spaceport: 'Puerto Espacial Planetario',
     buildTime: 'Tiempo de Construcción',
     production: 'Producción',
     consumption: 'Consumo',
@@ -221,7 +222,8 @@ export default {
       'Investiga estructuras geológicas y aumenta la tasa de regeneración de depósitos de mineral. +10% de regeneración por nivel',
     deepDrillingFacility:
       'Perfora profundamente en la corteza para acceder a vetas de mineral más profundas. +20% de capacidad de depósito de mineral por nivel',
-    university: 'Entrena investigadores para acelerar la velocidad de investigación. -8% de tiempo de investigación por nivel'
+    university: 'Entrena investigadores para acelerar la velocidad de investigación. -8% de tiempo de investigación por nivel',
+    spaceport: 'Centro logístico de rutas comerciales interestelares. Desbloquea el comercio entre jugadores con la Tecnología de Transferencia Hiperespacial y reduce la pérdida comercial un 2% por nivel'
   },
   ships: {
     lightFighter: 'Caza Ligero',
@@ -326,7 +328,8 @@ export default {
     intergalacticResearchNetwork: 'Red de Investigación Intergaláctica',
     mineralResearch: 'Investigación Mineral',
     crystalResearch: 'Investigación de Cristal',
-    fuelResearch: 'Investigación de Combustible'
+    fuelResearch: 'Investigación de Combustible',
+    hyperspaceTransfer: 'Tecnología de Transferencia Hiperespacial'
   },
   technologyDescriptions: {
     energyTechnology: 'Mejora la eficiencia energética',
@@ -354,7 +357,8 @@ export default {
     intergalacticResearchNetwork: 'Conecta múltiples laboratorios de investigación entre planetas. Cada nivel conecta 1 laboratorio adicional',
     mineralResearch: 'Investiga técnicas más eficientes de extracción de metal. +2% de producción de metal por nivel',
     crystalResearch: 'Investiga técnicas más eficientes de refinamiento de cristal. +2% de producción de cristal por nivel',
-    fuelResearch: 'Investiga técnicas más eficientes de síntesis de deuterio. +2% de producción de deuterio por nivel'
+    fuelResearch: 'Investiga técnicas más eficientes de síntesis de deuterio. +2% de producción de deuterio por nivel',
+    hyperspaceTransfer: 'Pliega rutas locales en corredores de carga interestelares estables. Desbloquea el comercio entre jugadores con el Puerto Espacial Planetario y reduce la pérdida comercial un 2% por nivel'
   },
   officers: {
     commander: 'Comandante',
@@ -2000,6 +2004,12 @@ export default {
       choiceEffect: 'Efecto de elección de diálogo'
     },
     chapters: {
+      '7': {
+        title: 'Ruta Comercial Interestelar',
+        description: 'Construye un puerto espacial y la tecnología de transferencia para desbloquear el comercio',
+        backgroundStory:
+          'Tras el salto descubres que lo que realmente conecta la galaxia no son las puertas, sino las rutas comerciales. La logística y la transferencia hiperespacial hacen fluir los recursos entre civilizaciones.'
+      },
       '6': { title: 'Navegación estelar', description: 'Mapa, escaneo, nombres y salto', backgroundStory: 'El mapa estelar se despliega; nuevas rutas esperan nombre.' },
       '1': {
         title: 'Origen',
@@ -2033,6 +2043,14 @@ export default {
       }
     },
     quests: {
+      '7_1': { title: 'Salida del Puerto Espacial', description: 'Construye el Puerto Espacial Planetario al nivel 1' },
+      '7_2': { title: 'Ruta Plegada', description: 'Investiga la Tecnología de Transferencia Hiperespacial al nivel 1' },
+      '7_3': { title: 'Centro Comercial', description: 'Mejora el Puerto Espacial Planetario al nivel 3' },
+      '7_4': { title: 'Ruta Estable', description: 'Investiga la Tecnología de Transferencia Hiperespacial al nivel 3' },
+      '7_5': {
+        title: 'Caravana Interestelar',
+        description: 'Alcanza el nivel 5 en el puerto espacial y la tecnología de transferencia para crear una red comercial madura'
+      },
       '6_1': { title: 'Rumbo a las estrellas', description: 'Abre el mapa 3D y escanea un sistema' },
       '6_2': { title: 'El derecho a nombrar', description: 'Dale un nombre a tu descubrimiento' },
       '6_3': { title: 'Ecos de ruinas', description: 'Recupera una señal desconocida' },
@@ -2175,6 +2193,8 @@ export default {
       ancientGuardian: 'Guardián Antiguo'
     },
     objectiveDescriptions: {
+      buildSpaceport: 'Construye el Puerto Espacial Planetario al nivel requerido',
+      researchHyperspaceTransfer: 'Investiga la Tecnología de Transferencia Hiperespacial al nivel requerido',
       scanSystem: 'Escanear 1 sistema',
       nameSystem: 'Nombrar 1 sistema',
       collectSignal: 'Recuperar 1 señal',
@@ -2232,6 +2252,14 @@ export default {
       continueDevelopment: 'Continuar desarrollo'
     },
     dialogues: {
+      '7_1': { prologue_1: 'Tras el salto, lo primero es levantar un puerto espacial en el nuevo mundo.' },
+      '7_2': { prologue_1: 'Los datos de rutas antiguas apuntan a una forma de plegar el espacio...' },
+      '7_3': { prologue_1: 'Las caravanas son cada vez más frecuentes; el puerto actual ya no basta.' },
+      '7_4': { prologue_1: 'Estabiliza la tecnología de transferencia para soportar cargas mayores.' },
+      '7_5': {
+        prologue_1: 'La ruta está abierta. Es hora de que la galaxia escuche tu nombre.',
+        epilogue_1: 'El comercio sustituyó al humo de la guerra. Tu imperio se ha convertido en un puente entre las estrellas.'
+      },
       '6_1': { prologue_1: 'Abre el mapa 3D y escanea un sistema cercano.' },
       '6_2': { prologue_1: 'Deja tu nombre en este cielo.' },
       '6_3': { prologue_1: 'Las señales esconden reliquias de una era caída.' },
@@ -2489,9 +2517,15 @@ export default {
     send: 'Enviar',
     points: 'Puntos',
     planets: 'Planetas',
-    tradeTitle: 'Comercio',
-    tradeDetails: 'Detalles del comercio',
+    tradeTitle: 'Comercio entre jugadores',
+    tradeDetails: 'Detalles del comercio entre jugadores',
     tradeWith: 'Comerciar con {name}',
+    tradeLocked: 'Primero construye un Puerto Espacial Planetario e investiga la Tecnología de Transferencia Hiperespacial',
+    tradeTargetLocked: 'Este jugador aún no ha desbloqueado el comercio',
+    tradeLockedHint: 'Requiere {building} nivel 1 + {tech} nivel 1',
+    tradeTargetLockedHint: '{name} aún no ha desbloqueado el comercio',
+    tradeLossLabel: 'Pérdida comercial',
+    tradeLossHint: 'Puerto espacial nivel {building}, tecnología de transferencia nivel {tech}; se aplica la pérdida mayor.',
     tradeViewDetails: 'Ver detalles',
     tradePendingIncoming: 'Esperando tu respuesta',
     tradePendingOutgoing: 'Esperando al otro jugador',

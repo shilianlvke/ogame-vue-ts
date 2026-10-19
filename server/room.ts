@@ -445,6 +445,8 @@ export class Room {
     if (!player) {
       player = this.createPlayer(resolvedAccount)
     }
+    // 旧存档登录时按当前战役版本迁移，新增章节不会被旧进度跳过
+    player.campaignProgress = initializeCampaignProgress(player)
     this.syncPlayers()
 
     // 第一个玩家加入时立刻建立 NPC 注册表（否则要等第一个 tick 才有 NPC）
