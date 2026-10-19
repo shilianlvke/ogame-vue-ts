@@ -82,6 +82,16 @@ export const startServer = async (options: StartOptions): Promise<RunningServer>
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url ?? '/', 'http://localhost').pathname
 
+    // 非 Upgrade 请求访问 /ws 时给出明确状态，避免被 SPA 回退成 200 index.html
+    if (pathname === '/ws') {
+      res.statusCode = 426
+      res.setHeader('Upgrade', 'websocket')
+      res.setHeader('Connection', 'Upgrade')
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.end('WebSocket endpoint: connect with ws:// or wss://')
+      return
+    }
+
     if (pathname === '/health') {
       sendJson(res, 200, {
         ok: true,
@@ -114,9 +124,22 @@ export const startServer = async (options: StartOptions): Promise<RunningServer>
     sendJson(res, 404, { error: 'not found' })
   })
 
+  if (process.env.DEBUG_WS === '1') {
+    server.on('upgrade', request => {
+      console.log(
+        `[ws] upgrade url=${request.url ?? ''} host=${request.headers.host ?? ''} ` +
+          `upgrade=${request.headers.upgrade ?? ''} connection=${request.headers.connection ?? ''} ` +
+          `remote=${request.socket.remoteAddress ?? ''}`
+      )
+    })
+  }
+
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 256 * 1024 })
 
-  wss.on('connection', (socket: WebSocket) => {
+  wss.on('connection', (socket: WebSocket, request) => {
+    if (process.env.DEBUG_WS === '1') {
+      console.log(`[ws] connected url=${request.url ?? ''} remote=${request.socket.remoteAddress ?? ''}`)
+    }
     let playerId: string | null = null
 
     const connection: ClientConnection = {

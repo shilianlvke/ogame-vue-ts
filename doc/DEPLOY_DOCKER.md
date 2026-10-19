@@ -180,7 +180,17 @@ new WebSocket('wss://nomansky.example.com:60465/ws').onopen = () => console.log(
 
 如果 `onopen` 不触发，看浏览器 Network → WS 的状态码：
 `404` 通常是路径被改写，`502/504` 通常是后端地址/端口不对，
+`426` 表示请求到了 Node，但没有带 `Upgrade: websocket`（中间代理把升级头去掉了），
 一直 pending 通常是 Lucky 没开 WebSocket 或读超时太短。
+
+可以在服务端（Docker 环境变量或启动命令）加 `DEBUG_WS=1` 后重启，再复现一次：
+
+```bash
+DEBUG_WS=1 node server-dist/main.js
+```
+
+日志出现 `[ws] upgrade url=/ws ...` 说明请求已经到达 Node；完全没有这行，
+说明问题在 SakuraFrp / Lucky 这一层，重点查隧道类型、Lucky 子规则路径和 WebSocket/HTTP3 设置。
 
 ## 首次访问
 
