@@ -469,7 +469,8 @@
       const isCurrent = system.index === state.system
       const isSelected = system.id === props.selectedSystemId
       const discovered = !!discoveredOf(system.galaxy, system.index)
-      const color = discovered || isCurrent ? ECONOMY_COLOR[system.economy] ?? COLORS.current : 'rgba(100,116,139,0.55)'
+      const isHome = !!homePosition && homePosition.galaxy === system.galaxy && homePosition.system === system.index
+      const color = discovered || isCurrent || isHome ? ECONOMY_COLOR[system.economy] ?? COLORS.current : 'rgba(100,116,139,0.55)'
       const radius = isCurrent ? 5.5 : discovered ? 3.8 : 2.5
       if (p.x < -30 || p.y < -30 || p.x > width + 30 || p.y > height + 30) continue
 
@@ -481,7 +482,7 @@
       ctx.fill()
       ctx.shadowBlur = 0
 
-      if (homePosition && homePosition.galaxy === system.galaxy && homePosition.system === system.index) {
+      if (isHome) {
         ctx.strokeStyle = COLORS.own
         ctx.lineWidth = 1.4
         ctx.beginPath()
@@ -503,8 +504,8 @@
         ctx.stroke()
       }
 
-      if (isCurrent || isSelected || discovered) {
-        ctx.fillStyle = isCurrent ? '#fef3c7' : discovered ? COLORS.label : COLORS.labelMuted
+      if (isCurrent || isSelected || discovered || isHome) {
+        ctx.fillStyle = isCurrent ? '#fef3c7' : isHome ? '#93c5fd' : discovered ? COLORS.label : COLORS.labelMuted
         ctx.font = isCurrent ? '600 11px ui-sans-serif, system-ui, sans-serif' : '10px ui-sans-serif, system-ui, sans-serif'
         ctx.textAlign = 'left'
         ctx.fillText(systemName(system), p.x + 8, p.y + 3)

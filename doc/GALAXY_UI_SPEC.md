@@ -523,7 +523,7 @@ cycle.pressure.warning      // 层压制提示
 
 ---
 
-## 14. 3D 星图（可选升级）
+## 14. 历史设计：3D 星图（已由 2.5D 星图取代）
 
 ![3D 投影预演](./galaxy-3d-preview.png)
 
