@@ -211,7 +211,10 @@ export const useNetStore = defineStore('net', {
           return 'offline'
       }
     },
-    playerCount: state => state.players.length
+    /** 在线玩家数（页面展示的“在线玩家”） */
+    playerCount: state => state.players.filter(player => player.online).length,
+    /** 服务器注册玩家总数 */
+    totalPlayerCount: state => state.players.length
   },
   actions: {
     /** 注册 UI 回调（App.vue 在挂载时调用） */

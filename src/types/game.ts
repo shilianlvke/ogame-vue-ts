@@ -793,6 +793,29 @@ export interface Officer {
   }
 }
 
+// 玩家间交易资源
+export interface PlayerTradeResources {
+  metal: number
+  crystal: number
+  deuterium: number
+}
+
+// 玩家间交易提议
+export interface PlayerTradeOffer {
+  id: string
+  fromId: string
+  fromName: string
+  toId: string
+  toName: string
+  /** 发起方给出的资源 */
+  offer: PlayerTradeResources
+  /** 发起方要求的资源 */
+  request: PlayerTradeResources
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired'
+  createdAt: number
+  expiresAt: number
+}
+
 // 玩家
 export interface Player {
   id: string
@@ -819,6 +842,7 @@ export interface Player {
   aidNotifications?: AidNotification[] // 友好NPC资源援助通知
   allyDefenseNotifications?: AllyDefenseNotification[] // 友好NPC协防通知
   attitudeChangeNotifications?: AttitudeChangeNotification[] // NPC态度变化通知
+  playerTrades?: PlayerTradeOffer[] // 玩家间交易提议（收发双向同步）
   points: number // 总积分（每1000资源=1分）
   bonusPoints?: number // 奖励积分（战役、成就等奖励的积分，不会被重新计算覆盖）
   isGMEnabled?: boolean // GM模式开关（默认false，通过秘籍激活）
@@ -845,6 +869,8 @@ export interface Player {
   questNotifications?: QuestNotification[] // 任务通知
   /** 新手保护期截止时间戳（仅联机模式使用；此期间不能攻击其他玩家，也不能被攻击） */
   protectionUntil?: number
+  /** 最近一次在线/离线时间（联机在线状态） */
+  lastSeenAt?: number
   /** 所在周目（1 起；旧存档视为第 1 周目） */
   cycle?: number
   /** 已排定的周目跃迁时间（到时由 tick 执行） */

@@ -9,6 +9,7 @@ import * as resourceLogic from './resourceLogic'
 import * as achievementLogic from './achievementLogic'
 import * as unlockLogic from './unlockLogic'
 import * as waitingQueueLogic from './waitingQueueLogic'
+import * as playerTradeLogic from './playerTradeLogic'
 import type { UnlockedItem } from './unlockLogic'
 
 /**
@@ -35,6 +36,7 @@ export const initializePlayer = (playerId: string, playerName: string = 'Command
     giftNotifications: [],
     giftRejectedNotifications: [],
     diplomaticReports: [],
+    playerTrades: [],
     points: 0
   }
 
@@ -222,6 +224,9 @@ export const processGameUpdate = (
   // 重要：先更新 player.researchQueue，再处理等待队列
   // 这样等待队列处理时可以正确 push 新项目到队列中
   player.researchQueue = updatedResearchQueue
+
+  // 清理过期玩家交易
+  playerTradeLogic.cleanupExpiredPlayerTrades(player, now)
 
   // 处理等待队列自动执行
   const waitingResult = waitingQueueLogic.processAllWaitingQueues(player, now)

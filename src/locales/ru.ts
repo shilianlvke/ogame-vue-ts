@@ -86,6 +86,7 @@ export default {
     simulator: 'Симулятор',
     galaxy: 'Галактика',
     diplomacy: 'Дипломатия',
+    players: 'Игроки',
     achievements: 'Достижения',
     campaign: 'Кампания',
     ranking: 'Рейтинг',
@@ -2371,5 +2372,35 @@ export default {
         epilogue_2: 'Ваше путешествие продолжается... Новые приключения ждут за звёздами...'
       }
     }
+  },
+  players: {
+    subtitle: 'Общайтесь и торгуйте с игроками сервера',
+    searchPlaceholder: 'Поиск игроков',
+    online: 'В сети',
+    offline: 'Не в сети',
+    me: 'Я',
+    total: 'Игроков: {count}',
+    lastSeen: 'Был в сети',
+    selectPlayer: 'Выберите игрока для чата',
+    noMessages: 'Личных сообщений пока нет',
+    messagePlaceholder: 'Введите личное сообщение…',
+    send: 'Отправить',
+    points: 'Очки',
+    planets: 'Планеты',
+    tradeTitle: 'Торговля',
+    tradeOffer: 'Я отдаю',
+    tradeRequest: 'Я прошу',
+    tradeSend: 'Предложить обмен',
+    tradeSent: 'Предложение отправлено',
+    tradeIncoming: 'Входящие предложения',
+    tradeOutgoing: 'Исходящие предложения',
+    tradeAccept: 'Принять',
+    tradeDecline: 'Отклонить',
+    tradeCancel: 'Отменить',
+    tradeEmpty: 'Нет ожидающих предложений',
+    tradeInvalid: 'Укажите хотя бы один ресурс',
+    onlineOnly: 'Функции игроков доступны в онлайн-режиме',
+    onlineOnlyDesc: 'Подключитесь к серверу на главной странице, чтобы видеть игроков, чат и торговлю.',
+    backHome: 'На главную'
   }
 }

@@ -23,6 +23,7 @@ import type {
   OfficerType,
   Planet,
   Player,
+  PlayerTradeResources,
   Position,
   Resources
 } from '@/types/game'
@@ -52,6 +53,7 @@ import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
 import * as campaignLogic from '@/logic/campaignLogic'
 import * as diplomaticLogic from '@/logic/diplomaticLogic'
 import * as messageLogic from '@/logic/messageLogic'
+import * as playerTradeLogic from '@/logic/playerTradeLogic'
 import * as npcBehaviorLogic from '@/logic/npcBehaviorLogic'
 import type { MessageCollection } from '@/logic/messageLogic'
 import * as gameLogic from '@/logic/gameLogic'
@@ -158,6 +160,15 @@ export type GameCommand =
       action: 'accept' | 'decline'
       id: string
     }
+  // 玩家间交易
+  | {
+      type: 'player.trade.create'
+      toPlayerId: string
+      offer: PlayerTradeResources
+      request: PlayerTradeResources
+    }
+  | { type: 'player.trade.respond'; offerId: string; action: 'accept' | 'decline' }
+  | { type: 'player.trade.cancel'; offerId: string }
 
 /** 命令成功 */
 export interface CommandSuccess {
@@ -907,6 +918,62 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       }
 
       player.jointAttackInvites!.splice(index, 1)
+      return succeed()
+    }
+    case 'player.trade.create': {
+      const target = findPlayerById(world, command.toPlayerId)
+      if (!target || target.id === player.id) return fail('errors.requirementsNotMet')
+      if (!player.planets.length || !target.planets.length) return fail('errors.planetNotFound')
+
+      const offer = playerTradeLogic.normalizeTradeResources(command.offer)
+      const request = playerTradeLogic.normalizeTradeResources(command.request)
+      const invalid = playerTradeLogic.validateTradeResources(offer, request)
+      if (invalid) return fail(invalid)
+
+      const pendingOutgoing =
+        player.playerTrades?.filter(trade => trade.fromId === player.id && trade.status === 'pending').length ?? 0
+      if (pendingOutgoing >= 20) return fail('errors.requirementsNotMet')
+
+      const trade = playerTradeLogic.createPlayerTradeOffer(player, target, offer, request, now)
+      playerTradeLogic.addPlayerTradeOffer(player, target, trade)
+      return succeed()
+    }
+    case 'player.trade.respond': {
+      if (command.action !== 'accept' && command.action !== 'decline') return fail()
+      const index =
+        player.playerTrades?.findIndex(trade => trade.id === command.offerId && trade.toId === player.id) ?? -1
+      if (index < 0) return fail('errors.requirementsNotMet')
+      const trade = player.playerTrades![index]!
+      const from = findPlayerById(world, trade.fromId)
+      if (!from) {
+        playerTradeLogic.removePlayerTradeOffer(player, trade.id)
+        return fail('errors.requirementsNotMet')
+      }
+
+      if (trade.status !== 'pending' || now >= trade.expiresAt) {
+        playerTradeLogic.removePlayerTradeOffer(player, trade.id)
+        playerTradeLogic.removePlayerTradeOffer(from, trade.id)
+        return fail('npcBehavior.trade.expired')
+      }
+
+      if (command.action === 'accept') {
+        const settled = playerTradeLogic.settlePlayerTrade(from, player, trade)
+        if (!settled.ok) return fail(settled.reason ?? 'errors.insufficientResources')
+      }
+
+      playerTradeLogic.removePlayerTradeOffer(player, trade.id)
+      playerTradeLogic.removePlayerTradeOffer(from, trade.id)
+      return succeed()
+    }
+    case 'player.trade.cancel': {
+      const trade = player.playerTrades?.find(
+        candidate => candidate.id === command.offerId && candidate.fromId === player.id && candidate.status === 'pending'
+      )
+      if (!trade) return fail('errors.requirementsNotMet')
+
+      const to = findPlayerById(world, trade.toId)
+      playerTradeLogic.removePlayerTradeOffer(player, trade.id)
+      if (to) playerTradeLogic.removePlayerTradeOffer(to, trade.id)
       return succeed()
     }
     case 'planet.rename': {

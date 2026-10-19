@@ -361,6 +361,7 @@ export class Room {
 
   private createPlayer(account: Account): Player {
     const player = gameLogic.initializePlayer(account.id, account.name)
+    player.lastSeenAt = Date.now()
     player.planets = [this.createHomePlanet(account)]
     // 服务端创建玩家时初始化战役进度，否则 campaign.start 会报 notInitialized
     player.campaignProgress = initializeCampaignProgress(player)
@@ -469,15 +470,20 @@ export class Room {
       budgetResetAt: Date.now() + 1000
     }
 
+    player.lastSeenAt = Date.now()
     const snapshot = buildSnapshot(this.world, player, {
       tick: this.tick,
       now: Date.now(),
-      visibility: this.options.visibility
+      visibility: this.options.visibility,
+      // 尚未写入 sessions，所以要把自己显式算进去
+      onlinePlayerIds: [...this.sessions.keys(), player.id]
     })
     seedPatchState(session.patchState, snapshot)
 
     this.sessions.set(player.id, session)
     this.dirty = true
+    // 让其他在线玩家立即看到“某人上线”；若正在 tick，交给本轮末尾的 broadcast
+    if (!this.ticking) this.broadcast(Date.now())
 
     return { ok: true, account: resolvedAccount, player, snapshot, isNew }
   }
@@ -485,11 +491,19 @@ export class Room {
   /** 连接断开（玩家数据保留，舰队继续飞行 = 离线进度） */
   leave(playerId: string, connection: ClientConnection): void {
     const session = this.sessions.get(playerId)
-    if (session && session.connection === connection) {
+    const removed = !!session && session.connection === connection
+    if (removed) {
       this.sessions.delete(playerId)
     }
+
     const account = this.state.accounts[playerId]
     if (account) account.lastSeenAt = Date.now()
+    if (!removed) return
+
+    const player = this.state.players[playerId]
+    if (player) player.lastSeenAt = Date.now()
+    // 让其他在线玩家立即看到“某人离线”；若正在 tick，交给本轮末尾的 broadcast
+    if (!this.ticking) this.broadcast(Date.now())
   }
 
   /* -------------------------------- 命令 --------------------------------- */
@@ -700,6 +714,7 @@ export class Room {
         tick: this.tick,
         now,
         visibility: this.options.visibility,
+        onlinePlayerIds: [...this.sessions.keys()],
         events
       })
 
@@ -727,7 +742,12 @@ export class Room {
   snapshotFor(playerId: string): WorldSnapshot | null {
     const player = this.state.players[playerId]
     if (!player) return null
-    return buildSnapshot(this.world, player, { tick: this.tick, now: Date.now(), visibility: this.options.visibility })
+    return buildSnapshot(this.world, player, {
+      tick: this.tick,
+      now: Date.now(),
+      visibility: this.options.visibility,
+      onlinePlayerIds: [...this.sessions.keys()]
+    })
   }
 
   /** 仅用于测试/诊断：当前所有玩家 */

@@ -167,6 +167,7 @@ pnpm test          # 以上三项串起来
 | 等待队列 | `queue.addWaiting`、`queue.removeWaiting` |
 | 消息 / 通知 | `messages.clear`、`messages.delete`、`messages.markRead` |
 | 外交响应 | `diplomacy.respond`（礼物 / 贸易 / 联合攻击） |
+| 玩家交互 | `player.trade.create`、`player.trade.respond`、`player.trade.cancel` |
 | 战役 | `campaign.start`、`campaign.claim`、`campaign.choice` |
 
 配套改动：`PHALANX_SCAN_COST` 从 `GalaxyView` 硬编码移入 `core/commands.ts`，
@@ -224,6 +225,8 @@ pnpm test               # 类型检查 + 引擎冒烟 + 服务端冒烟
 | `AUTOSAVE_MS` | `30000` | 自动存档间隔 |
 
 运维接口：`GET /health`、`GET /api/info`；游戏入口：`ws://<host>:<port>/ws`。
+玩家档案 `players` 中的 `online` / `lastSeenAt` 由服务端会话实时维护；
+玩家页通过 `patch.players` 实时更新所有玩家的在线状态。
 
 ### 进程内结构
 

@@ -85,6 +85,7 @@ export default {
     simulator: 'シミュレーター',
     galaxy: '銀河',
     diplomacy: '外交',
+    players: 'プレイヤー',
     campaign: 'キャンペーン',
     achievements: '実績',
     ranking: 'ランキング',
@@ -2358,5 +2359,35 @@ export default {
         epilogue_2: 'あなたの旅は続く...新たな冒険が星の彼方で待っている...'
       }
     }
+  },
+  players: {
+    subtitle: 'サーバーのプレイヤーとチャット・取引',
+    searchPlaceholder: 'プレイヤーを検索',
+    online: 'オンライン',
+    offline: 'オフライン',
+    me: '自分',
+    total: '{count} 人のプレイヤー',
+    lastSeen: '最終オンライン',
+    selectPlayer: 'プレイヤーを選んでチャット',
+    noMessages: 'プライベートメッセージはまだありません',
+    messagePlaceholder: 'プライベートメッセージを入力…',
+    send: '送信',
+    points: 'ポイント',
+    planets: '惑星',
+    tradeTitle: '取引',
+    tradeOffer: '提供',
+    tradeRequest: '要求',
+    tradeSend: '取引を提案',
+    tradeSent: '取引提案を送信しました',
+    tradeIncoming: '受信した取引',
+    tradeOutgoing: '送信した取引',
+    tradeAccept: '承諾',
+    tradeDecline: '拒否',
+    tradeCancel: '取り消し',
+    tradeEmpty: '保留中の取引はありません',
+    tradeInvalid: '取引する資源を1つ以上入力してください',
+    onlineOnly: 'プレイヤー機能はオンラインモードが必要です',
+    onlineOnlyDesc: 'ホームでサーバーに接続すると、プレイヤー・チャット・取引を利用できます。',
+    backHome: 'ホームに戻る'
   }
 }

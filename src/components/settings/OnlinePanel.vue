@@ -62,10 +62,10 @@
           </div>
           <div class="flex items-center justify-between">
             <span class="text-muted-foreground">{{ t('online.players') }}</span>
-            <span class="font-medium">{{ net.playerCount }}</span>
+            <span class="font-medium">{{ net.playerCount }} / {{ net.totalPlayerCount }}</span>
           </div>
-          <div v-if="net.players.length > 1" class="flex flex-wrap gap-1 pt-1">
-            <Badge v-for="player in net.players" :key="player.id" variant="secondary" class="text-xs">
+          <div v-if="onlinePlayers.length > 0" class="flex flex-wrap gap-1 pt-1">
+            <Badge v-for="player in onlinePlayers" :key="player.id" variant="secondary" class="text-xs">
               {{ player.name }} · {{ player.points }}
             </Badge>
           </div>
@@ -122,6 +122,7 @@
 
   const statusText = computed(() => describeNetStatus(net.status, t))
   const errorText = computed(() => describeNetError(net.error, t))
+  const onlinePlayers = computed(() => net.players.filter(player => player.online))
 
   const statusVariant = computed<'default' | 'secondary' | 'destructive' | 'outline'>(() => {
     if (net.status === 'online') return 'default'

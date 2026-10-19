@@ -92,6 +92,7 @@ export default {
     simulator: '模拟',
     galaxy: '星系',
     diplomacy: '外交',
+    players: '玩家',
     achievements: '成就',
     campaign: '战役',
     ranking: '排行',
@@ -2386,5 +2387,35 @@ export default {
     // 删除相关
     deleteFailedHttp: '删除失败: HTTP {status}',
     deleteError: '删除错误: {error}'
+  },
+  players: {
+    subtitle: '和服务器里的玩家聊天、交易',
+    searchPlaceholder: '搜索玩家',
+    online: '在线',
+    offline: '离线',
+    me: '我',
+    total: '共 {count} 名玩家',
+    lastSeen: '最近在线',
+    selectPlayer: '选择一个玩家开始聊天',
+    noMessages: '还没有私聊消息',
+    messagePlaceholder: '输入私聊消息…',
+    send: '发送',
+    points: '积分',
+    planets: '星球',
+    tradeTitle: '交易',
+    tradeOffer: '我给出',
+    tradeRequest: '我要求',
+    tradeSend: '发送交易',
+    tradeSent: '交易提议已发送',
+    tradeIncoming: '收到的交易',
+    tradeOutgoing: '发出的交易',
+    tradeAccept: '接受',
+    tradeDecline: '拒绝',
+    tradeCancel: '撤回',
+    tradeEmpty: '没有待处理的交易',
+    tradeInvalid: '请至少填写一项交易资源',
+    onlineOnly: '玩家功能需要联机模式',
+    onlineOnlyDesc: '回到首页连接服务器后，才能查看在线玩家、私聊和交易。',
+    backHome: '返回首页'
   }
 }

@@ -91,6 +91,7 @@ export default {
     simulator: 'Simulator',
     galaxy: 'Galaxy',
     diplomacy: 'Diplomacy',
+    players: 'Players',
     achievements: 'Achievements',
     campaign: 'Campaign',
     ranking: 'Ranking',
@@ -2486,5 +2487,35 @@ export default {
     // Delete
     deleteFailedHttp: 'Delete failed: HTTP {status}',
     deleteError: 'Delete error: {error}'
+  },
+  players: {
+    subtitle: 'Chat and trade with players on this server',
+    searchPlaceholder: 'Search players',
+    online: 'Online',
+    offline: 'Offline',
+    me: 'Me',
+    total: '{count} players',
+    lastSeen: 'Last seen',
+    selectPlayer: 'Select a player to start chatting',
+    noMessages: 'No private messages yet',
+    messagePlaceholder: 'Type a private message…',
+    send: 'Send',
+    points: 'Points',
+    planets: 'Planets',
+    tradeTitle: 'Trade',
+    tradeOffer: 'I give',
+    tradeRequest: 'I request',
+    tradeSend: 'Send trade',
+    tradeSent: 'Trade offer sent',
+    tradeIncoming: 'Incoming trades',
+    tradeOutgoing: 'Outgoing trades',
+    tradeAccept: 'Accept',
+    tradeDecline: 'Decline',
+    tradeCancel: 'Cancel',
+    tradeEmpty: 'No pending trades',
+    tradeInvalid: 'Enter at least one resource amount',
+    onlineOnly: 'Player features require online mode',
+    onlineOnlyDesc: 'Return to the home page and connect to a server to see online players, chat and trade.',
+    backHome: 'Back to home'
   }
 }

@@ -45,6 +45,10 @@ export interface PlayerPublicProfile {
   planetCount: number
   /** 各分类积分（联机排行榜用） */
   scores: RankingEntry['scores']
+  /** 当前是否在线（服务端实时判断） */
+  online: boolean
+  /** 最近一次离线/上线时间 */
+  lastSeenAt?: number
 }
 
 /* -------------------------------------------------------------------------- */
@@ -286,15 +290,19 @@ export const collectVisiblePlanets = (world: World, viewer: Player): Record<stri
   return result
 }
 
-/** 公开玩家档案列表 */
-export const collectPlayerProfiles = (world: World): PlayerPublicProfile[] =>
-  allPlayers(world).map(player => ({
+/** 公开玩家档案列表；onlineIds 由服务端会话列表提供 */
+export const collectPlayerProfiles = (world: World, onlineIds?: readonly string[]): PlayerPublicProfile[] => {
+  const onlineSet = new Set(onlineIds ?? [])
+  return allPlayers(world).map(player => ({
     id: player.id,
     name: player.name,
     points: player.points,
     planetCount: player.planets.length,
-    scores: calculatePlayerScores(player)
+    scores: calculatePlayerScores(player),
+    online: onlineSet.has(player.id),
+    lastSeenAt: player.lastSeenAt
   }))
+}
 
 /* -------------------------------------------------------------------------- */
 /*                              快照 / 补丁构建                                */
@@ -316,6 +324,7 @@ const REPORT_KEYS = [
   'attitudeChangeNotifications',
   'diplomaticReports',
   'questNotifications',
+  'playerTrades',
   'chatMessages'
 ] as const
 
@@ -337,6 +346,8 @@ export interface SnapshotOptions {
   visibility?: VisibilityMode
   tick?: number
   now?: number
+  /** 服务端当前在线玩家 ID；用于实时在线状态 */
+  onlinePlayerIds?: readonly string[]
 }
 
 /** 构建全量快照 */
@@ -363,7 +374,7 @@ export const buildSnapshot = (world: World, viewer: Player, options: SnapshotOpt
       departAt: caravan.departAt,
       arriveAt: caravan.arriveAt
     })),
-    players: collectPlayerProfiles(world)
+    players: collectPlayerProfiles(world, options.onlinePlayerIds)
   }
 }
 
@@ -451,7 +462,7 @@ export const buildPatch = (world: World, viewer: Player, state: PatchState, opti
   }
 
   // —— 玩家档案 ——
-  const profiles = collectPlayerProfiles(world)
+  const profiles = collectPlayerProfiles(world, options.onlinePlayerIds)
   const profilesJson = JSON.stringify(profiles)
   if (profilesJson !== state.players) {
     patch.players = profiles

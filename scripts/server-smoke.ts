@@ -176,6 +176,13 @@ const main = async () => {
   assert(alice.snapshot.self.planets[0].name !== 'planet.homePlanet', '中文母星名称未翻译')
   assert(bob.snapshot.self.planets[0].name !== 'planet.homePlanet', '英文母星名称未翻译')
   assert(alice.snapshot.self.planets[0].name !== bob.snapshot.self.planets[0].name, '不同语言的母星名称相同（语言未生效）')
+  // Bob 上线后，Alice 必须立刻收到在线状态补丁
+  await alice.client.next(
+    m => m.t === 'patch' && !!m.players?.some(player => player.id === bob.playerId && player.online === true),
+    5000,
+    '玩家上线补丁'
+  )
+  console.log('[players] 玩家上线实时推送正常')
   assert(alice.snapshot.npcs.length > 0, '快照中没有 NPC')
   const npcSample = alice.snapshot.npcs.find(npc => npc.planets.length > 0)
   assert(!!npcSample, 'NPC 未携带公开星球视图')
@@ -215,6 +222,20 @@ const main = async () => {
     carol.client.close()
     await new Promise(resolveSleep => setTimeout(resolveSleep, 50))
     console.log('[auth] 密码注册 / 错误密码 / 缺少密码 / 换设备登录 全部正常')
+  }
+
+  // 在线状态：服务端会话列表必须同步到所有玩家档案
+  {
+    const onlineIds = server.room.onlinePlayerIds()
+    assert(onlineIds.includes(alice.playerId) && onlineIds.includes(bob.playerId), '在线会话列表缺少玩家')
+    const profiles = server.room.snapshotFor(alice.playerId)!.players
+    const onlineSet = new Set(onlineIds)
+    assert(profiles.length >= 3, '玩家档案数量不足')
+    assert(
+      profiles.every(profile => profile.online === onlineSet.has(profile.id)),
+      '玩家档案的在线状态与会话列表不一致'
+    )
+    console.log('[players] 在线状态快照与会话列表一致')
   }
 
   // Bob 的初始快照里已经能看到 Alice 的星球
@@ -487,6 +508,53 @@ const main = async () => {
     assert(bobPlayer.battleReports.length === 1, '新战报到达后旧战报复活')
     assert(bobPlayer.battleReports[0]!.id === 'battle_smoke_new', '新战报到达后数组内容不正确')
     console.log('[messages] 已读/清空持久化，新通知不会带回旧通知')
+  }
+
+  // 7.5.2) 玩家间交易：创建 -> 接收方接受 -> 双方资源与提议同步
+  {
+    const alicePlayer = server.room.profileOf(alice.playerId)!
+    const bobPlayer = server.room.profileOf(bob.playerId)!
+    const alicePlanet = alicePlayer.planets[0]
+    const bobPlanet = bobPlayer.planets[0]
+    alicePlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
+    bobPlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
+
+    alice.client.send({
+      t: 'cmd',
+      seq: 5,
+      command: {
+        type: 'player.trade.create',
+        toPlayerId: bob.playerId,
+        offer: { metal: 1_000, crystal: 0, deuterium: 0 },
+        request: { metal: 0, crystal: 500, deuterium: 0 }
+      }
+    })
+    await alice.client.next(m => m.t === 'ack' && m.seq === 5, 5000, '交易创建 ack')
+    assert((alicePlayer.playerTrades?.length ?? 0) === 1, '发起方没有交易提议')
+    assert((bobPlayer.playerTrades?.length ?? 0) === 1, '接收方没有交易提议')
+    const tradeId = alicePlayer.playerTrades![0]!.id
+
+    bob.client.send({
+      t: 'cmd',
+      seq: 6,
+      command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
+    })
+    await bob.client.next(m => m.t === 'ack' && m.seq === 6, 5000, '交易接受 ack')
+    assert((alicePlayer.playerTrades?.length ?? 0) === 0, '接受后发起方交易未清除')
+    assert((bobPlayer.playerTrades?.length ?? 0) === 0, '接受后接收方交易未清除')
+    assert(
+      alicePlanet.resources.metal === 9_000 && alicePlanet.resources.crystal === 10_500,
+      '接受交易后发起方资源不正确'
+    )
+    assert(
+      bobPlanet.resources.metal === 11_000 && bobPlanet.resources.crystal === 9_500,
+      '接受交易后接收方资源不正确'
+    )
+
+    // 复原资源，避免影响后续场景
+    alicePlanet.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
+    bobPlanet.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
+    console.log('[players] 玩家交易创建/接受与资源结算正常')
   }
 
   // 7.6) PvP：Alice 侦查 Bob —— 防守方收到被侦查通知

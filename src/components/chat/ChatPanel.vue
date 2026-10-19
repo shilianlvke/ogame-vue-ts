@@ -78,7 +78,10 @@
   const bottomRef = ref<HTMLElement | null>(null)
 
   const myId = computed(() => gameStore.player.id)
-  const messages = computed(() => (gameStore.player.chatMessages ?? []).slice(-60))
+  // 只显示公共频道；私聊统一放在“玩家”页面，避免这里把私聊内容当成公共消息展示
+  const messages = computed(() =>
+    (gameStore.player.chatMessages ?? []).filter(message => !message.toId).slice(-60)
+  )
   const unread = computed(
     () => messages.value.filter(message => message.fromId !== myId.value && message.timestamp > lastSeenAt.value).length
   )

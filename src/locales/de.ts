@@ -85,6 +85,7 @@ export default {
     simulator: 'Simulator',
     galaxy: 'Galaxie',
     diplomacy: 'Diplomatie',
+    players: 'Spieler',
     achievements: 'Erfolge',
     campaign: 'Kampagne',
     ranking: 'Rangliste',
@@ -2375,5 +2376,35 @@ export default {
         epilogue_2: 'Deine Reise geht weiter... Neue Abenteuer warten jenseits der Sterne...'
       }
     }
+  },
+  players: {
+    subtitle: 'Mit Spielern auf diesem Server chatten und handeln',
+    searchPlaceholder: 'Spieler suchen',
+    online: 'Online',
+    offline: 'Offline',
+    me: 'Ich',
+    total: '{count} Spieler',
+    lastSeen: 'Zuletzt online',
+    selectPlayer: 'Wähle einen Spieler für den Chat',
+    noMessages: 'Noch keine privaten Nachrichten',
+    messagePlaceholder: 'Private Nachricht schreiben…',
+    send: 'Senden',
+    points: 'Punkte',
+    planets: 'Planeten',
+    tradeTitle: 'Handel',
+    tradeOffer: 'Ich gebe',
+    tradeRequest: 'Ich verlange',
+    tradeSend: 'Handel anbieten',
+    tradeSent: 'Handelsangebot gesendet',
+    tradeIncoming: 'Eingehende Angebote',
+    tradeOutgoing: 'Gesendete Angebote',
+    tradeAccept: 'Annehmen',
+    tradeDecline: 'Ablehnen',
+    tradeCancel: 'Zurückziehen',
+    tradeEmpty: 'Keine offenen Angebote',
+    tradeInvalid: 'Bitte mindestens eine Ressource angeben',
+    onlineOnly: 'Spielerfunktionen benötigen den Online-Modus',
+    onlineOnlyDesc: 'Verbinde dich auf der Startseite mit einem Server, um Spieler, Chat und Handel zu sehen.',
+    backHome: 'Zurück zur Startseite'
   }
 }

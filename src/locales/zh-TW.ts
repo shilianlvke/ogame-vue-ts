@@ -86,6 +86,7 @@ export default {
     simulator: '模擬',
     galaxy: '星系',
     diplomacy: '外交',
+    players: '玩家',
     achievements: '成就',
     campaign: '戰役',
     ranking: '排行',
@@ -2538,5 +2539,35 @@ export default {
         epilogue_2: '你的旅程還在繼續...新的冒險在星海彼岸等待著你...'
       }
     }
+  },
+  players: {
+    subtitle: '和伺服器裡的玩家聊天、交易',
+    searchPlaceholder: '搜尋玩家',
+    online: '在線',
+    offline: '離線',
+    me: '我',
+    total: '共 {count} 名玩家',
+    lastSeen: '最近在線',
+    selectPlayer: '選擇一個玩家開始聊天',
+    noMessages: '還沒有私聊訊息',
+    messagePlaceholder: '輸入私聊訊息…',
+    send: '發送',
+    points: '積分',
+    planets: '星球',
+    tradeTitle: '交易',
+    tradeOffer: '我給出',
+    tradeRequest: '我要求',
+    tradeSend: '發送交易',
+    tradeSent: '交易提議已發送',
+    tradeIncoming: '收到的交易',
+    tradeOutgoing: '發出的交易',
+    tradeAccept: '接受',
+    tradeDecline: '拒絕',
+    tradeCancel: '撤回',
+    tradeEmpty: '沒有待處理的交易',
+    tradeInvalid: '請至少填寫一項交易資源',
+    onlineOnly: '玩家功能需要連線模式',
+    onlineOnlyDesc: '回到首頁連線伺服器後，才能查看在線玩家、私聊和交易。',
+    backHome: '返回首頁'
   }
 }

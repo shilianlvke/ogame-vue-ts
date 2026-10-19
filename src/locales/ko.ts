@@ -85,6 +85,7 @@ export default {
     simulator: '시뮬레이터',
     galaxy: '은하계',
     diplomacy: '외교',
+    players: '플레이어',
     achievements: '업적',
     campaign: '캠페인',
     ranking: '랭킹',
@@ -2300,5 +2301,35 @@ export default {
         epilogue_2: '당신의 여정은 계속된다... 새로운 모험이 별 너머에서 기다리고 있다...'
       }
     }
+  },
+  players: {
+    subtitle: '서버 플레이어와 채팅하고 거래하세요',
+    searchPlaceholder: '플레이어 검색',
+    online: '온라인',
+    offline: '오프라인',
+    me: '나',
+    total: '플레이어 {count}명',
+    lastSeen: '마지막 접속',
+    selectPlayer: '플레이어를 선택해 채팅 시작',
+    noMessages: '아직 개인 메시지가 없습니다',
+    messagePlaceholder: '개인 메시지 입력…',
+    send: '보내기',
+    points: '점수',
+    planets: '행성',
+    tradeTitle: '거래',
+    tradeOffer: '내가 주는 것',
+    tradeRequest: '내가 요구하는 것',
+    tradeSend: '거래 제안',
+    tradeSent: '거래 제안을 보냈습니다',
+    tradeIncoming: '받은 거래',
+    tradeOutgoing: '보낸 거래',
+    tradeAccept: '수락',
+    tradeDecline: '거절',
+    tradeCancel: '취소',
+    tradeEmpty: '대기 중인 거래가 없습니다',
+    tradeInvalid: '거래할 자원을 하나 이상 입력하세요',
+    onlineOnly: '플레이어 기능은 온라인 모드가 필요합니다',
+    onlineOnlyDesc: '홈에서 서버에 연결하면 플레이어, 채팅, 거래를 사용할 수 있습니다.',
+    backHome: '홈으로'
   }
 }
