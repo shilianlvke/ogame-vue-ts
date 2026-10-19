@@ -76,7 +76,10 @@
           <template v-else>
             <div class="grid gap-1.5">
               <Label for="home-server" class="text-xs">{{ t('online.server') }}</Label>
-              <Input id="home-server" v-model="netStore.serverUrl" placeholder="ws://127.0.0.1:25122/ws" />
+              <Input id="home-server" v-model="netStore.serverUrl" :placeholder="defaultUrl" />
+              <Button variant="link" size="sm" class="h-auto w-fit p-0 text-[11px]" @click="netStore.serverUrl = defaultUrl">
+                {{ t('online.useCurrentAddress') }}
+              </Button>
             </div>
             <div class="grid gap-1.5">
               <Label for="home-name" class="text-xs">{{ t('online.name') }}</Label>
@@ -140,6 +143,20 @@
       </Button>
     </div>
 
+    <!-- 登录页版本更新弹窗 -->
+    <AlertDialog v-model:open="showUpdateDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ t('settings.newVersionAvailable', { version: latestBuildInfo?.version || '' }) }}</AlertDialogTitle>
+          <AlertDialogDescription>{{ t('settings.browserUpdateReady') }}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{{ t('common.cancel') }}</AlertDialogCancel>
+          <AlertDialogAction @click="handleUpdateNow">{{ t('settings.refreshNow') }}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     <!-- 隐私协议弹窗 -->
     <PrivacyDialog v-model:open="showPrivacyDialog" />
 
@@ -178,11 +195,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useGameStore } from '@/stores/gameStore'
-  import { useNetStore } from '@/stores/netStore'
+  import { defaultServerUrl, useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
+  import { fetchLatestBuildInfo, isBuildChanged, reloadForUpdate, type BuildInfo } from '@/utils/appUpdate'
   import { localeNames, type Locale } from '@/locales'
   import { describeNetError, describeNetStatus } from '@/net/messages'
   import { Button } from '@/components/ui/button'
@@ -210,12 +228,16 @@
   const gameStore = useGameStore()
   const netStore = useNetStore()
   const { t } = useI18n()
+  const defaultUrl = defaultServerUrl()
 
   const showPrivacyDialog = ref(false)
   const showAgreementDialog = ref(false)
   const privacyAgreed = ref(false)
-  /** 同意协议后要执行的动作（单机进入 / 联机连接） */
-  const pendingAction = ref<'single' | 'online' | null>(null)
+  /** 同意协议后要执行的动作（单机进入 / 联机连接 / 进入已连接的游戏） */
+  const pendingAction = ref<'single' | 'online' | 'enter' | null>(null)
+
+  const showUpdateDialog = ref(false)
+  const latestBuildInfo = ref<BuildInfo | null>(null)
   /** 用户在本页发起了联机，登录成功后自动进入游戏 */
   const pendingOnlineEntry = ref(false)
 
@@ -233,7 +255,7 @@
   })
 
   /** 同意隐私协议后的统一入口 */
-  const requireAgreement = (action: 'single' | 'online'): boolean => {
+  const requireAgreement = (action: 'single' | 'online' | 'enter'): boolean => {
     if (gameStore.player.privacyAgreed) return true
     pendingAction.value = action
     showAgreementDialog.value = true
@@ -246,7 +268,7 @@
     showAgreementDialog.value = false
     const action = pendingAction.value
     pendingAction.value = null
-    if (action === 'single') {
+    if (action === 'single' || action === 'enter') {
       router.push('/overview')
     } else if (action === 'online') {
       startOnline()
@@ -280,7 +302,11 @@
   }
 
   const enterOnline = () => {
-    if (netStore.isOnline) router.push('/overview')
+    if (!netStore.isOnline) return
+    // 自动恢复联机时可能没走过登录表单，这里补上隐私协议检查，
+    // 否则路由守卫会静默把 /overview 重定向回 /，表现为按钮没反应。
+    if (!requireAgreement('enter')) return
+    router.push('/overview')
   }
 
   const handleDisconnect = () => {
@@ -301,6 +327,23 @@
       }
     }
   )
+
+  const checkLoginPageUpdate = async () => {
+    const latest = await fetchLatestBuildInfo()
+    if (latest && isBuildChanged(latest)) {
+      latestBuildInfo.value = latest
+      showUpdateDialog.value = true
+    }
+  }
+
+  const handleUpdateNow = () => {
+    void reloadForUpdate()
+  }
+
+  // 每次打开登录页检查一次站点构建版本
+  onMounted(() => {
+    void checkLoginPageUpdate()
+  })
 </script>
 
 <style scoped>
