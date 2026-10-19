@@ -1125,6 +1125,8 @@ export default {
     checkUpdate: '업데이트 확인',
     checking: '확인 중...',
     newVersionAvailable: '새 버전 {version} 사용 가능',
+    browserUpdateReady: '새 빌드가 준비되었습니다. 페이지를 새로 고쳐 업데이트하세요.',
+    refreshNow: '지금 새로 고침',
     upToDate: '이미 최신 버전입니다',
     checkUpdateFailed: '업데이트 확인 실패, 네트워크 연결을 확인하세요',
     viewUpdate: '업데이트 보기',

@@ -1134,6 +1134,8 @@ export default {
     checkUpdate: '检查更新',
     checking: '检查中...',
     newVersionAvailable: '发现新版本 {version}',
+    browserUpdateReady: '发现新版本，刷新页面即可完成更新',
+    refreshNow: '立即刷新',
     upToDate: '已是最新版本',
     checkUpdateFailed: '检查更新失败，请检查网络连接',
     viewUpdate: '查看更新',

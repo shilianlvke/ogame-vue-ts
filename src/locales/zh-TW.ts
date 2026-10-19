@@ -1139,6 +1139,8 @@ export default {
     checkUpdate: '檢查更新',
     checking: '檢查中...',
     newVersionAvailable: '發現新版本 {version}',
+    browserUpdateReady: '發現新版本，重新整理頁面即可完成更新',
+    refreshNow: '立即重新整理',
     upToDate: '已是最新版本',
     checkUpdateCooldown: '請稍後再試（5分鐘冷卻時間）',
     checkUpdateFailed: '檢查更新失敗，請檢查網路連線',

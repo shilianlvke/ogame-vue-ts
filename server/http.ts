@@ -69,6 +69,9 @@ export const createStaticHandler = (rootDir: string) => {
       // 带 hash 的静态资源可以长缓存，HTML 不缓存
       if (extname(target) === '.html') {
         res.setHeader('Cache-Control', 'no-cache')
+      } else if (target.endsWith(`${sep}version.json`)) {
+        // 版本探测文件必须每次走网络，不能被浏览器/CDN 缓存
+        res.setHeader('Cache-Control', 'no-store')
       } else if (target.includes(`${sep}assets${sep}`)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
       }

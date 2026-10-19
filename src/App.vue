@@ -578,6 +578,7 @@
   import { toast } from 'vue-sonner'
   import { migrateGameData } from '@/utils/migration'
   import { checkLatestVersion } from '@/utils/versionCheck'
+  import { useAppUpdate } from '@/composables/useAppUpdate'
   import { StarsBackground } from '@/components/ui/bg-stars'
   import { ParticlesBg } from '@/components/ui/particles-bg'
   import { App as CapacitorApp } from '@capacitor/app'
@@ -594,6 +595,7 @@
   const { isDark } = useTheme()
   const { t } = useI18n()
   const { BUILDINGS, TECHNOLOGIES } = useGameConfig()
+  const appUpdate = useAppUpdate()
   const enemyAlertNotificationsRef = ref<InstanceType<typeof EnemyAlertNotifications> | null>(null)
   // ConfirmDialog 状态
   const confirmDialogOpen = ref(false)
@@ -1207,6 +1209,8 @@
 
       // 启动游戏循环（联机模式下只更新时间戳，不推进世界）
       startGameLoop()
+      // 检测站点是否部署了新构建（版本号或构建时间变化）
+      appUpdate.start()
       // 启动积分更新定时器（联机模式积分由服务端计算）
       if (!online) {
         startPointsUpdate()
@@ -1288,6 +1292,7 @@
     if (pointsUpdateInterval.value) clearInterval(pointsUpdateInterval.value)
     if (konamiCleanup.value) konamiCleanup.value()
     if (versionCheckInterval.value) clearInterval(versionCheckInterval.value)
+    appUpdate.stop()
     // 移除队列取消事件监听
     window.removeEventListener('cancel-build', handleCancelBuildEvent as EventListener)
     window.removeEventListener('cancel-research', handleCancelResearchEvent as EventListener)

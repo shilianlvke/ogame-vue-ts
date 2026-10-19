@@ -1164,6 +1164,8 @@ export default {
     checkUpdate: 'Check Update',
     checking: 'Checking...',
     newVersionAvailable: 'New version {version} available',
+    browserUpdateReady: 'A new build is available. Refresh the page to update.',
+    refreshNow: 'Refresh now',
     upToDate: 'Already up to date',
     checkUpdateFailed: 'Failed to check for updates, please check your network connection',
     viewUpdate: 'View Update',

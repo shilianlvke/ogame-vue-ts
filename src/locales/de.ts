@@ -1149,6 +1149,8 @@ export default {
     checkUpdate: 'Update prüfen',
     checking: 'Prüfen...',
     newVersionAvailable: 'Neue Version {version} verfügbar',
+    browserUpdateReady: 'Ein neuer Build ist verfügbar. Seite neu laden, um zu aktualisieren.',
+    refreshNow: 'Jetzt neu laden',
     upToDate: 'Bereits auf dem neuesten Stand',
     checkUpdateFailed: 'Update-Prüfung fehlgeschlagen, bitte überprüfen Sie Ihre Netzwerkverbindung',
     viewUpdate: 'Update ansehen',

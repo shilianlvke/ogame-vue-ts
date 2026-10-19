@@ -158,6 +158,19 @@ http://<NAS IP>:25122
 
 看到旧界面时访问一次 `http://<NAS IP>:25122/reset-sw` 清 Service Worker 缓存。
 
+## 浏览器自动更新
+
+每次 `pnpm build` 都会生成 `docs/version.json`（包含 `version` 与构建时间 `buildTime`）。
+页面启动后、每 5 分钟、窗口重新聚焦或从后台恢复时会检查这个文件：
+
+- 版本号或构建时间任意一个变化，就认为部署了新构建；
+- 页面会弹出“立即刷新”提示；
+- 切到后台或空闲 60 秒后会自动刷新；
+- 刷新前会先落盘存档，并清理旧 Service Worker / CacheStorage。
+
+因此正常部署后不需要再让用户手动强制刷新。反向代理不要缓存
+`version.json` 与 `index.html`（仓库自带的 `nginx.conf` 已设置 `no-store` / `no-cache`）。
+
 ## 常见问题
 
 | 现象 | 处理 |

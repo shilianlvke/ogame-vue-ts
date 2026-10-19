@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin, type ViteDevServer } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
@@ -8,10 +8,43 @@ import pkg from './package.json'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+/** 构建元信息：bundle 与 version.json 必须使用同一份值 */
+const buildInfo = {
+  version: pkg.version,
+  buildTime: new Date().toISOString()
+}
+
+/**
+ * 输出 /version.json，供客户端判断站点是否已经部署了新构建。
+ * 版本号或构建时间任意一个变化都算新构建。
+ */
+const appVersionPlugin: Plugin = {
+  name: 'app-version',
+  configureServer(server: ViteDevServer) {
+    server.middlewares.use((req, res, next) => {
+      if ((req.url ?? '').split('?')[0] !== '/version.json') {
+        next()
+        return
+      }
+      res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      res.setHeader('Cache-Control', 'no-store')
+      res.end(JSON.stringify(buildInfo))
+    })
+  },
+  generateBundle() {
+    this.emitFile({
+      type: 'asset',
+      fileName: 'version.json',
+      source: JSON.stringify(buildInfo, null, 2)
+    })
+  }
+}
+
 // @ts-expect-error - Vite CSS transformer type
 export default defineConfig(async () => {
   const plugins = [
     vue(),
+    appVersionPlugin,
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -29,6 +62,8 @@ export default defineConfig(async () => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,wav,json}'],
+        // version.json 必须走网络，不能被旧 Service Worker 缓存
+        globIgnores: ['**/version.json'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
@@ -56,6 +91,10 @@ export default defineConfig(async () => {
 
   return {
     base: './',
+    define: {
+      __APP_VERSION__: JSON.stringify(buildInfo.version),
+      __BUILD_TIME__: JSON.stringify(buildInfo.buildTime)
+    },
     build: {
       outDir: 'docs',
       sourcemap: false,

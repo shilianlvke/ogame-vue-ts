@@ -310,11 +310,11 @@
         <div class="space-y-2">
           <div class="flex items-center justify-between text-sm">
             <span class="text-muted-foreground">{{ t('settings.version') }}:</span>
-            <span class="font-medium">{{ pkg.version }}</span>
+            <span class="font-medium">{{ CURRENT_BUILD_INFO.version }}</span>
           </div>
           <div class="flex items-center justify-between text-sm">
             <span class="text-muted-foreground">{{ t('settings.buildDate') }}:</span>
-            <span class="font-medium">{{ pkg.buildDate }}</span>
+            <span class="font-medium">{{ formatBuildTime(CURRENT_BUILD_INFO.buildTime) }}</span>
           </div>
           <!-- 检查更新按钮 -->
           <div class="pt-2">
@@ -431,8 +431,9 @@ import { dispatchCommand } from '@/core/runtime'
   import { decryptData, encryptData } from '@/utils/crypto'
   import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
   import pkg from '../../package.json'
-  import { checkLatestVersion, canCheckVersion } from '@/utils/versionCheck'
+  import { checkLatestVersion, canCheckVersion, VERSION_CHECK_COOLDOWN_MS } from '@/utils/versionCheck'
   import type { VersionInfo } from '@/utils/versionCheck'
+  import { CURRENT_BUILD_INFO, fetchLatestBuildInfo, formatBuildTime, isBuildChanged, reloadForUpdate } from '@/utils/appUpdate'
   import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
   import PrivacyDialog from '@/components/dialogs/PrivacyDialog.vue'
   import WebDAVConfigDialog from '@/components/settings/WebDAVConfigDialog.vue'
@@ -539,9 +540,8 @@ import { dispatchCommand } from '@/core/runtime'
 
     const lastCheck = gameStore.player.lastManualUpdateCheck || 0
     const now = Date.now()
-    const fiveMinutes = 5 * 60 * 1000
     const timePassed = now - lastCheck
-    const timeRemaining = fiveMinutes - timePassed
+    const timeRemaining = VERSION_CHECK_COOLDOWN_MS - timePassed
 
     if (timeRemaining <= 0) {
       cooldownTime.value = ''
@@ -603,6 +603,23 @@ onMounted(() => {
 
     isCheckingVersion.value = true
     try {
+      // 先检查站点是否部署了新的构建（版本号或构建时间变化）
+      const latestBuild = await fetchLatestBuildInfo()
+      if (latestBuild && isBuildChanged(latestBuild)) {
+        toast.info(t('settings.browserUpdateReady'), {
+          duration: Infinity,
+          dismissible: true,
+          action: {
+            label: t('settings.refreshNow'),
+            onClick: () => {
+              void reloadForUpdate()
+            }
+          }
+        })
+        return
+      }
+
+      // 再检查 GitHub Release（用于下载桌面/安装包）
       const versionInfo = await checkLatestVersion(gameStore.player.lastManualUpdateCheck || 0, (time: number) => {
         gameStore.player.lastManualUpdateCheck = time
       })

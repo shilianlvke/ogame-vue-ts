@@ -1150,6 +1150,8 @@ export default {
     checkUpdate: 'Проверить обновление',
     checking: 'Проверка...',
     newVersionAvailable: 'Доступна новая версия {version}',
+    browserUpdateReady: 'Доступна новая сборка. Обновите страницу, чтобы обновиться.',
+    refreshNow: 'Обновить сейчас',
     upToDate: 'Уже актуальная версия',
     checkUpdateCooldown: 'Пожалуйста, попробуйте позже (5 минут перезарядки)',
     checkUpdateFailed: 'Не удалось проверить обновления, проверьте подключение к Интернету',

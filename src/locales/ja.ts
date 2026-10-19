@@ -1171,6 +1171,8 @@ export default {
     checkUpdate: 'アップデート確認',
     checking: '確認中...',
     newVersionAvailable: '新バージョン{version}が利用可能です',
+    browserUpdateReady: '新しいビルドが利用可能です。ページを再読み込みして更新してください。',
+    refreshNow: '今すぐ再読み込み',
     upToDate: '最新バージョンです',
     checkUpdateCooldown: 'しばらくしてから再度お試しください（5分間のクールダウン）',
     checkUpdateFailed: 'アップデートの確認に失敗しました。ネットワーク接続を確認してください',

@@ -6,13 +6,15 @@ export interface VersionInfo {
   downloadUrl: string
 }
 
-// 检查GitHub最新版本
+/** 主动/被动版本检查的最小间隔（与设置页倒计时保持一致） */
+export const VERSION_CHECK_COOLDOWN_MS = 5 * 60 * 1000
+
+// 检查 GitHub 最新 Release
 export const checkLatestVersion = async (lastCheckTime: number, updateCheckTime: (time: number) => void): Promise<VersionInfo | null> => {
   const now = Date.now()
-  const oneHour = 60 * 60 * 1000 // 1小时
 
-  // 如果距离上次检查不到1小时，跳过
-  if (now - lastCheckTime < oneHour) {
+  // 如果距离上次检查不到冷却时间，跳过
+  if (now - lastCheckTime < VERSION_CHECK_COOLDOWN_MS) {
     return null
   }
 
@@ -49,9 +51,8 @@ export const checkLatestVersion = async (lastCheckTime: number, updateCheckTime:
   }
 }
 
-// 检查是否可以进行版本检查（距离上次检查是否超过1小时）
+// 检查是否可以进行版本检查（距离上次检查是否超过冷却时间）
 export const canCheckVersion = (lastCheckTime: number): boolean => {
   const now = Date.now()
-  const oneHour = 60 * 60 * 1000 // 1小时
-  return now - lastCheckTime >= oneHour
+  return now - lastCheckTime >= VERSION_CHECK_COOLDOWN_MS
 }

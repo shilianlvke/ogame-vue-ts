@@ -14,7 +14,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 25121",
-    "build": "vue-tsc -b && vite build && node update-build-date.js",
+    "build": "vue-tsc -b && node update-build-date.js && vite build",
     "typecheck": "vue-tsc -b",
     "smoke": "vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
     "smoke:server": "cross-env SMOKE_ENTRY=scripts/server-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",

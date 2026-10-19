@@ -1156,6 +1156,8 @@ export default {
     checkUpdate: 'Verificar Actualización',
     checking: 'Verificando...',
     newVersionAvailable: 'Nueva versión {version} disponible',
+    browserUpdateReady: 'Hay una nueva compilación disponible. Recarga la página para actualizar.',
+    refreshNow: 'Recargar ahora',
     upToDate: 'Ya está actualizado',
     checkUpdateFailed: 'Falló la verificación de actualizaciones, por favor verifica tu conexión de red',
     viewUpdate: 'Ver Actualización',
