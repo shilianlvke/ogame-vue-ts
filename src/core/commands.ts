@@ -946,23 +946,22 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       const trade = player.playerTrades![index]!
       const from = findPlayerById(world, trade.fromId)
       if (!from) {
-        playerTradeLogic.removePlayerTradeOffer(player, trade.id)
+        playerTradeLogic.setPlayerTradeStatus(undefined, player, trade.id, 'cancelled')
         return fail('errors.requirementsNotMet')
       }
 
       if (trade.status !== 'pending' || now >= trade.expiresAt) {
-        playerTradeLogic.removePlayerTradeOffer(player, trade.id)
-        playerTradeLogic.removePlayerTradeOffer(from, trade.id)
+        playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'expired')
         return fail('npcBehavior.trade.expired')
       }
 
       if (command.action === 'accept') {
         const settled = playerTradeLogic.settlePlayerTrade(from, player, trade)
         if (!settled.ok) return fail(settled.reason ?? 'errors.insufficientResources')
+        playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'accepted')
+      } else {
+        playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'declined')
       }
-
-      playerTradeLogic.removePlayerTradeOffer(player, trade.id)
-      playerTradeLogic.removePlayerTradeOffer(from, trade.id)
       return succeed()
     }
     case 'player.trade.cancel': {
@@ -972,8 +971,7 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       if (!trade) return fail('errors.requirementsNotMet')
 
       const to = findPlayerById(world, trade.toId)
-      playerTradeLogic.removePlayerTradeOffer(player, trade.id)
-      if (to) playerTradeLogic.removePlayerTradeOffer(to, trade.id)
+      playerTradeLogic.setPlayerTradeStatus(player, to, trade.id, 'cancelled')
       return succeed()
     }
     case 'planet.rename': {

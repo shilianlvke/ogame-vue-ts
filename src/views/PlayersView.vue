@@ -14,10 +14,7 @@
       </Card>
     </div>
 
-    <div
-      v-else
-      class="grid gap-4 lg:h-[calc(100vh-9rem)] lg:grid-cols-[260px_minmax(0,1fr)_300px]"
-    >
+    <div v-else class="grid gap-4 lg:h-[calc(100vh-9rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
       <!-- 联系人 -->
       <Card class="flex min-h-[320px] flex-col overflow-hidden lg:min-h-0">
         <CardHeader class="shrink-0 pb-2">
@@ -62,7 +59,10 @@
                     {{ t('players.me') }}
                   </Badge>
                 </span>
-                <span class="mt-0.5 flex items-center gap-1 text-[11px]" :class="player.online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'">
+                <span
+                  class="mt-0.5 flex items-center gap-1 text-[11px]"
+                  :class="player.online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+                >
                   <span class="h-1.5 w-1.5 rounded-full" :class="player.online ? 'bg-green-500' : 'bg-muted-foreground/50'" />
                   {{ player.online ? t('players.online') : t('players.offline') }}
                 </span>
@@ -82,7 +82,7 @@
       <Card class="flex min-h-[420px] min-w-0 flex-col overflow-hidden lg:min-h-0">
         <template v-if="selectedPeer">
           <CardHeader class="shrink-0 border-b py-3">
-            <CardTitle class="flex items-center gap-2 text-base">
+            <CardTitle class="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
               <span
                 class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
                 :style="avatarStyle(selectedPeer.id)"
@@ -90,42 +90,127 @@
                 {{ initials(selectedPeer.name) }}
               </span>
               <span class="truncate">{{ selectedPeer.name }}</span>
-              <span class="flex items-center gap-1 text-xs font-normal" :class="selectedPeer.online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'">
+              <span
+                class="flex items-center gap-1 text-xs font-normal"
+                :class="selectedPeer.online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+              >
                 <span class="h-1.5 w-1.5 rounded-full" :class="selectedPeer.online ? 'bg-green-500' : 'bg-muted-foreground/50'" />
                 {{ selectedPeer.online ? t('players.online') : t('players.offline') }}
+              </span>
+              <span class="ml-auto text-[11px] font-normal text-muted-foreground">
+                {{ t('players.points') }} {{ formatNumber(selectedPeer.points) }} ·
+                {{ t('players.planets') }} {{ selectedPeer.planetCount }}
               </span>
             </CardTitle>
           </CardHeader>
 
           <ScrollArea class="min-h-0 flex-1">
             <div class="space-y-3 p-4">
-              <div
-                v-for="message in privateMessages"
-                :key="message.id"
-                class="flex"
-                :class="message.fromId === myId ? 'justify-end' : 'justify-start'"
-              >
-                <div class="max-w-[78%]">
-                  <div
-                    class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words"
-                    :class="message.fromId === myId ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm bg-muted'"
-                  >
-                    {{ message.text }}
-                  </div>
-                  <div class="mt-1 text-[10px] text-muted-foreground" :class="message.fromId === myId ? 'text-right' : ''">
-                    {{ formatMessageTime(message.timestamp) }}
+              <template v-for="item in timeline" :key="item.key">
+                <!-- 普通私聊消息 -->
+                <div
+                  v-if="item.kind === 'message'"
+                  class="flex"
+                  :class="item.message.fromId === myId ? 'justify-end' : 'justify-start'"
+                >
+                  <div class="max-w-[78%]">
+                    <div
+                      class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words"
+                      :class="item.message.fromId === myId ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm bg-muted'"
+                    >
+                      {{ item.message.text }}
+                    </div>
+                    <div class="mt-1 text-[10px] text-muted-foreground" :class="item.message.fromId === myId ? 'text-right' : ''">
+                      {{ formatMessageTime(item.message.timestamp) }}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p v-if="privateMessages.length === 0" class="py-10 text-center text-xs text-muted-foreground">
+
+                <!-- 交易卡片 -->
+                <div v-else class="flex" :class="item.trade.fromId === myId ? 'justify-end' : 'justify-start'">
+                  <div
+                    class="w-full max-w-[320px] cursor-pointer rounded-xl border bg-card p-3 shadow-sm transition-colors hover:bg-muted/30"
+                    @click="openTradeDetail(item.trade)"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5 text-xs font-semibold">
+                        <ArrowLeftRight class="h-3.5 w-3.5 text-primary" />
+                        {{ t('players.tradeTitle') }}
+                      </div>
+                      <Badge :variant="tradeStatusVariant(item.trade)" class="h-4 px-1.5 text-[10px]">
+                        {{ tradeStatusLabel(item.trade) }}
+                      </Badge>
+                    </div>
+
+                    <div class="mt-2 space-y-1 text-[11px]">
+                      <div class="flex justify-between gap-2">
+                        <span class="text-muted-foreground">{{ t('players.tradeOffer') }}</span>
+                        <span class="text-right">{{ resourceSummary(item.trade.offer) }}</span>
+                      </div>
+                      <div class="flex justify-between gap-2">
+                        <span class="text-muted-foreground">{{ t('players.tradeRequest') }}</span>
+                        <span class="text-right">{{ resourceSummary(item.trade.request) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="mt-2 flex items-center justify-between gap-2">
+                      <span class="text-[10px] text-muted-foreground">{{ formatMessageTime(item.trade.createdAt) }}</span>
+                      <span class="text-[10px] text-primary">{{ t('players.tradeViewDetails') }}</span>
+                    </div>
+
+                    <div
+                      v-if="isIncomingPending(item.trade) || isOutgoingPending(item.trade)"
+                      class="mt-2 flex gap-2 border-t pt-2"
+                    >
+                      <template v-if="isIncomingPending(item.trade)">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          class="h-7 flex-1 px-2 text-[11px]"
+                          @click.stop="respondTrade(item.trade, 'decline')"
+                        >
+                          {{ t('players.tradeDecline') }}
+                        </Button>
+                        <Button size="sm" class="h-7 flex-1 px-2 text-[11px]" @click.stop="respondTrade(item.trade, 'accept')">
+                          {{ t('players.tradeAccept') }}
+                        </Button>
+                      </template>
+                      <Button
+                        v-else
+                        size="sm"
+                        variant="outline"
+                        class="h-7 px-2 text-[11px]"
+                        @click.stop="cancelTrade(item.trade)"
+                      >
+                        {{ t('players.tradeCancel') }}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <p v-if="timeline.length === 0" class="py-10 text-center text-xs text-muted-foreground">
                 {{ t('players.noMessages') }}
               </p>
               <div ref="bottomRef" />
             </div>
           </ScrollArea>
 
-          <div class="shrink-0 border-t p-3">
-            <div class="flex gap-2">
+          <!-- 输入框上方工具栏：交易是第一个功能，后续可继续加图标 -->
+          <div class="shrink-0 border-t">
+            <div class="flex items-center gap-1 px-3 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-8 gap-1.5 px-2 text-xs"
+                :title="t('players.tradeTitle')"
+                @click="openTradeDialog"
+              >
+                <ArrowLeftRight class="h-4 w-4" />
+                {{ t('players.tradeTitle') }}
+              </Button>
+            </div>
+            <div class="flex gap-2 p-3 pt-2">
               <Input
                 v-model="draft"
                 :maxlength="MAX_CHAT_LENGTH"
@@ -144,101 +229,120 @@
           <p class="text-sm text-muted-foreground">{{ t('players.selectPlayer') }}</p>
         </div>
       </Card>
+    </div>
 
-      <!-- 玩家详情 / 交易 -->
-      <Card class="flex min-h-[360px] flex-col overflow-hidden lg:min-h-0">
-        <CardHeader class="shrink-0 pb-2">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <ArrowLeftRight class="h-4 w-4 text-primary" />
-            {{ t('players.tradeTitle') }}
-          </CardTitle>
-        </CardHeader>
-        <ScrollArea class="min-h-0 flex-1">
-          <div class="space-y-4 p-4">
-            <template v-if="selectedPeer">
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="rounded-lg bg-muted/50 p-2">
-                  <div class="text-muted-foreground">{{ t('players.points') }}</div>
-                  <div class="font-medium">{{ formatNumber(selectedPeer.points) }}</div>
-                </div>
-                <div class="rounded-lg bg-muted/50 p-2">
-                  <div class="text-muted-foreground">{{ t('players.planets') }}</div>
-                  <div class="font-medium">{{ selectedPeer.planetCount }}</div>
-                </div>
-                <div class="col-span-2 rounded-lg bg-muted/50 p-2">
-                  <div class="text-muted-foreground">{{ t('players.lastSeen') }}</div>
-                  <div class="font-medium">{{ lastSeenText(selectedPeer) }}</div>
-                </div>
-              </div>
+    <!-- 发起交易弹框 -->
+    <Dialog v-model:open="tradeDialogOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('players.tradeTitle') }}</DialogTitle>
+          <DialogDescription>
+            {{ selectedPeer ? t('players.tradeWith', { name: selectedPeer.name }) : '' }}
+          </DialogDescription>
+        </DialogHeader>
 
-              <Separator />
-
-              <div class="space-y-2">
-                <div class="text-xs font-medium">{{ t('players.tradeOffer') }}</div>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <Input v-model.number="tradeOffer.metal" type="number" min="0" step="1" placeholder="M" />
-                  <Input v-model.number="tradeOffer.crystal" type="number" min="0" step="1" placeholder="C" />
-                  <Input v-model.number="tradeOffer.deuterium" type="number" min="0" step="1" placeholder="D" />
-                </div>
-                <div class="text-xs font-medium">{{ t('players.tradeRequest') }}</div>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <Input v-model.number="tradeRequest.metal" type="number" min="0" step="1" placeholder="M" />
-                  <Input v-model.number="tradeRequest.crystal" type="number" min="0" step="1" placeholder="C" />
-                  <Input v-model.number="tradeRequest.deuterium" type="number" min="0" step="1" placeholder="D" />
-                </div>
-                <Button class="w-full" size="sm" @click="sendTradeOffer">
-                  <ArrowLeftRight class="mr-2 h-4 w-4" />
-                  {{ t('players.tradeSend') }}
-                </Button>
-              </div>
-            </template>
-            <p v-else class="py-4 text-center text-xs text-muted-foreground">{{ t('players.selectPlayer') }}</p>
-
-            <Separator />
-
-            <div class="space-y-2">
-              <div class="text-xs font-medium">{{ t('players.tradeIncoming') }}</div>
-              <div v-for="trade in incomingTrades" :key="trade.id" class="space-y-2 rounded-lg border p-2 text-xs">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="truncate font-medium">{{ trade.fromName }}</span>
-                  <span class="text-[10px] text-muted-foreground">→ {{ t('players.me') }}</span>
-                </div>
-                <div class="text-[11px] text-muted-foreground">
-                  {{ t('players.tradeOffer') }}: {{ resourceSummary(trade.offer) }}
-                </div>
-                <div class="text-[11px] text-muted-foreground">
-                  {{ t('players.tradeRequest') }}: {{ resourceSummary(trade.request) }}
-                </div>
-                <div class="flex gap-2">
-                  <Button size="sm" class="flex-1" @click="respondTrade(trade, 'accept')">{{ t('players.tradeAccept') }}</Button>
-                  <Button size="sm" variant="outline" class="flex-1" @click="respondTrade(trade, 'decline')">{{ t('players.tradeDecline') }}</Button>
-                </div>
-              </div>
-              <p v-if="incomingTrades.length === 0" class="text-[11px] text-muted-foreground">{{ t('players.tradeEmpty') }}</p>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center gap-1.5 text-sm font-medium">
+              <ArrowLeftRight class="h-4 w-4 text-primary" />
+              {{ t('players.tradeOffer') }}
             </div>
-
-            <div class="space-y-2">
-              <div class="text-xs font-medium">{{ t('players.tradeOutgoing') }}</div>
-              <div v-for="trade in outgoingTrades" :key="trade.id" class="space-y-2 rounded-lg border p-2 text-xs">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="truncate font-medium">{{ trade.toName }}</span>
-                  <Button size="sm" variant="outline" class="h-6 px-2 text-[10px]" @click="cancelTrade(trade)">
-                    {{ t('players.tradeCancel') }}
-                  </Button>
+            <div class="grid grid-cols-3 gap-2">
+              <div v-for="resourceType in tradeResourceTypes" :key="`offer-${resourceType}`" class="space-y-1">
+                <div class="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <ResourceIcon :type="resourceType" size="sm" />
+                  {{ t(`resources.${resourceType}`) }}
                 </div>
-                <div class="text-[11px] text-muted-foreground">
-                  {{ t('players.tradeOffer') }}: {{ resourceSummary(trade.offer) }}
-                </div>
-                <div class="text-[11px] text-muted-foreground">
-                  {{ t('players.tradeRequest') }}: {{ resourceSummary(trade.request) }}
-                </div>
+                <Input v-model.number="tradeOffer[resourceType]" type="number" min="0" step="1" />
               </div>
-              <p v-if="outgoingTrades.length === 0" class="text-[11px] text-muted-foreground">{{ t('players.tradeEmpty') }}</p>
             </div>
           </div>
-        </ScrollArea>
-      </Card>
-    </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center gap-1.5 text-sm font-medium">
+              <ArrowLeftRight class="h-4 w-4 rotate-180 text-primary" />
+              {{ t('players.tradeRequest') }}
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div v-for="resourceType in tradeResourceTypes" :key="`request-${resourceType}`" class="space-y-1">
+                <div class="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <ResourceIcon :type="resourceType" size="sm" />
+                  {{ t(`resources.${resourceType}`) }}
+                </div>
+                <Input v-model.number="tradeRequest[resourceType]" type="number" min="0" step="1" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="tradeDialogOpen = false">{{ t('common.cancel') }}</Button>
+          <Button :disabled="!tradeFormValid" @click="sendTradeOffer">
+            <ArrowLeftRight class="mr-2 h-4 w-4" />
+            {{ t('players.tradeSend') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 交易详情弹框 -->
+    <Dialog v-model:open="tradeDetailOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('players.tradeDetails') }}</DialogTitle>
+          <DialogDescription>
+            {{ selectedTrade ? t('players.tradeWith', { name: tradePartnerName(selectedTrade) }) : '' }}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div v-if="selectedTrade" class="space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium">{{ selectedTrade.fromName }} → {{ selectedTrade.toName }}</span>
+            <Badge :variant="tradeStatusVariant(selectedTrade)">{{ tradeStatusLabel(selectedTrade) }}</Badge>
+          </div>
+
+          <div class="grid gap-2 text-sm">
+            <div class="rounded-lg bg-muted/50 p-3">
+              <div class="mb-1 text-muted-foreground">{{ t('players.tradeOffer') }}</div>
+              <div>{{ resourceSummary(selectedTrade.offer) }}</div>
+            </div>
+            <div class="rounded-lg bg-muted/50 p-3">
+              <div class="mb-1 text-muted-foreground">{{ t('players.tradeRequest') }}</div>
+              <div>{{ resourceSummary(selectedTrade.request) }}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{{ formatDateTime(selectedTrade.createdAt) }}</span>
+            <span>{{ formatDateTime(selectedTrade.expiresAt) }}</span>
+          </div>
+
+          <p v-if="isIncomingPending(selectedTrade)" class="text-xs text-muted-foreground">
+            {{ t('players.tradePendingIncoming') }}
+          </p>
+          <p v-else-if="isOutgoingPending(selectedTrade)" class="text-xs text-muted-foreground">
+            {{ t('players.tradePendingOutgoing') }}
+          </p>
+        </div>
+
+        <DialogFooter class="flex-wrap">
+          <Button variant="outline" @click="tradeDetailOpen = false">{{ t('common.close') }}</Button>
+          <template v-if="selectedTrade && isIncomingPending(selectedTrade)">
+            <Button variant="outline" @click="respondTrade(selectedTrade, 'decline')">
+              {{ t('players.tradeDecline') }}
+            </Button>
+            <Button @click="respondTrade(selectedTrade, 'accept')">{{ t('players.tradeAccept') }}</Button>
+          </template>
+          <Button
+            v-else-if="selectedTrade && isOutgoingPending(selectedTrade)"
+            variant="outline"
+            @click="cancelTrade(selectedTrade)"
+          >
+            {{ t('players.tradeCancel') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -249,9 +353,17 @@
   import { Badge } from '@/components/ui/badge'
   import { Button } from '@/components/ui/button'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+  } from '@/components/ui/dialog'
   import { Input } from '@/components/ui/input'
   import { ScrollArea } from '@/components/ui/scroll-area'
-  import { Separator } from '@/components/ui/separator'
+  import ResourceIcon from '@/components/common/ResourceIcon.vue'
   import { useGameStore } from '@/stores/gameStore'
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
@@ -261,7 +373,7 @@
   import { formatNumber } from '@/utils/format'
   import { toast } from 'vue-sonner'
   import type { PlayerPublicProfile } from '@/core/protocol'
-  import type { PlayerTradeOffer, PlayerTradeResources } from '@/types/game'
+  import type { ChatMessage, PlayerTradeOffer, PlayerTradeResources } from '@/types/game'
 
   const router = useRouter()
   const gameStore = useGameStore()
@@ -276,8 +388,12 @@
   const bottomRef = ref<HTMLElement | null>(null)
   const readAt = ref<Record<string, number>>({})
 
+  const tradeResourceTypes = ['metal', 'crystal', 'deuterium'] as const
   const tradeOffer = reactive<PlayerTradeResources>(emptyTradeResources())
   const tradeRequest = reactive<PlayerTradeResources>(emptyTradeResources())
+  const tradeDialogOpen = ref(false)
+  const tradeDetailOpen = ref(false)
+  const selectedTradeId = ref<string | null>(null)
 
   const players = computed(() =>
     [...netStore.players].sort(
@@ -288,12 +404,14 @@
   const filteredPlayers = computed(() => {
     const keyword = search.value.trim().toLowerCase()
     if (!keyword) return players.value
-    return players.value.filter(player => player.name.toLowerCase().includes(keyword) || player.id.toLowerCase().includes(keyword))
+    return players.value.filter(
+      player => player.name.toLowerCase().includes(keyword) || player.id.toLowerCase().includes(keyword)
+    )
   })
 
   const selectedPeer = computed(() => players.value.find(player => player.id === selectedPeerId.value) ?? null)
-
   const chatMessages = computed(() => gameStore.player.chatMessages ?? [])
+  const playerTrades = computed(() => gameStore.player.playerTrades ?? [])
 
   const privateMessages = computed(() => {
     const peerId = selectedPeerId.value
@@ -308,13 +426,50 @@
       .sort((a, b) => a.timestamp - b.timestamp)
   })
 
-  const pendingTrades = computed(() =>
-    (gameStore.player.playerTrades ?? []).filter(
-      trade => trade.status === 'pending' && trade.expiresAt > Date.now()
+  const tradesWithPeer = computed(() => {
+    const peerId = selectedPeerId.value
+    if (!peerId) return []
+    return playerTrades.value.filter(
+      trade =>
+        (trade.fromId === myId.value && trade.toId === peerId) ||
+        (trade.fromId === peerId && trade.toId === myId.value)
     )
+  })
+
+  type TimelineItem =
+    | { kind: 'message'; key: string; timestamp: number; message: ChatMessage }
+    | { kind: 'trade'; key: string; timestamp: number; trade: PlayerTradeOffer }
+
+  const timeline = computed<TimelineItem[]>(() => {
+    const items: TimelineItem[] = [
+      ...privateMessages.value.map<TimelineItem>(message => ({
+        kind: 'message',
+        key: `message-${message.id}`,
+        timestamp: message.timestamp,
+        message
+      })),
+      ...tradesWithPeer.value.map<TimelineItem>(trade => ({
+        kind: 'trade',
+        key: `trade-${trade.id}`,
+        timestamp: trade.createdAt,
+        trade
+      }))
+    ]
+    return items.sort((a, b) => a.timestamp - b.timestamp)
+  })
+
+  const selectedTrade = computed(
+    () => playerTrades.value.find(trade => trade.id === selectedTradeId.value) ?? null
   )
-  const incomingTrades = computed(() => pendingTrades.value.filter(trade => trade.toId === myId.value))
-  const outgoingTrades = computed(() => pendingTrades.value.filter(trade => trade.fromId === myId.value))
+
+  const tradeFormValid = computed(() => {
+    const total = tradeResourceTypes.reduce(
+      (sum, resourceType) =>
+        sum + (Number(tradeOffer[resourceType]) || 0) + (Number(tradeRequest[resourceType]) || 0),
+      0
+    )
+    return total > 0
+  })
 
   const canSend = computed(
     () => netStore.isOnline && !!selectedPeer.value && draft.value.trim().length > 0 && !cooling.value
@@ -330,9 +485,17 @@
   const unreadCount = (player: PlayerPublicProfile): number => {
     if (player.id === myId.value) return 0
     const since = readAt.value[player.id] ?? 0
-    return chatMessages.value.filter(
+    const unreadMessages = chatMessages.value.filter(
       message => message.fromId === player.id && message.toId === myId.value && message.timestamp > since
     ).length
+    const unreadTrades = playerTrades.value.filter(
+      trade =>
+        trade.fromId === player.id &&
+        trade.toId === myId.value &&
+        trade.createdAt > since &&
+        trade.status === 'pending'
+    ).length
+    return unreadMessages + unreadTrades
   }
 
   const avatarStyle = (id: string): Record<string, string> => {
@@ -348,11 +511,7 @@
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
   }
 
-  const lastSeenText = (player: PlayerPublicProfile): string => {
-    if (player.online) return t('players.online')
-    if (!player.lastSeenAt) return t('players.offline')
-    return new Date(player.lastSeenAt).toLocaleString()
-  }
+  const formatDateTime = (timestamp: number): string => new Date(timestamp).toLocaleString()
 
   const scrollToBottom = async (): Promise<void> => {
     await nextTick()
@@ -379,9 +538,11 @@
     void scrollToBottom()
   }
 
-  const resetTradeForm = (): void => {
+  const openTradeDialog = (): void => {
+    if (!selectedPeer.value) return
     Object.assign(tradeOffer, emptyTradeResources())
     Object.assign(tradeRequest, emptyTradeResources())
+    tradeDialogOpen.value = true
   }
 
   const resourceSummary = (resources: PlayerTradeResources): string => {
@@ -394,13 +555,7 @@
 
   const sendTradeOffer = (): void => {
     const peer = selectedPeer.value
-    if (!peer) return
-    const total =
-      tradeOffer.metal + tradeOffer.crystal + tradeOffer.deuterium + tradeRequest.metal + tradeRequest.crystal + tradeRequest.deuterium
-    if (total <= 0) {
-      toast.error(t('players.tradeInvalid'))
-      return
-    }
+    if (!peer || !tradeFormValid.value) return
 
     const result = dispatchCommand({
       type: 'player.trade.create',
@@ -414,17 +569,65 @@
     }
 
     toast.success(t('players.tradeSent'))
-    resetTradeForm()
+    tradeDialogOpen.value = false
+    void scrollToBottom()
   }
+
+  const isIncomingPending = (trade: PlayerTradeOffer): boolean =>
+    trade.toId === myId.value && trade.status === 'pending' && trade.expiresAt > Date.now()
+
+  const isOutgoingPending = (trade: PlayerTradeOffer): boolean =>
+    trade.fromId === myId.value && trade.status === 'pending' && trade.expiresAt > Date.now()
 
   const respondTrade = (trade: PlayerTradeOffer, action: 'accept' | 'decline'): void => {
     const result = dispatchCommand({ type: 'player.trade.respond', offerId: trade.id, action })
-    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
+    }
+    tradeDetailOpen.value = false
   }
 
   const cancelTrade = (trade: PlayerTradeOffer): void => {
     const result = dispatchCommand({ type: 'player.trade.cancel', offerId: trade.id })
-    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
+    }
+    tradeDetailOpen.value = false
+  }
+
+  const openTradeDetail = (trade: PlayerTradeOffer): void => {
+    selectedTradeId.value = trade.id
+    tradeDetailOpen.value = true
+  }
+
+  const tradePartnerName = (trade: PlayerTradeOffer): string =>
+    trade.fromId === myId.value ? trade.toName : trade.fromName
+
+  const tradeStatusLabel = (trade: PlayerTradeOffer): string => {
+    if (trade.status === 'pending' && trade.expiresAt <= Date.now()) return t('players.tradeExpired')
+    switch (trade.status) {
+      case 'pending':
+        return trade.toId === myId.value
+          ? t('players.tradePendingIncoming')
+          : t('players.tradePendingOutgoing')
+      case 'accepted':
+        return t('players.tradeAccepted')
+      case 'declined':
+        return t('players.tradeDeclined')
+      case 'cancelled':
+        return t('players.tradeCancelled')
+      default:
+        return t('players.tradeExpired')
+    }
+  }
+
+  const tradeStatusVariant = (trade: PlayerTradeOffer): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    if (trade.status === 'accepted') return 'default'
+    if (trade.status === 'declined') return 'destructive'
+    if (trade.status === 'pending' && trade.expiresAt > Date.now()) return 'secondary'
+    return 'outline'
   }
 
   watch(
@@ -434,7 +637,9 @@
         selectedPeerId.value = null
       }
       if (!selectedPeerId.value) {
-        const first = list.find(player => player.id !== myId.value && player.online) ?? list.find(player => player.id !== myId.value)
+        const first =
+          list.find(player => player.id !== myId.value && player.online) ??
+          list.find(player => player.id !== myId.value)
         if (first) selectPeer(first)
       }
     },
@@ -442,7 +647,7 @@
   )
 
   watch(
-    () => privateMessages.value.length,
+    () => timeline.value.length,
     () => {
       if (!selectedPeerId.value) return
       readAt.value[selectedPeerId.value] = Date.now()

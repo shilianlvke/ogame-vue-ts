@@ -11,6 +11,7 @@ import type { Player, PlayerTradeOffer, PlayerTradeResources } from '@/types/gam
 
 export const PLAYER_TRADE_EXPIRY_MS = 30 * 60 * 1000
 const MAX_TRADE_AMOUNT = 1_000_000_000_000
+const MAX_TRADE_HISTORY = 50
 
 const RESOURCE_KEYS = ['metal', 'crystal', 'deuterium'] as const
 
@@ -64,18 +65,40 @@ export const createPlayerTradeOffer = (
   expiresAt: now + PLAYER_TRADE_EXPIRY_MS
 })
 
+/** 控制交易历史长度，优先保留未处理的交易 */
+export const trimPlayerTradeHistory = (player: Player, max: number = MAX_TRADE_HISTORY): void => {
+  if (!player.playerTrades || player.playerTrades.length <= max) return
+  for (let i = 0; i < player.playerTrades.length && player.playerTrades.length > max; ) {
+    if (player.playerTrades[i]!.status === 'pending') {
+      i += 1
+      continue
+    }
+    player.playerTrades.splice(i, 1)
+  }
+}
+
 export const addPlayerTradeOffer = (from: Player, to: Player, trade: PlayerTradeOffer): void => {
   if (!from.playerTrades) from.playerTrades = []
   if (!to.playerTrades) to.playerTrades = []
   from.playerTrades.push({ ...trade })
   to.playerTrades.push({ ...trade })
+  trimPlayerTradeHistory(from)
+  trimPlayerTradeHistory(to)
 }
 
-export const removePlayerTradeOffer = (player: Player, tradeId: string): boolean => {
-  const index = player.playerTrades?.findIndex(trade => trade.id === tradeId) ?? -1
-  if (index < 0) return false
-  player.playerTrades!.splice(index, 1)
-  return true
+/** 更新双方交易状态；已结束的交易保留在数组中，作为聊天卡片的历史记录 */
+export const setPlayerTradeStatus = (
+  from: Player | undefined,
+  to: Player | undefined,
+  tradeId: string,
+  status: PlayerTradeOffer['status']
+): void => {
+  for (const player of [from, to]) {
+    if (!player) continue
+    const trade = player.playerTrades?.find(candidate => candidate.id === tradeId)
+    if (trade) trade.status = status
+    trimPlayerTradeHistory(player)
+  }
 }
 
 /** 接受交易：校验并转移双方主星资源 */
@@ -107,13 +130,13 @@ export const settlePlayerTrade = (
   return { ok: true }
 }
 
-/** 清理过期的 pending 交易（双方数组各自清理） */
+/** 标记过期的 pending 交易；保留卡片历史 */
 export const cleanupExpiredPlayerTrades = (player: Player, now: number): void => {
   if (!player.playerTrades?.length) return
-  for (let i = player.playerTrades.length - 1; i >= 0; i -= 1) {
-    const trade = player.playerTrades[i]!
+  for (const trade of player.playerTrades) {
     if (trade.status === 'pending' && now >= trade.expiresAt) {
-      player.playerTrades.splice(i, 1)
+      trade.status = 'expired'
     }
   }
+  trimPlayerTradeHistory(player)
 }

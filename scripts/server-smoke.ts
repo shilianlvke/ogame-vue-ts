@@ -540,8 +540,10 @@ const main = async () => {
       command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
     })
     await bob.client.next(m => m.t === 'ack' && m.seq === 6, 5000, '交易接受 ack')
-    assert((alicePlayer.playerTrades?.length ?? 0) === 0, '接受后发起方交易未清除')
-    assert((bobPlayer.playerTrades?.length ?? 0) === 0, '接受后接收方交易未清除')
+    assert((alicePlayer.playerTrades?.length ?? 0) === 1, '接受后发起方交易卡片丢失')
+    assert((bobPlayer.playerTrades?.length ?? 0) === 1, '接受后接收方交易卡片丢失')
+    assert(alicePlayer.playerTrades![0]!.status === 'accepted', '发起方交易状态未更新为 accepted')
+    assert(bobPlayer.playerTrades![0]!.status === 'accepted', '接收方交易状态未更新为 accepted')
     assert(
       alicePlanet.resources.metal === 9_000 && alicePlanet.resources.crystal === 10_500,
       '接受交易后发起方资源不正确'
