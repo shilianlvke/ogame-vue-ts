@@ -1,7 +1,7 @@
 <template>
   <div
     ref="wrapRef"
-    class="relative h-full min-h-[360px] w-full touch-none overflow-hidden bg-[#050a18] text-slate-100 select-none"
+    class="relative h-full min-h-[360px] w-full touch-none overflow-hidden bg-background text-foreground select-none"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -14,16 +14,16 @@
     <!-- 画布内悬停信息 -->
     <div
       v-if="hover"
-      class="pointer-events-none absolute z-20 w-56 rounded-lg border border-white/15 bg-slate-950/90 p-2.5 text-xs shadow-xl backdrop-blur"
+      class="pointer-events-none absolute z-20 w-56 rounded-lg border border-border bg-popover/95 p-2.5 text-xs text-popover-foreground shadow-xl backdrop-blur"
       :style="{ left: `${hover.x}px`, top: `${hover.y}px` }"
     >
-      <div class="truncate font-semibold text-white">{{ hover.title }}</div>
-      <div v-if="hover.subtitle" class="truncate text-[10px] text-slate-400">{{ hover.subtitle }}</div>
-      <div v-for="line in hover.lines" :key="line" class="mt-0.5 text-[10px] text-slate-300">{{ line }}</div>
+      <div class="truncate font-semibold">{{ hover.title }}</div>
+      <div v-if="hover.subtitle" class="truncate text-[10px] text-muted-foreground">{{ hover.subtitle }}</div>
+      <div v-for="line in hover.lines" :key="line" class="mt-0.5 text-[10px] text-muted-foreground">{{ line }}</div>
     </div>
 
     <!-- 小地图说明 -->
-    <div class="pointer-events-none absolute bottom-3 left-3 rounded-md border border-white/10 bg-slate-950/55 px-2 py-1 text-[10px] text-slate-400">
+    <div class="pointer-events-none absolute bottom-3 left-3 rounded-md border border-border bg-background/70 px-2 py-1 text-[10px] text-muted-foreground">
       <span class="sm:hidden">{{ t('galaxyMap.dragHint') }}</span>
       <span class="hidden sm:inline">{{ t('galaxyMap.hoverHint') }}</span>
     </div>
@@ -35,6 +35,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import { useNPCStore } from '@/stores/npcStore'
   import { useI18n } from '@/composables/useI18n'
+  import { useTheme } from '@/composables/useTheme'
   import { DEFAULT_LAYOUT_SEED, LAYOUT_CONFIG, regionOfGalaxy } from '@/config/galaxyConfig'
   import { buildCycleLayout } from '@/logic/galaxyGen'
   import { generateRegionName, generateStellarName } from '@/logic/nameGenerator'
@@ -80,6 +81,7 @@
   const gameStore = useGameStore()
   const npcStore = useNPCStore()
   const { t } = useI18n()
+  const { isDark } = useTheme()
 
   const wrapRef = ref<HTMLElement | null>(null)
   const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -109,31 +111,173 @@
   let pan = { x: 0, y: 0 }
   let pinchDistance = 0
 
-  const COLORS = {
+  interface MapPalette {
+    backgroundTop: string
+    backgroundMid: string
+    background: string
+    vignetteStart: string
+    vignetteEnd: string
+    starfieldPrimary: string
+    starfieldSecondary: string
+    star: string
+    starGlow0: string
+    starGlow1: string
+    starGlow2: string
+    starStroke: string
+    starLabel: string
+    orbit: string
+    lane: string
+    laneSoft: string
+    gate: string
+    gateSoft: string
+    boundary: string
+    label: string
+    labelMuted: string
+    current: string
+    selected: string
+    own: string
+    npc: string
+    hostile: string
+    friendly: string
+    empty: string
+    emptyDot: string
+    homeLabel: string
+    currentLabel: string
+    unknown: string
+    moon: string
+    disk0: string
+    disk1: string
+    disk2: string
+    gateLink: string
+    regionNode: string
+    regionMuted: string
+    currentRing: string
+    compassLine: string
+    compassNeedle: string
+    compassText: string
+    labelShadow: string
+  }
+
+  const DARK_COLORS: MapPalette = {
+    backgroundTop: '#0c1730',
+    backgroundMid: '#071024',
     background: '#050a18',
+    vignetteStart: 'rgba(5,10,24,0)',
+    vignetteEnd: 'rgba(5,10,24,0.78)',
+    starfieldPrimary: 'rgba(147,197,253,0.55)',
+    starfieldSecondary: 'rgba(226,232,240,0.42)',
     star: '#f8d38a',
-    orbit: 'rgba(148, 196, 255, 0.22)',
-    lane: 'rgba(125, 211, 252, 0.3)',
-    gate: 'rgba(167, 139, 250, 0.55)',
-    label: '#dbeafe',
-    labelMuted: '#7f93b7',
+    starGlow0: 'rgba(254,240,138,0.8)',
+    starGlow1: 'rgba(251,191,36,0.32)',
+    starGlow2: 'rgba(251,191,36,0)',
+    starStroke: 'rgba(255,255,255,0.55)',
+    starLabel: '#fff6d6',
+    orbit: 'rgba(125,211,252,0.55)',
+    lane: 'rgba(96,165,250,0.72)',
+    laneSoft: 'rgba(125,211,252,0.5)',
+    gate: 'rgba(167,139,250,0.9)',
+    gateSoft: 'rgba(167,139,250,0.6)',
+    boundary: 'rgba(125,211,252,0.25)',
+    label: '#e2e8f0',
+    labelMuted: '#94a3b8',
     current: '#fbbf24',
     selected: '#67e8f9',
     own: '#60a5fa',
     npc: '#f59e0b',
     hostile: '#fb7185',
     friendly: '#34d399',
-    empty: '#1e293b'
+    empty: '#334155',
+    emptyDot: 'rgba(148,163,184,0.45)',
+    homeLabel: '#93c5fd',
+    currentLabel: '#fef3c7',
+    unknown: 'rgba(148,163,184,0.6)',
+    moon: '#cbd5e1',
+    disk0: 'rgba(251,191,36,0.16)',
+    disk1: 'rgba(96,165,250,0.08)',
+    disk2: 'rgba(15,23,42,0)',
+    gateLink: 'rgba(167,139,250,0.32)',
+    regionNode: '#7dd3fc',
+    regionMuted: '#64748b',
+    currentRing: 'rgba(251,191,36,0.8)',
+    compassLine: 'rgba(226,232,240,0.28)',
+    compassNeedle: 'rgba(251,191,36,0.75)',
+    compassText: 'rgba(226,232,240,0.7)',
+    labelShadow: 'rgba(0,0,0,0.75)'
   }
 
-  const ECONOMY_COLOR: Record<string, string> = {
-    mining: '#f59e0b',
-    industrial: '#94a3b8',
-    tech: '#38bdf8',
-    trade: '#34d399',
-    agriculture: '#84cc16',
-    military: '#f43f5e'
+  const LIGHT_COLORS: MapPalette = {
+    backgroundTop: '#f8fbff',
+    backgroundMid: '#eef4fb',
+    background: '#dce8f6',
+    vignetteStart: 'rgba(220,232,246,0)',
+    vignetteEnd: 'rgba(220,232,246,0.55)',
+    starfieldPrimary: 'rgba(37,99,235,0.38)',
+    starfieldSecondary: 'rgba(71,85,105,0.3)',
+    star: '#e0a21a',
+    starGlow0: 'rgba(245,158,11,0.45)',
+    starGlow1: 'rgba(251,191,36,0.2)',
+    starGlow2: 'rgba(251,191,36,0)',
+    starStroke: 'rgba(146,64,14,0.45)',
+    starLabel: '#7c2d12',
+    orbit: 'rgba(30,64,175,0.42)',
+    lane: 'rgba(3,105,161,0.6)',
+    laneSoft: 'rgba(3,105,161,0.38)',
+    gate: 'rgba(109,40,217,0.7)',
+    gateSoft: 'rgba(109,40,217,0.45)',
+    boundary: 'rgba(3,105,161,0.2)',
+    label: '#0f2744',
+    labelMuted: '#536780',
+    current: '#b45309',
+    selected: '#0e7490',
+    own: '#1d4ed8',
+    npc: '#b45309',
+    hostile: '#be123c',
+    friendly: '#047857',
+    empty: '#94a3b8',
+    emptyDot: 'rgba(100,116,139,0.45)',
+    homeLabel: '#1e40af',
+    currentLabel: '#7c2d12',
+    unknown: 'rgba(100,116,139,0.6)',
+    moon: '#475569',
+    disk0: 'rgba(245,158,11,0.12)',
+    disk1: 'rgba(37,99,235,0.08)',
+    disk2: 'rgba(220,232,246,0)',
+    gateLink: 'rgba(109,40,217,0.3)',
+    regionNode: '#0369a1',
+    regionMuted: '#64748b',
+    currentRing: 'rgba(180,83,9,0.8)',
+    compassLine: 'rgba(15,39,68,0.25)',
+    compassNeedle: 'rgba(180,83,9,0.8)',
+    compassText: 'rgba(15,39,68,0.7)',
+    labelShadow: 'rgba(255,255,255,0.75)'
   }
+
+  const COLORS: MapPalette = { ...DARK_COLORS }
+  const applyThemeColors = (): void => {
+    Object.assign(COLORS, isDark.value ? DARK_COLORS : LIGHT_COLORS)
+  }
+  applyThemeColors()
+
+  const ECONOMY_COLOR_DARK: Record<string, string> = {
+    mining: '#fbbf24',
+    industrial: '#cbd5e1',
+    tech: '#7dd3fc',
+    trade: '#6ee7b7',
+    agriculture: '#a3e635',
+    military: '#fb7185'
+  }
+
+  const ECONOMY_COLOR_LIGHT: Record<string, string> = {
+    mining: '#b45309',
+    industrial: '#475569',
+    tech: '#0369a1',
+    trade: '#047857',
+    agriculture: '#4d7c0f',
+    military: '#be123c'
+  }
+
+  const economyColor = (economy: string): string =>
+    (isDark.value ? ECONOMY_COLOR_DARK : ECONOMY_COLOR_LIGHT)[economy] ?? COLORS.current
 
   const systemIdOf = (galaxy: number, system: number): string =>
     `${cycle.value}:${regionOfGalaxy(galaxy)}:${system}`
@@ -250,8 +394,8 @@
 
   const drawSpaceBackground = (context: CanvasRenderingContext2D, width: number, height: number): void => {
     const gradient = context.createRadialGradient(width * 0.5, height * 0.48, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.75)
-    gradient.addColorStop(0, '#0c1730')
-    gradient.addColorStop(0.5, '#071024')
+    gradient.addColorStop(0, COLORS.backgroundTop)
+    gradient.addColorStop(0.5, COLORS.backgroundMid)
     gradient.addColorStop(1, COLORS.background)
     context.fillStyle = gradient
     context.fillRect(0, 0, width, height)
@@ -263,7 +407,7 @@
       const y = ((i * 104729 + 17) % 10000) / 10000 * height
       const radius = i % 7 === 0 ? 1.2 : 0.55
       context.globalAlpha = i % 5 === 0 ? 0.55 : 0.25
-      context.fillStyle = i % 11 === 0 ? '#93c5fd' : '#e2e8f0'
+      context.fillStyle = i % 11 === 0 ? COLORS.starfieldPrimary : COLORS.starfieldSecondary
       context.beginPath()
       context.arc(x, y, radius, 0, Math.PI * 2)
       context.fill()
@@ -278,8 +422,8 @@
       height / 2,
       Math.max(width, height) * 0.75
     )
-    vignette.addColorStop(0, 'rgba(5,10,24,0)')
-    vignette.addColorStop(1, 'rgba(5,10,24,0.78)')
+    vignette.addColorStop(0, COLORS.vignetteStart)
+    vignette.addColorStop(1, COLORS.vignetteEnd)
     context.fillStyle = vignette
     context.fillRect(0, 0, width, height)
   }
@@ -295,9 +439,9 @@
 
     // 恒星光晕
     const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.22)
-    glow.addColorStop(0, 'rgba(254, 240, 138, 0.8)')
-    glow.addColorStop(0.16, 'rgba(251, 191, 36, 0.32)')
-    glow.addColorStop(1, 'rgba(251, 191, 36, 0)')
+    glow.addColorStop(0, COLORS.starGlow0)
+    glow.addColorStop(0.16, COLORS.starGlow1)
+    glow.addColorStop(1, COLORS.starGlow2)
     ctx.fillStyle = glow
     ctx.beginPath()
     ctx.arc(cx, cy, size * 0.22, 0, Math.PI * 2)
@@ -308,11 +452,11 @@
     ctx.beginPath()
     ctx.arc(cx, cy, Math.max(10, size * 0.045), 0, Math.PI * 2)
     ctx.fill()
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)'
+    ctx.strokeStyle = COLORS.starStroke
     ctx.lineWidth = 1
     ctx.stroke()
 
-    drawCenteredLabel(star ? systemName(star) : `${state.galaxy}:${state.system}`, cx, cy + size * 0.08, 15, '#fff6d6', '600')
+    drawCenteredLabel(star ? systemName(star) : `${state.galaxy}:${state.system}`, cx, cy + size * 0.08, 15, COLORS.starLabel, '600')
     ctx.fillStyle = COLORS.labelMuted
     ctx.font = '11px ui-sans-serif, system-ui, sans-serif'
     ctx.textAlign = 'center'
@@ -329,7 +473,7 @@
       if (!other) continue
       const angle = Math.atan2(other.coords.y - (star?.coords.y ?? 0), other.coords.x - (star?.coords.x ?? 0))
       const len = size * 0.46
-      ctx.strokeStyle = lane.kind === 'gate' ? 'rgba(167,139,250,0.38)' : 'rgba(125,211,252,0.25)'
+      ctx.strokeStyle = lane.kind === 'gate' ? COLORS.gateSoft : COLORS.laneSoft
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(cx + Math.cos(angle) * size * 0.1, cy + Math.sin(angle) * size * 0.08)
@@ -368,14 +512,14 @@
         ctx.fill()
         ctx.shadowBlur = 0
       } else {
-        ctx.fillStyle = 'rgba(100,116,139,0.3)'
+        ctx.fillStyle = COLORS.emptyDot
         ctx.beginPath()
         ctx.arc(x, y, 2.3, 0, Math.PI * 2)
         ctx.fill()
       }
 
       if (slot.moon) {
-        ctx.fillStyle = '#cbd5e1'
+        ctx.fillStyle = COLORS.moon
         ctx.beginPath()
         ctx.arc(x + 9, y - 8, 2.1, 0, Math.PI * 2)
         ctx.fill()
@@ -431,7 +575,7 @@
     })
 
     // 星区边界
-    ctx.strokeStyle = 'rgba(125, 211, 252, 0.12)'
+    ctx.strokeStyle = COLORS.boundary
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.ellipse(cx, cy, size * 0.47, size * 0.47 * 0.58, 0, 0, Math.PI * 2)
@@ -470,7 +614,7 @@
       const isSelected = system.id === props.selectedSystemId
       const discovered = !!discoveredOf(system.galaxy, system.index)
       const isHome = !!homePosition && homePosition.galaxy === system.galaxy && homePosition.system === system.index
-      const color = discovered || isCurrent || isHome ? ECONOMY_COLOR[system.economy] ?? COLORS.current : 'rgba(100,116,139,0.55)'
+      const color = discovered || isCurrent || isHome ? economyColor(system.economy) : COLORS.unknown
       const radius = isCurrent ? 5.5 : discovered ? 3.8 : 2.5
       if (p.x < -30 || p.y < -30 || p.x > width + 30 || p.y > height + 30) continue
 
@@ -505,7 +649,7 @@
       }
 
       if (isCurrent || isSelected || discovered || isHome) {
-        ctx.fillStyle = isCurrent ? '#fef3c7' : isHome ? '#93c5fd' : discovered ? COLORS.label : COLORS.labelMuted
+        ctx.fillStyle = isCurrent ? COLORS.currentLabel : isHome ? COLORS.homeLabel : discovered ? COLORS.label : COLORS.labelMuted
         ctx.font = isCurrent ? '600 11px ui-sans-serif, system-ui, sans-serif' : '10px ui-sans-serif, system-ui, sans-serif'
         ctx.textAlign = 'left'
         ctx.fillText(systemName(system), p.x + 8, p.y + 3)
@@ -538,9 +682,9 @@
 
     // 银河盘面
     const disk = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.48)
-    disk.addColorStop(0, 'rgba(251, 191, 36, 0.16)')
-    disk.addColorStop(0.4, 'rgba(96, 165, 250, 0.08)')
-    disk.addColorStop(1, 'rgba(15, 23, 42, 0)')
+    disk.addColorStop(0, COLORS.disk0)
+    disk.addColorStop(0.4, COLORS.disk1)
+    disk.addColorStop(1, COLORS.disk2)
     ctx.fillStyle = disk
     ctx.beginPath()
     ctx.ellipse(cx, cy, size * 0.48, size * 0.48 * 0.58, 0, 0, Math.PI * 2)
@@ -557,7 +701,7 @@
       seen.add(key)
       const pa = project(layout.value.regions[a.region - 1]?.center ?? a.coords)
       const pb = project(layout.value.regions[b.region - 1]?.center ?? b.coords)
-      ctx.strokeStyle = 'rgba(167, 139, 250, 0.18)'
+      ctx.strokeStyle = COLORS.gateLink
       ctx.lineWidth = 0.9
       ctx.setLineDash([4, 8])
       ctx.beginPath()
@@ -572,7 +716,7 @@
       const isCurrent = region.region === regionOfGalaxy(state.galaxy)
       const isSelected = region.region === props.selectedRegion
       const scanned = regionScannedCount(region)
-      const color = isCurrent ? COLORS.current : scanned > 0 ? '#7dd3fc' : '#64748b'
+      const color = isCurrent ? COLORS.current : scanned > 0 ? COLORS.regionNode : COLORS.regionMuted
       const radius = isCurrent ? 8 : 6
       ctx.shadowColor = color
       ctx.shadowBlur = isCurrent || isSelected ? 18 : 6
@@ -583,7 +727,7 @@
       ctx.shadowBlur = 0
 
       if (isCurrent) {
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)'
+        ctx.strokeStyle = COLORS.currentRing
         ctx.lineWidth = 1.3
         ctx.beginPath()
         ctx.arc(p.x, p.y, radius + 5, 0, Math.PI * 2)
@@ -597,7 +741,7 @@
         ctx.stroke()
       }
 
-      ctx.fillStyle = isCurrent ? '#fef3c7' : COLORS.labelMuted
+      ctx.fillStyle = isCurrent ? COLORS.currentLabel : COLORS.labelMuted
       ctx.font = isCurrent ? '600 11px ui-sans-serif, system-ui, sans-serif' : '10px ui-sans-serif, system-ui, sans-serif'
       ctx.textAlign = 'left'
       ctx.fillText(regionName(region), p.x + 12, p.y + 3)
@@ -625,7 +769,7 @@
     ctx.font = `${weight} ${fontSize}px ui-sans-serif, system-ui, sans-serif`
     ctx.fillStyle = color
     ctx.textAlign = 'center'
-    ctx.shadowColor = 'rgba(0,0,0,0.75)'
+    ctx.shadowColor = COLORS.labelShadow
     ctx.shadowBlur = 6
     ctx.fillText(text, x, y)
     ctx.shadowBlur = 0
@@ -638,17 +782,17 @@
     radius: number,
     angle: number
   ): void => {
-    context.strokeStyle = 'rgba(226,232,240,0.28)'
+    context.strokeStyle = COLORS.compassLine
     context.lineWidth = 1
     context.beginPath()
     context.arc(x, y, radius, 0, Math.PI * 2)
     context.stroke()
-    context.strokeStyle = 'rgba(251,191,36,0.75)'
+    context.strokeStyle = COLORS.compassNeedle
     context.beginPath()
     context.moveTo(x, y)
     context.lineTo(x + Math.cos(angle) * radius * 0.8, y + Math.sin(angle) * radius * 0.8)
     context.stroke()
-    context.fillStyle = 'rgba(226,232,240,0.7)'
+    context.fillStyle = COLORS.compassText
     context.font = '8px ui-sans-serif, system-ui, sans-serif'
     context.textAlign = 'center'
     context.fillText('N', x, y - radius - 3)
@@ -812,6 +956,11 @@
   }
 
   defineExpose({ zoomIn: () => zoomBy(1.2), zoomOut: () => zoomBy(1 / 1.2), resetView })
+
+  watch(isDark, () => {
+    applyThemeColors()
+    requestDraw()
+  })
 
   watch(
     () => props.view,

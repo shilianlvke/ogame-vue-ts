@@ -44,28 +44,28 @@
 
         <!-- 当前坐标 -->
         <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-          <div class="pointer-events-auto rounded-lg border border-white/10 bg-slate-950/65 px-3 py-2 text-xs text-slate-200 backdrop-blur">
-            <div class="font-medium text-white">{{ currentSystemLabel }}</div>
-            <div class="mt-0.5 text-[10px] text-slate-400">[{{ currentGalaxy }}:{{ currentSystem }}] · {{ currentRegionName }}</div>
+          <div class="pointer-events-auto rounded-lg border border-border bg-background/80 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+            <div class="font-medium">{{ currentSystemLabel }}</div>
+            <div class="mt-0.5 text-[10px] text-muted-foreground">[{{ currentGalaxy }}:{{ currentSystem }}] · {{ currentRegionName }}</div>
           </div>
           <div class="pointer-events-auto flex gap-1.5">
-            <Button size="icon" variant="outline" class="h-8 w-8 border-white/15 bg-slate-950/65 text-slate-100" @click="mapRef?.zoomIn()">
+            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.zoomIn()">
               <Plus class="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="outline" class="h-8 w-8 border-white/15 bg-slate-950/65 text-slate-100" @click="mapRef?.zoomOut()">
+            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.zoomOut()">
               <Minus class="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="outline" class="h-8 w-8 border-white/15 bg-slate-950/65 text-slate-100" @click="mapRef?.resetView()">
+            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.resetView()">
               <Maximize2 class="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         <!-- 图例 -->
-        <div class="pointer-events-none absolute bottom-3 right-3 hidden rounded-lg border border-white/10 bg-slate-950/65 px-2.5 py-2 text-[10px] text-slate-300 backdrop-blur sm:block">
-          <div class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-blue-400" />{{ t('galaxyMap.legendOwn') }}</div>
-          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-400" />{{ t('galaxyMap.legendNpc') }}</div>
-          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-cyan-300" />{{ t('galaxyMap.legendScanned') }}</div>
+        <div class="pointer-events-none absolute bottom-3 right-3 hidden rounded-lg border border-border bg-background/80 px-2.5 py-2 text-[10px] text-muted-foreground shadow-sm backdrop-blur sm:block">
+          <div class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400" />{{ t('galaxyMap.legendOwn') }}</div>
+          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-600 dark:bg-amber-400" />{{ t('galaxyMap.legendNpc') }}</div>
+          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-cyan-700 dark:bg-cyan-300" />{{ t('galaxyMap.legendScanned') }}</div>
         </div>
       </Card>
 
