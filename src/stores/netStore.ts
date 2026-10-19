@@ -53,13 +53,44 @@ interface NetSettings {
   accountName: string
 }
 
-/** 默认服务器地址：优先同源（服务端同时托管前端），开发环境回退到 25122 */
+/**
+ * 默认服务器地址
+ *
+ * - 生产环境：始终使用当前页面的同源地址。
+ *   这样经过 Lucky / nginx / SakuraFrp 等反向代理、且外部端口不是 25122 时，
+ *   会自动得到 `wss://当前域名:当前端口/ws`，而不是错误地连到 25122。
+ * - Vite 开发环境：前端在 25121，后端在 25122，仍然指向当前主机的 25122。
+ * - Electron file://：回退到本机 25122。
+ */
 export const defaultServerUrl = (): string => {
   if (typeof location === 'undefined') return 'ws://localhost:25122/ws'
+  if (location.protocol === 'file:') return 'ws://localhost:25122/ws'
+
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const isLocalDevPort = location.port && location.port !== '25122' && location.port !== '80' && location.port !== '443'
-  const host = isLocalDevPort ? `${location.hostname}:25122` : location.host
-  return `${protocol}//${host}/ws`
+  // server smoke / 纯 Node 类型检查没有 vite/client 的 ImportMeta 扩展，做一次安全读取
+  const viteEnv = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env
+  if (viteEnv?.DEV) {
+    return `${protocol}//${location.hostname}:25122/ws`
+  }
+  return `${protocol}//${location.host}/ws`
+}
+
+/**
+ * 兼容旧版本写入 localStorage 的错误默认值。
+ *
+ * 旧逻辑在页面端口不是 25122/80/443 时，会强制写成 `hostname:25122`。
+ * 典型场景就是公网 HTTPS 端口 60465，结果浏览器一直去连 25122。
+ * 只有“存储值恰好等于旧默认值”时才纠正，用户手动填写的其他地址保持不动。
+ */
+const normalizeLegacyServerUrl = (serverUrl: string, fallback: string): string => {
+  if (typeof location === 'undefined') return serverUrl
+  if (!location.port || location.port === '25122' || location.port === '80' || location.port === '443') {
+    return serverUrl
+  }
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const legacyDefault = `${protocol}//${location.hostname}:25122/ws`
+  return serverUrl === legacyDefault ? fallback : serverUrl
 }
 
 const readSettings = (): NetSettings => {
@@ -71,7 +102,7 @@ const readSettings = (): NetSettings => {
     const parsed = JSON.parse(raw) as Partial<NetSettings>
     return {
       enabled: parsed.enabled === true,
-      serverUrl: parsed.serverUrl || fallback.serverUrl,
+      serverUrl: normalizeLegacyServerUrl(parsed.serverUrl || fallback.serverUrl, fallback.serverUrl),
       name: parsed.name ?? '',
       token: parsed.token ?? '',
       accountName: parsed.accountName ?? ''

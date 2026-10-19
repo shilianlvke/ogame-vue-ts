@@ -969,6 +969,7 @@ export default {
       error: '連線失敗',
     },
     server: '伺服器位址',
+    useCurrentAddress: '使用目前網址',
     name: '指揮官名稱',
     password: '密碼',
     passwordHint: '至少 4 位',

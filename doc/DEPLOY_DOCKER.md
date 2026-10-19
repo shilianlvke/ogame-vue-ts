@@ -150,6 +150,38 @@ location / {
 
 否则页面能打开但连不上服务器。
 
+### Lucky + SakuraFrp（公网 HTTPS/WSS）
+
+以外部地址 `https://nomansky.example.com:60465` 为例：
+
+- 浏览器访问的页面和 WebSocket 都走 **60465**，地址应是
+  `wss://nomansky.example.com:60465/ws`，不是 `:25122`；
+- SakuraFrp：用 TCP 隧道把公网 `60465` 转到 Lucky 的 HTTPS 监听端口；
+  如果用的是 HTTP/HTTPS 隧道，则要改成指向 Lucky 的 HTTP 端口并开启 WebSocket，
+  两种模式的本地端口不能混用；
+- Lucky：前端填 HTTPS 域名/60465，后端填 `http://<飞牛内网IP>:25122`
+  （Node 服务端是普通 HTTP，不要填 `https://...:25122`）；
+- Lucky 必须开启 **WebSocket / Upgrade**，保留 `/ws` 路径，不要重写；
+- 代理读超时至少 60 秒（WebSocket 每 20 秒会发 ping）。
+
+先在服务器上确认：
+
+```bash
+curl http://127.0.0.1:25122/health
+curl -k https://127.0.0.1:<Lucky HTTPS 端口>/health
+curl https://nomansky.example.com:60465/health
+```
+
+浏览器控制台里用下面这行测试握手（`onopen` 成功即代理链路通）：
+
+```js
+new WebSocket('wss://nomansky.example.com:60465/ws').onopen = () => console.log('ws open')
+```
+
+如果 `onopen` 不触发，看浏览器 Network → WS 的状态码：
+`404` 通常是路径被改写，`502/504` 通常是后端地址/端口不对，
+一直 pending 通常是 Lucky 没开 WebSocket 或读超时太短。
+
 ## 首次访问
 
 ```

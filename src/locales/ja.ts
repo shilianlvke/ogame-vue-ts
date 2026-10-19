@@ -1000,6 +1000,7 @@ export default {
       error: '失敗',
     },
     server: 'サーバーアドレス',
+    useCurrentAddress: '現在のアドレスを使用',
     name: '司令官名',
     password: 'パスワード',
     passwordHint: '4文字以上',

@@ -996,6 +996,7 @@ export default {
       error: 'Failed',
     },
     server: 'Server URL',
+    useCurrentAddress: 'Use current address',
     name: 'Commander name',
     password: 'Password',
     passwordHint: 'At least 4 characters',

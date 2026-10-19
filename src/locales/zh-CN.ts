@@ -966,6 +966,7 @@ export default {
       error: '连接失败',
     },
     server: '服务器地址',
+    useCurrentAddress: '使用当前地址',
     name: '指挥官名称',
     password: '密码',
     passwordHint: '至少 4 位',

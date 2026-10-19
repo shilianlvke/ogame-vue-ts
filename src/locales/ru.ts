@@ -979,6 +979,7 @@ export default {
       error: 'Ошибка',
     },
     server: 'Адрес сервера',
+    useCurrentAddress: 'Использовать текущий адрес',
     name: 'Имя командира',
     password: 'Пароль',
     passwordHint: 'Не менее 4 символов',

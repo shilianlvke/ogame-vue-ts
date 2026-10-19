@@ -978,6 +978,7 @@ export default {
       error: 'Fehlgeschlagen',
     },
     server: 'Server-URL',
+    useCurrentAddress: 'Aktuelle Adresse verwenden',
     name: 'Kommandantenname',
     password: 'Passwort',
     passwordHint: 'Mindestens 4 Zeichen',

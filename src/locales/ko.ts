@@ -956,6 +956,7 @@ export default {
       error: '실패',
     },
     server: '서버 주소',
+    useCurrentAddress: '현재 주소 사용',
     name: '지휘관 이름',
     password: '비밀번호',
     passwordHint: '4자 이상',

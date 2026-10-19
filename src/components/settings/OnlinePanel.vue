@@ -14,7 +14,10 @@
       <template v-if="!net.enabled">
         <div class="grid gap-2">
           <Label for="online-server">{{ t('online.server') }}</Label>
-          <Input id="online-server" v-model="net.serverUrl" placeholder="ws://127.0.0.1:25122/ws" />
+          <Input id="online-server" v-model="net.serverUrl" :placeholder="defaultUrl" />
+          <Button variant="link" size="sm" class="h-auto w-fit p-0 text-xs" @click="useCurrentAddress">
+            {{ t('online.useCurrentAddress') }}
+          </Button>
         </div>
 
         <div class="grid gap-2">
@@ -103,7 +106,7 @@
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
   import { Globe2, Link2, RotateCcw } from 'lucide-vue-next'
-  import { useNetStore } from '@/stores/netStore'
+  import { defaultServerUrl, useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { describeNetError, describeNetStatus } from '@/net/messages'
   import { toast } from 'vue-sonner'
@@ -111,6 +114,11 @@
   const net = useNetStore()
   const { t } = useI18n()
   const confirmRestore = ref(false)
+  const defaultUrl = defaultServerUrl()
+
+  const useCurrentAddress = () => {
+    net.serverUrl = defaultUrl
+  }
 
   const statusText = computed(() => describeNetStatus(net.status, t))
   const errorText = computed(() => describeNetError(net.error, t))

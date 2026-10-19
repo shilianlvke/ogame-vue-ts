@@ -987,6 +987,7 @@ export default {
       error: 'Error',
     },
     server: 'Dirección del servidor',
+    useCurrentAddress: 'Usar dirección actual',
     name: 'Nombre del comandante',
     password: 'Contraseña',
     passwordHint: 'Al menos 4 caracteres',
