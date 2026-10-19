@@ -45,3 +45,35 @@ scripts/.smoke-out
 server-dist
 data
 .deploy-last-commit
+
+# 包管理器锁文件（统一使用 pnpm）
+package-lock.json
+yarn.lock
+
+# 环境变量与签名材料
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+android/app/google-services.json
+
+# 构建 / 测试产物
+/pkg
+coverage
+*.tsbuildinfo
+*.apk
+*.aab
+*.ipa
+
+# 本地临时文件
+*.ini
+Thumbs.db
+desktop.ini
+*.bak
+*.tmp
+*.orig
+
+# 已从仓库移除、仅保留在本地的重复或生成资源
+/doc/galaxy-flight-preview.png
+/resources/icon.png
