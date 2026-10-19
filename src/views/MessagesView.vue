@@ -538,7 +538,8 @@
   } from '@/types/game'
   import { MissionType } from '@/types/game'
   import { useNPCStore } from '@/stores/npcStore'
-  import * as diplomaticLogic from '@/logic/diplomaticLogic'
+  import { dispatchCommand } from '@/core/runtime'
+  import type { MessageCollection } from '@/logic/messageLogic'
   import { toast } from 'vue-sonner'
 
   const gameStore = useGameStore()
@@ -571,6 +572,19 @@
     intelReports: false,
     jointAttackInvites: false
   })
+
+  const clearOptionCollections: Record<ClearOptionKey, MessageCollection> = {
+    battles: 'battleReports',
+    spyReports: 'spyReports',
+    spiedNotifications: 'spiedNotifications',
+    missionReports: 'missionReports',
+    npcActivity: 'npcActivityNotifications',
+    giftNotifications: 'giftNotifications',
+    giftRejected: 'giftRejectedNotifications',
+    tradeOffers: 'tradeOffers',
+    intelReports: 'intelReports',
+    jointAttackInvites: 'jointAttackInvites'
+  }
 
   // 清空消息选项配置
   const clearOptionFields = computed(() => [
@@ -651,35 +665,17 @@
   })
 
   const clearSelectedMessages = () => {
-    if (clearOptions.value.battles) {
-      gameStore.player.battleReports = []
-    }
-    if (clearOptions.value.spyReports) {
-      gameStore.player.spyReports = []
-    }
-    if (clearOptions.value.spiedNotifications) {
-      gameStore.player.spiedNotifications = []
-    }
-    if (clearOptions.value.missionReports) {
-      gameStore.player.missionReports = []
-    }
-    if (clearOptions.value.npcActivity) {
-      gameStore.player.npcActivityNotifications = []
-    }
-    if (clearOptions.value.giftNotifications) {
-      gameStore.player.giftNotifications = []
-    }
-    if (clearOptions.value.giftRejected) {
-      gameStore.player.giftRejectedNotifications = []
-    }
-    if (clearOptions.value.tradeOffers) {
-      gameStore.player.tradeOffers = []
-    }
-    if (clearOptions.value.intelReports) {
-      gameStore.player.intelReports = []
-    }
-    if (clearOptions.value.jointAttackInvites) {
-      gameStore.player.jointAttackInvites = []
+    const collections = (Object.keys(clearOptions.value) as ClearOptionKey[])
+      .filter(key => clearOptions.value[key])
+      .map(key => clearOptionCollections[key])
+
+    if (collections.length === 0) return
+
+    // 走命令层：联机模式下清理必须写服务端，否则新通知到达时旧通知会随补丁回来
+    const result = dispatchCommand({ type: 'messages.clear', collections })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
     }
 
     // 重置选项
@@ -701,6 +697,14 @@
 
     // 显示成功提示
     toast.success(t('messagesView.clearSuccess'))
+  }
+
+  const markMessageRead = (collection: MessageCollection, id: string) => {
+    dispatchCommand({ type: 'messages.markRead', collections: [collection], id })
+  }
+
+  const removeMessage = (collection: MessageCollection, id: string) => {
+    dispatchCommand({ type: 'messages.delete', collection, id })
   }
 
   // 分页状态
@@ -1035,30 +1039,19 @@
   const openBattleReport = (report: BattleResult) => {
     selectedBattleReport.value = report
     showBattleDialog.value = true
-    // 标记为已读
-    if (!report.read) {
-      report.read = true
-    }
+    markMessageRead('battleReports', report.id)
   }
 
   // 打开间谍报告
   const openSpyReport = (report: SpyReport) => {
     selectedSpyReport.value = report
     showSpyDialog.value = true
-    // 找到原始间谍报告对象并标记为已读（因为sortedSpyReports是副本）
-    const originalReport = gameStore.player.spyReports.find(r => r.id === report.id)
-    if (originalReport && !originalReport.read) {
-      originalReport.read = true
-    }
+    markMessageRead('spyReports', report.id)
   }
 
   // 打开被侦查通知
   const openSpiedNotification = (notification: SpiedNotification) => {
-    // 找到原始通知对象并标记为已读（因为sortedSpiedNotifications是副本）
-    const originalNotification = gameStore.player.spiedNotifications?.find(n => n.id === notification.id)
-    if (originalNotification && !originalNotification.read) {
-      originalNotification.read = true
-    }
+    markMessageRead('spiedNotifications', notification.id)
     // 设置选中的通知并打开详情对话框
     selectedSpiedNotification.value = notification
     showSpiedDialog.value = true
@@ -1066,38 +1059,22 @@
 
   // 删除战斗报告
   const deleteBattleReport = (reportId: string) => {
-    const index = gameStore.player.battleReports.findIndex(r => r.id === reportId)
-    if (index > -1) {
-      gameStore.player.battleReports.splice(index, 1)
-    }
+    removeMessage('battleReports', reportId)
   }
 
   // 删除间谍报告
   const deleteSpyReport = (reportId: string) => {
-    const index = gameStore.player.spyReports.findIndex(r => r.id === reportId)
-    if (index > -1) {
-      gameStore.player.spyReports.splice(index, 1)
-    }
+    removeMessage('spyReports', reportId)
   }
 
   // 删除被侦查通知
   const deleteSpiedNotification = (notificationId: string) => {
-    if (!gameStore.player.spiedNotifications) {
-      return
-    }
-    const index = gameStore.player.spiedNotifications.findIndex(n => n.id === notificationId)
-    if (index > -1) {
-      gameStore.player.spiedNotifications.splice(index, 1)
-    }
+    removeMessage('spiedNotifications', notificationId)
   }
 
   // 打开NPC活动通知
   const openNPCActivityNotification = (notification: NPCActivityNotification) => {
-    // 找到原始通知对象并标记为已读（因为sortedNPCActivityNotifications是副本）
-    const originalNotification = gameStore.player.npcActivityNotifications?.find(n => n.id === notification.id)
-    if (originalNotification && !originalNotification.read) {
-      originalNotification.read = true
-    }
+    markMessageRead('npcActivityNotifications', notification.id)
     // 设置选中的通知并打开详情对话框
     selectedNPCActivityNotification.value = notification
     showNPCActivityDialog.value = true
@@ -1105,13 +1082,7 @@
 
   // 删除NPC活动通知
   const deleteNPCActivityNotification = (notificationId: string) => {
-    if (!gameStore.player.npcActivityNotifications) {
-      return
-    }
-    const index = gameStore.player.npcActivityNotifications.findIndex(n => n.id === notificationId)
-    if (index > -1) {
-      gameStore.player.npcActivityNotifications.splice(index, 1)
-    }
+    removeMessage('npcActivityNotifications', notificationId)
   }
 
   // 获取任务类型名称
@@ -1134,10 +1105,7 @@
 
   // 打开任务报告
   const openMissionReport = (report: MissionReport) => {
-    // 标记为已读
-    if (!report.read) {
-      report.read = true
-    }
+    markMessageRead('missionReports', report.id)
     // 设置选中的报告并打开详情对话框
     selectedMissionReport.value = report
     showMissionDialog.value = true
@@ -1145,69 +1113,43 @@
 
   // 删除任务报告
   const deleteMissionReport = (reportId: string) => {
-    if (!gameStore.player.missionReports) {
-      return
-    }
-    const index = gameStore.player.missionReports.findIndex(r => r.id === reportId)
-    if (index > -1) {
-      gameStore.player.missionReports.splice(index, 1)
-    }
+    removeMessage('missionReports', reportId)
   }
 
   // 标记礼物通知为已读
   const markGiftAsRead = (gift: GiftNotification) => {
-    // 找到原始礼物通知对象并标记为已读（因为gifts是副本）
-    const originalGift = gameStore.player.giftNotifications?.find(g => g.id === gift.id)
-    if (originalGift && !originalGift.read) {
-      originalGift.read = true
-    }
+    markMessageRead('giftNotifications', gift.id)
   }
 
   // 接受礼物
   const acceptGift = (gift: GiftNotification) => {
-    const npc = npcStore.npcs.find(n => n.id === gift.fromNpcId)
-    if (npc) {
-      diplomaticLogic.acceptNPCGift(gameStore.player, npc, gift, gameStore.locale)
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'gift', action: 'accept', id: gift.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
     }
   }
 
   // 拒绝礼物
   const rejectGift = (gift: GiftNotification) => {
-    const npc = npcStore.npcs.find(n => n.id === gift.fromNpcId)
-    if (npc) {
-      diplomaticLogic.rejectNPCGift(gameStore.player, npc, gift, gameStore.locale)
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'gift', action: 'decline', id: gift.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
     }
   }
 
   // 删除礼物通知
   const deleteGiftNotification = (giftId: string) => {
-    if (!gameStore.player.giftNotifications) {
-      return
-    }
-    const index = gameStore.player.giftNotifications.findIndex(g => g.id === giftId)
-    if (index > -1) {
-      gameStore.player.giftNotifications.splice(index, 1)
-    }
+    removeMessage('giftNotifications', giftId)
   }
 
   // 标记礼物被拒绝通知为已读
   const markGiftRejectedAsRead = (rejection: GiftRejectedNotification) => {
-    // 找到原始拒绝通知对象并标记为已读（因为rejections是副本）
-    const originalRejection = gameStore.player.giftRejectedNotifications?.find(r => r.id === rejection.id)
-    if (originalRejection && !originalRejection.read) {
-      originalRejection.read = true
-    }
+    markMessageRead('giftRejectedNotifications', rejection.id)
   }
 
   // 删除礼物被拒绝通知
   const deleteGiftRejectedNotification = (rejectionId: string) => {
-    if (!gameStore.player.giftRejectedNotifications) {
-      return
-    }
-    const index = gameStore.player.giftRejectedNotifications.findIndex(r => r.id === rejectionId)
-    if (index > -1) {
-      gameStore.player.giftRejectedNotifications.splice(index, 1)
-    }
+    removeMessage('giftRejectedNotifications', rejectionId)
   }
 
   // ========== 贸易提议相关 ==========
@@ -1284,30 +1226,10 @@
       return
     }
 
-    const planet = gameStore.player.planets[0]
-    if (!planet) return
-
-    const requested = extractResourceInfo(offer.requestedResources)
-    const offered = extractResourceInfo(offer.offeredResources)
-
-    if (!requested || !offered) {
-      toast.error(t('npcBehavior.trade.acceptFailed'))
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'trade', action: 'accept', id: offer.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'npcBehavior.trade.acceptFailed'))
       return
-    }
-
-    // 扣除请求的资源
-    planet.resources[requested.type] -= requested.amount
-
-    // 添加获得的资源
-    planet.resources[offered.type] += offered.amount
-
-    // 移除贸易提议
-    deleteTradeOffer(offer.id)
-
-    // 提高与该NPC的好感度（使用 npcStore）
-    const npcRelation = npcStore.npcs.find(n => n.id === offer.npcId)?.relations?.[gameStore.player.id]
-    if (npcRelation) {
-      npcRelation.reputation += 10
     }
 
     toast.success(t('npcBehavior.trade.acceptSuccess'))
@@ -1315,38 +1237,31 @@
 
   // 拒绝贸易提议
   const declineTradeOffer = (offer: TradeOffer) => {
-    deleteTradeOffer(offer.id)
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'trade', action: 'decline', id: offer.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
+    }
+
     toast.info(t('npcBehavior.trade.declined'))
   }
 
   // 删除贸易提议
   const deleteTradeOffer = (offerId: string) => {
-    if (!gameStore.player.tradeOffers) return
-    const index = gameStore.player.tradeOffers.findIndex(o => o.id === offerId)
-    if (index > -1) {
-      gameStore.player.tradeOffers.splice(index, 1)
-    }
+    removeMessage('tradeOffers', offerId)
   }
 
   // ========== 情报报告相关 ==========
 
   // 打开情报报告详情对话框
   const openIntelReportDialog = (intel: IntelReport) => {
-    // 标记为已读
-    const originalIntel = gameStore.player.intelReports?.find(i => i.id === intel.id)
-    if (originalIntel && !originalIntel.read) {
-      originalIntel.read = true
-    }
+    markMessageRead('intelReports', intel.id)
     // 目前情报报告直接显示在卡片上，后续可添加详情对话框
   }
 
   // 删除情报报告
   const deleteIntelReport = (intelId: string) => {
-    if (!gameStore.player.intelReports) return
-    const index = gameStore.player.intelReports.findIndex(i => i.id === intelId)
-    if (index > -1) {
-      gameStore.player.intelReports.splice(index, 1)
-    }
+    removeMessage('intelReports', intelId)
   }
 
   // ========== 联合攻击邀请相关 ==========
@@ -1363,13 +1278,10 @@
       return
     }
 
-    // 移除邀请
-    deleteJointAttackInvite(invite.id)
-
-    // 提高与该NPC的好感度（使用 npcStore）
-    const npcRelation = npcStore.npcs.find(n => n.id === invite.fromNpcId)?.relations?.[gameStore.player.id]
-    if (npcRelation) {
-      npcRelation.reputation += 15
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'jointAttack', action: 'accept', id: invite.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
     }
 
     toast.success(t('npcBehavior.jointAttack.acceptSuccess'))
@@ -1378,16 +1290,17 @@
 
   // 拒绝联合攻击邀请
   const declineJointAttack = (invite: JointAttackInvite) => {
-    deleteJointAttackInvite(invite.id)
+    const result = dispatchCommand({ type: 'diplomacy.respond', kind: 'jointAttack', action: 'decline', id: invite.id })
+    if (!result.ok) {
+      toast.error(t(result.reason ?? 'errors.unknown'))
+      return
+    }
+
     toast.info(t('npcBehavior.jointAttack.declined'))
   }
 
   // 删除联合攻击邀请
   const deleteJointAttackInvite = (inviteId: string) => {
-    if (!gameStore.player.jointAttackInvites) return
-    const index = gameStore.player.jointAttackInvites.findIndex(i => i.id === inviteId)
-    if (index > -1) {
-      gameStore.player.jointAttackInvites.splice(index, 1)
-    }
+    removeMessage('jointAttackInvites', inviteId)
   }
 </script>

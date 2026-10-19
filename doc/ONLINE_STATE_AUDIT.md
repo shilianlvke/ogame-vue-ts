@@ -10,50 +10,34 @@
 | 行星改名 | `planet.rename` 命令 |
 | 恒星系改名 | `galaxy.rename` 命令 |
 | 等待队列（建造/研究/舰船/防御） | `queue.addWaiting` 命令 |
-| 战役接取/领奖 | `campaign.start` / `campaign.claim` 命令 |
+| 消息中心删除 / 清空 / 标记已读 | `messages.clear` / `messages.delete` / `messages.markRead` 命令 |
+| 外交通知标记已读（含来袭警报） | `messages.markRead` 命令 |
+| 礼物接受 / 拒绝 | `diplomacy.respond`（`kind: 'gift'`） |
+| 贸易提议接受 / 拒绝 | `diplomacy.respond`（`kind: 'trade'`） |
+| 联合攻击邀请接受 / 拒绝 | `diplomacy.respond`（`kind: 'jointAttack'`） |
+| 舰队任务终止（返航 / 已到达） | `fleet.abort` 命令 |
+| 战役对话声望 / 分支解锁 | `campaign.choice` 命令 |
+| 战役接取 / 领奖 | `campaign.start` / `campaign.claim` 命令 |
 | 扫描 / 信号 / 星门 / 跃迁 | 一开始就走命令 |
 
+消息类命令统一由 [messageLogic.ts](../src/logic/messageLogic.ts) 处理：
+清空、删除、已读都直接修改服务端玩家数组，因此新通知到达时，
+补丁里的数组只会包含"当前仍然存在"的通知，不会把已删除的旧通知带回来。
+
 ## 仍存在的问题（按严重度）
-
-### 高：消息中心删除/清空
-
-`MessagesView.vue` 里对 11 个数组做了本地 `splice` / 清空：
-
-```
-battleReports / spyReports / spiedNotifications / missionReports
-npcActivityNotifications / giftNotifications / giftRejectedNotifications
-tradeOffers / intelReports / jointAttackInvites
-```
-
-这些字段属于服务端补丁的 `reports` 部分，**本地删除后下一次补丁会重新下发**，
-表现为"删了又回来"。
-
-建议：新增 `messages.clear` 命令（`kind` + 可选 `index`），服务端按类型清理。
-
-### 中：舰队任务列表本地移除
-
-`FleetView.vue:1376` 直接 `fleetMissions.splice(index, 1)`。
-如果这是"移除已结束任务"，联机下删掉后服务端补丁会恢复；应改由服务端在任务结算时移除。
-
-### 中：战役进度初始化与分支重置
-
-`CampaignView.vue:197` 在客户端调用 `initializeCampaignProgress`，
-`:435` 本地重置 `unlockedBranches`。
-
-如果服务端创建玩家时没有初始化战役进度，`campaign.start` 会因 `notInitialized` 失败。
-需要确认服务端 `createPlayer` 是否调用了 `initializeCampaignProgress`。
 
 ### 低：提示（hints）偏好
 
 `useHints.ts` 的 `dismissedHints` / `hintsEnabled` 只写本地。
-联机下补丁会覆盖 → 已关闭的提示可能重新出现。
+联机下补丁可能覆盖 → 已关闭的提示可能重新出现。
 
 建议：并入一个 `player.prefs` 命令，或明确作为本地偏好（不参与服务端同步）。
 
 ### 低：舰队预设
 
-`FleetView.vue:989/991` 的 `fleetPresets` 本地增删，联机下会被覆盖。
-属于便利功能，可接受；若要持久化需加命令。
+`FleetView.vue:989/991` 的 `fleetPresets` 本地增删。
+它被列在 `netStore` 的 `LOCAL_PLAYER_FIELDS` 中，重连快照会保留；
+但补丁如果携带同名字段仍可能覆盖，属于便利功能，优先级低。
 
 ### 低：GM 工具
 
@@ -70,10 +54,10 @@ GM 页面本质是开发工具，联机下改了也会被覆盖；建议加"仅�
 - 资源是否足够的**只读比较**（BuildingsView / DefenseView）
 - 残骸场只读判断（FleetView）
 - UI 状态：`currentPlanetId`、侧边栏、`locale`、`isPaused`、`gameSpeed`（单机）
+- 本地偏好：主题、背景、隐私协议、舰队预设
 
 ## 建议修复顺序
 
-1. `messages.clear`（影响最大、最容易被玩家发现）
-2. 战役进度服务端初始化（不然新服玩家接不了任务）
-3. 舰队任务本地移除（确认语义后修）
-4. 其余偏好类，统一并入 `player.prefs`
+1. 提示（hints）偏好并入 `player.prefs`，或明确保留为本地状态
+2. GM 工具增加"仅单机可用"提示
+3. 其余本地偏好统一梳理，避免与补丁字段重名

@@ -1371,14 +1371,14 @@
 
   // 终止任务（不返还任何东西）
   const abortMission = (missionId: string) => {
-    const missionIndex = gameStore.player.fleetMissions.findIndex(m => m.id === missionId)
-    if (missionIndex > -1) {
-      gameStore.player.fleetMissions.splice(missionIndex, 1)
-      alertDialogTitle.value = t('fleetView.abortMissionSuccess')
-      alertDialogMessage.value = t('fleetView.abortMissionSuccessMessage')
-      alertDialogCallback.value = null
-      alertDialogOpen.value = true
-    }
+    // 走命令层：联机模式下本地删除会被服务端补丁恢复
+    const result = dispatchCommand({ type: 'fleet.abort', missionId })
+    if (!result.ok) return
+
+    alertDialogTitle.value = t('fleetView.abortMissionSuccess')
+    alertDialogMessage.value = t('fleetView.abortMissionSuccessMessage')
+    alertDialogCallback.value = null
+    alertDialogOpen.value = true
   }
 
   // 处理 AlertDialog 确认

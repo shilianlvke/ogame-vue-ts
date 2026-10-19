@@ -159,12 +159,15 @@ pnpm test          # 以上三项串起来
 | 建筑 | `building.upgrade`、`building.demolish`、`building.cancel` |
 | 研究 | `research.start`、`research.cancel` |
 | 船厂 | `ship.build`、`ship.scrap`、`defense.build` |
-| 舰队 | `fleet.send`、`fleet.recall` |
+| 舰队 | `fleet.send`、`fleet.recall`、`fleet.abort` |
 | 导弹 | `missile.launch` |
 | 传感器阵列 | `phalanx.scan` |
 | 军官 | `officer.hire`、`officer.renew`、`officer.dismiss` |
 | 星球 | `planet.abandon` |
 | 等待队列 | `queue.addWaiting`、`queue.removeWaiting` |
+| 消息 / 通知 | `messages.clear`、`messages.delete`、`messages.markRead` |
+| 外交响应 | `diplomacy.respond`（礼物 / 贸易 / 联合攻击） |
+| 战役 | `campaign.start`、`campaign.claim`、`campaign.choice` |
 
 配套改动：`PHALANX_SCAN_COST` 从 `GalaxyView` 硬编码移入 `core/commands.ts`，
 扫描扣费改由命令完成（服务端会重新校验余额）。
@@ -173,10 +176,10 @@ pnpm test          # 以上三项串起来
 
 | 位置 | 内容 | 处理计划 |
 |---|---|---|
-| `CampaignView` | 战役进度、分支选择 | 阶段 3 一并命令化 |
-| `MessagesView` | 战报/侦查报告标记已读、清空 | 属于本地 UI 状态，不上行 |
-| `FleetView` | `fleetPresets` | 玩家本地偏好 |
+| `CampaignView` | 战役进度的兜底初始化 | 服务端创建玩家时已初始化；单机保留兜底 |
+| `FleetView` | `fleetPresets` | 玩家本地偏好（重连快照会保留） |
 | `SettingsView` / `HomeView` | 主题、隐私协议、检查更新 | 本地偏好 |
+| `GMView` | 资源 / 建筑 / 舰队 / 防御 | 开发工具，仅建议单机使用 |
 | `GMView` | 调试后门 | 联机模式必须在服务端禁用 |
 
 ### 服务端接入方式

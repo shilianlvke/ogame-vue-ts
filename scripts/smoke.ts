@@ -22,7 +22,17 @@ import * as planetLogic from '@/logic/planetLogic'
 import * as fleetLogic from '@/logic/fleetLogic'
 import * as buildingLogic from '@/logic/buildingLogic'
 import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
-import type { Resources, FleetMission, Planet, NPC, DebrisField } from '@/types/game'
+import type {
+  Resources,
+  FleetMission,
+  Planet,
+  NPC,
+  DebrisField,
+  SpiedNotification,
+  GiftNotification,
+  TradeOffer,
+  JointAttackInvite
+} from '@/types/game'
 import { BuildingType, DefenseType, MissionType, NPCAIType, OfficerType, ShipType } from '@/types/game'
 
 const t = (key: string) => key
@@ -390,6 +400,162 @@ const runCommandScenario = async () => {
   if (home.buildQueue.filter(item => item.type === 'defense').length !== defenseQueueBefore + 1) {
     fail('场景 C：防御等待队列项执行后未进入正式队列')
   }
+
+  // 4.3) 消息/通知的删除、清空、已读必须走命令层
+  const messageTime = Date.now()
+  const firstSpied: SpiedNotification = {
+    id: 'smoke-spied-1',
+    timestamp: messageTime,
+    npcId: 'npc_smoke',
+    npcName: 'Smoke NPC',
+    targetPlanetId: home.id,
+    targetPlanetName: home.name,
+    detectionSuccess: true,
+    read: false
+  }
+  const secondSpied: SpiedNotification = {
+    ...firstSpied,
+    id: 'smoke-spied-2',
+    timestamp: messageTime + 1
+  }
+  player.spiedNotifications = [firstSpied, secondSpied]
+
+  const markRead = applyCommand(world, ctx, {
+    type: 'messages.markRead',
+    collections: ['spiedNotifications'],
+    id: firstSpied.id
+  })
+  if (!markRead.ok || !firstSpied.read) fail('场景 C：消息已读命令未生效')
+  if (secondSpied.read) fail('场景 C：消息已读命令误改了其他通知')
+
+  const deleted = applyCommand(world, ctx, {
+    type: 'messages.delete',
+    collection: 'spiedNotifications',
+    id: secondSpied.id
+  })
+  if (!deleted.ok || player.spiedNotifications.length !== 1) fail('场景 C：消息删除命令未生效')
+
+  const cleared = applyCommand(world, ctx, {
+    type: 'messages.clear',
+    collections: ['spiedNotifications']
+  })
+  if (!cleared.ok || player.spiedNotifications.length !== 0) fail('场景 C：消息清空命令未生效')
+
+  // 4.4) 外交通知的接受/拒绝必须走命令层，并真正修改服务端状态
+  ensureNpcRegistry(world, ctx)
+  const npc = world.npcs[0]
+  if (!npc) fail('场景 C：没有可用于外交测试的 NPC')
+  if (!npc.relations) npc.relations = {}
+  if (!npc.relations[player.id]) {
+    npc.relations[player.id] = {
+      fromId: npc.id,
+      toId: player.id,
+      reputation: 0,
+      status: 'neutral',
+      lastUpdated: messageTime,
+      history: []
+    }
+  }
+
+  const gift: GiftNotification = {
+    id: 'smoke-gift-1',
+    timestamp: messageTime,
+    fromNpcId: npc.id,
+    fromNpcName: npc.name,
+    resources: { metal: 100, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 },
+    currentReputation: npc.relations[player.id].reputation,
+    expectedReputationGain: 5,
+    expiresAt: messageTime + 60_000,
+    read: false
+  }
+  home.resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
+  player.giftNotifications = [gift]
+  const acceptedGift = applyCommand(world, ctx, {
+    type: 'diplomacy.respond',
+    kind: 'gift',
+    action: 'accept',
+    id: gift.id
+  })
+  if (!acceptedGift.ok || player.giftNotifications.length !== 0) fail('场景 C：接受礼物命令未移除通知')
+  if (home.resources.metal !== 100) fail('场景 C：接受礼物命令未发放资源')
+
+  const npcPlanet = npc.planets[0]
+  if (!npcPlanet) fail('场景 C：NPC 没有星球')
+  npcPlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 10_000, darkMatter: 0, energy: 0 }
+  home.resources = { metal: 1_000, crystal: 1_000, deuterium: 1_000, darkMatter: 0, energy: 0 }
+  const offer: TradeOffer = {
+    id: 'smoke-trade-1',
+    npcId: npc.id,
+    npcName: npc.name,
+    timestamp: messageTime,
+    offeredResources: { type: 'metal', amount: 500 },
+    requestedResources: { type: 'crystal', amount: 200 },
+    expiresAt: messageTime + 60_000,
+    status: 'pending',
+    read: false
+  }
+  player.tradeOffers = [offer]
+  const acceptedTrade = applyCommand(world, ctx, {
+    type: 'diplomacy.respond',
+    kind: 'trade',
+    action: 'accept',
+    id: offer.id
+  })
+  if (!acceptedTrade.ok || player.tradeOffers.length !== 0) fail('场景 C：接受贸易命令未移除提议')
+  if (home.resources.metal !== 1_500 || home.resources.crystal !== 800) fail('场景 C：接受贸易命令资源结算错误')
+
+  const invite: JointAttackInvite = {
+    id: 'smoke-joint-1',
+    fromNpcId: npc.id,
+    fromNpcName: npc.name,
+    timestamp: messageTime,
+    targetNpcId: 'npc_target',
+    targetNpcName: 'Target NPC',
+    targetPlanetId: 'planet_target',
+    targetPosition: { galaxy: 1, system: 1, position: 1 },
+    npcFleetCommitment: { lightFighter: 1 },
+    expectedLootRatio: 0.5,
+    expiresAt: messageTime + 60_000,
+    status: 'pending',
+    read: false
+  }
+  const reputationBefore = npc.relations[player.id].reputation
+  player.jointAttackInvites = [invite]
+  const acceptedJoint = applyCommand(world, ctx, {
+    type: 'diplomacy.respond',
+    kind: 'jointAttack',
+    action: 'accept',
+    id: invite.id
+  })
+  if (!acceptedJoint.ok || player.jointAttackInvites.length !== 0) fail('场景 C：接受联合攻击命令未移除邀请')
+  if (npc.relations[player.id].reputation !== Math.min(100, reputationBefore + 15)) {
+    fail('场景 C：接受联合攻击命令未提升好感度')
+  }
+
+  // 4.5) 战役对话的声望/分支也必须走命令层
+  const reputationBeforeChoice = npc.relations[player.id].reputation
+  const choiceResult = applyCommand(world, ctx, {
+    type: 'campaign.choice',
+    effect: 'reputation_up',
+    npcId: npc.id
+  })
+  if (!choiceResult.ok) fail(`场景 C：战役声望选项失败（${choiceResult.reason}）`)
+  if (npc.relations[player.id].reputation !== Math.min(100, reputationBeforeChoice + 10)) {
+    fail('场景 C：战役声望选项数值不正确')
+  }
+
+  const branchResult = applyCommand(world, ctx, {
+    type: 'campaign.choice',
+    effect: 'unlock_branch',
+    branchId: 'branch_smoke'
+  })
+  if (!branchResult.ok) fail(`场景 C：战役分支解锁失败（${branchResult.reason}）`)
+  if (!player.campaignProgress?.unlockedBranches?.includes('branch_smoke')) {
+    fail('场景 C：战役分支解锁未写入进度')
+  }
+
+  // 恢复资源，避免影响后续军官等场景
+  home.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 1_000_000, energy: 0 }
 
   // 5) 舰队派遣（扣除舰队与燃料）
   home.fleet.lightFighter = 10

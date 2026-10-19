@@ -182,9 +182,8 @@ import { dispatchCommand } from '@/core/runtime'
   import { formatNumber } from '@/utils/format'
   import { MAIN_CAMPAIGN, getQuestsByChapter, getQuestById, getTotalQuestCount } from '@/config/campaignConfig'
   import * as campaignLogic from '@/logic/campaignLogic'
-  import { QuestStatus, DiplomaticEventType, type CampaignQuestConfig, type StoryDialogue, type DialogueChoice } from '@/types/game'
+  import { QuestStatus, type CampaignQuestConfig, type StoryDialogue, type DialogueChoice } from '@/types/game'
   import { SHIPS } from '@/config/gameConfig'
-  import { updateReputation, getOrCreateRelation } from '@/logic/diplomaticLogic'
   import { toast } from 'vue-sonner'
 
   const { t } = useI18n()
@@ -397,21 +396,20 @@ import { dispatchCommand } from '@/core/runtime'
           return
         }
 
-        // 确保 relations 对象存在
-        if (!npc.relations) {
-          npc.relations = {}
-        }
-
         const change =
           choice.effect === 'reputation_up' ? choice.value ?? DEFAULT_REPUTATION_CHANGE : -(choice.value ?? DEFAULT_REPUTATION_CHANGE)
 
-        const relation = getOrCreateRelation(npc.relations, npc.id, gameStore.player.id)
-        npc.relations[gameStore.player.id] = updateReputation(
-          relation,
-          change,
-          DiplomaticEventType.CampaignChoice,
-          t('campaign.dialogue.choiceEffect')
-        )
+        // 走命令层：联机模式下本地改 NPC 关系会被服务端补丁覆盖
+        const result = dispatchCommand({
+          type: 'campaign.choice',
+          effect: choice.effect,
+          npcId: choice.npcId,
+          value: choice.value
+        })
+        if (!result.ok) {
+          if (result.reason) toast.error(t(result.reason))
+          return
+        }
 
         // 显示提示
         if (change > 0) {
@@ -428,17 +426,18 @@ import { dispatchCommand } from '@/core/runtime'
           return
         }
 
-        // 将分支任务ID添加到已解锁分支列表
-        if (!gameStore.player.campaignProgress) return
-
-        if (!gameStore.player.campaignProgress.unlockedBranches) {
-          gameStore.player.campaignProgress.unlockedBranches = []
+        // 走命令层：联机模式下本地改战役进度会被服务端补丁覆盖
+        const result = dispatchCommand({
+          type: 'campaign.choice',
+          effect: 'unlock_branch',
+          branchId: choice.branchId
+        })
+        if (!result.ok) {
+          if (result.reason) toast.error(t(result.reason))
+          return
         }
 
-        if (!gameStore.player.campaignProgress.unlockedBranches.includes(choice.branchId)) {
-          gameStore.player.campaignProgress.unlockedBranches.push(choice.branchId)
-          toast.success(t('campaign.notifications.branchUnlocked'))
-        }
+        toast.success(t('campaign.notifications.branchUnlocked'))
         break
       }
     }

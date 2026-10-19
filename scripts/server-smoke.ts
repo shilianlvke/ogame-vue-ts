@@ -432,6 +432,63 @@ const main = async () => {
     console.log(`[pvp] 战报已双向送达：${defenderReport.attackerId.slice(0, 6)} → ${defenderReport.defenderId.slice(0, 6)}，胜者 ${defenderReport.winner}`)
   }
 
+  // 7.5.1) 消息中心：已读 / 清空必须写服务端，新战报不能把已清除的旧战报带回来
+  {
+    const bobPlayer = server.room.profileOf(bob.playerId)!
+    const report = bobPlayer.battleReports[bobPlayer.battleReports.length - 1]
+    assert(!!report, '消息测试缺少战报')
+
+    // 先制造一个未读状态，再通过命令标记已读
+    report.read = false
+    bob.client.send({
+      t: 'cmd',
+      seq: 22,
+      command: { type: 'messages.markRead', collections: ['battleReports'], id: report.id }
+    })
+    await bob.client.next(m => m.t === 'ack' && m.seq === 22, 5000, '消息已读 ack')
+    await bob.client.next(
+      m =>
+        m.t === 'patch' &&
+        Array.isArray(m.reports?.battleReports) &&
+        (m.reports!.battleReports as Array<{ id: string; read?: boolean }>).some(
+          item => item.id === report.id && item.read === true
+        ),
+      5000,
+      '消息已读补丁'
+    )
+    assert((report as { read?: boolean }).read === true, '服务端没有保存消息已读状态')
+
+    // 清空战报：服务端数组与客户端补丁都必须为空
+    bob.client.send({
+      t: 'cmd',
+      seq: 23,
+      command: { type: 'messages.clear', collections: ['battleReports'] }
+    })
+    await bob.client.next(m => m.t === 'ack' && m.seq === 23, 5000, '消息清空 ack')
+    await bob.client.next(
+      m => m.t === 'patch' && Array.isArray(m.reports?.battleReports) && m.reports.battleReports.length === 0,
+      5000,
+      '消息清空补丁'
+    )
+    assert(bobPlayer.battleReports.length === 0, '服务端没有清空战报')
+
+    // 新战报到达后只应看到新战报，已清除的旧战报不能复活
+    const newReport = { ...report, id: 'battle_smoke_new', timestamp: Date.now(), read: false }
+    bobPlayer.battleReports.push(newReport)
+    await server.room.tickOnce(Date.now() + 1000)
+    await bob.client.next(
+      m =>
+        m.t === 'patch' &&
+        Array.isArray(m.reports?.battleReports) &&
+        (m.reports!.battleReports as Array<{ id: string }>).some(item => item.id === 'battle_smoke_new'),
+      5000,
+      '新战报补丁'
+    )
+    assert(bobPlayer.battleReports.length === 1, '新战报到达后旧战报复活')
+    assert(bobPlayer.battleReports[0]!.id === 'battle_smoke_new', '新战报到达后数组内容不正确')
+    console.log('[messages] 已读/清空持久化，新通知不会带回旧通知')
+  }
+
   // 7.6) PvP：Alice 侦查 Bob —— 防守方收到被侦查通知
   {
     const alicePlayer = server.room.profileOf(alice.playerId)!

@@ -545,6 +545,8 @@ export class Room {
       return false
     }
     this.world.player = player
+    // 命令里的文本（如礼物报告）要按发起玩家的语言生成
+    this.world.locale = item.session.locale
     // 有命令活动的周目保持全速 tick
     this.hotCycles.set(player.cycle ?? 1, this.tick + 120)
     const result = applyCommand(this.world, this.ctxFor(player, item.session.locale), item.command)
@@ -634,6 +636,7 @@ export class Room {
         // 阶段 1：每个玩家的队列与任务
         for (const player of cyclePlayers) {
           this.world.player = player
+          this.world.locale = this.localeOf(player.id)
           await tickPlayerPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), now)
           if (this.world.player.campaignProgress) {
             checkAllActiveQuestsProgress(this.world.player, this.world.npcs, this.world)
@@ -644,6 +647,7 @@ export class Room {
         const ambient = cyclePlayers[this.npcCursor % cyclePlayers.length]
         this.npcCursor += 1
         this.world.player = ambient
+        this.world.locale = this.localeOf(ambient.id)
         await tickNpcPhase(this.world, this.ctxFor(ambient, this.localeOf(ambient.id)), now, delta)
         if (!this.world.gates && this.state.gates) this.world.gates = this.state.gates
         const captures = tickGatePhase(this.world, delta)
@@ -654,6 +658,7 @@ export class Room {
         for (let i = 0; i < cyclePlayers.length; i++) {
           const player = cyclePlayers[i]
           this.world.player = player
+          this.world.locale = this.localeOf(player.id)
           this.world.achievementAccum = this.state.achievementAccum[player.id] ?? 0
           tickPlayerPostPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), delta, {
             cleanupEliminated: i === cyclePlayers.length - 1

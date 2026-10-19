@@ -161,6 +161,7 @@
   import { Siren, Eye, Sword, Shield, Globe, Recycle } from 'lucide-vue-next'
   import { MissionType } from '@/types/game'
   import type { IncomingFleetAlert } from '@/types/game'
+  import { dispatchCommand } from '@/core/runtime'
   import { formatDate, formatTime } from '@/utils/format'
 
   const router = useRouter()
@@ -301,7 +302,11 @@
 
   // 处理警报点击
   const handleAlertClick = (alert: IncomingFleetAlert) => {
-    alert.read = true
+    dispatchCommand({
+      type: 'messages.markRead',
+      collections: ['incomingFleetAlerts'],
+      id: alert.id
+    })
     selectedAlert.value = alert
     isOpen.value = true
     // 打开对话框
@@ -310,8 +315,9 @@
 
   // 标记所有为已读
   const markAllAsRead = () => {
-    gameStore.player.incomingFleetAlerts?.forEach(alert => {
-      alert.read = true
+    dispatchCommand({
+      type: 'messages.markRead',
+      collections: ['incomingFleetAlerts']
     })
   }
 

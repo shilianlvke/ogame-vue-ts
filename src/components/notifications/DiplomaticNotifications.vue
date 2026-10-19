@@ -496,6 +496,8 @@
   import { Empty, EmptyContent, EmptyDescription } from '@/components/ui/empty'
   import { RelationStatus, DiplomaticEventType } from '@/types/game'
   import type { DiplomaticReport, TradeOffer, IntelReport, JointAttackInvite } from '@/types/game'
+  import { dispatchCommand } from '@/core/runtime'
+  import type { MessageCollection } from '@/logic/messageLogic'
   import { formatRelativeTime } from '@/utils/format'
   import NumberWithTooltip from '@/components/common/NumberWithTooltip.vue'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'
@@ -509,6 +511,13 @@
     timestamp: number
     read: boolean
     data: DiplomaticReport | TradeOffer | IntelReport | JointAttackInvite
+  }
+
+  const notificationCollections: Record<NotificationType, MessageCollection> = {
+    diplomatic: 'diplomaticReports',
+    trade: 'tradeOffers',
+    intel: 'intelReports',
+    jointAttack: 'jointAttackInvites'
   }
 
   const router = useRouter()
@@ -961,46 +970,18 @@
    * 标记单个通知为已读
    */
   const markNotificationAsRead = (notification: UnifiedNotification) => {
-    switch (notification.type) {
-      case 'diplomatic': {
-        const report = notification.data as DiplomaticReport
-        report.read = true
-        break
-      }
-      case 'trade': {
-        const offer = notification.data as TradeOffer
-        offer.read = true
-        break
-      }
-      case 'intel': {
-        const report = notification.data as IntelReport
-        report.read = true
-        break
-      }
-      case 'jointAttack': {
-        const invite = notification.data as JointAttackInvite
-        invite.read = true
-        break
-      }
-    }
+    dispatchCommand({
+      type: 'messages.markRead',
+      collections: [notificationCollections[notification.type]],
+      id: notification.id
+    })
   }
 
   const markAllAsRead = () => {
-    // 标记所有外交报告
-    gameStore.player.diplomaticReports?.forEach(report => {
-      report.read = true
-    })
-    // 标记所有贸易提议
-    gameStore.player.tradeOffers?.forEach(offer => {
-      offer.read = true
-    })
-    // 标记所有情报报告
-    gameStore.player.intelReports?.forEach(report => {
-      report.read = true
-    })
-    // 标记所有联合攻击邀请
-    gameStore.player.jointAttackInvites?.forEach(invite => {
-      invite.read = true
+    // 一次命令标记四类外交通知，服务端会随补丁同步
+    dispatchCommand({
+      type: 'messages.markRead',
+      collections: Object.values(notificationCollections)
     })
   }
 
