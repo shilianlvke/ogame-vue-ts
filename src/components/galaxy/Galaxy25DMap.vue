@@ -422,8 +422,9 @@
     const cx = width / 2 + pan.x
     const cy = height / 2 + pan.y
     const size = Math.min(width, height)
-    const scale = (size * 0.4 * zoom.value) / (LAYOUT_CONFIG.REGION_RADIUS * 1.12)
-    const center = region.center
+    // 本星系视图以“当前恒星系”为镜头中心；玩家仍可拖拽/缩放查看整个星区。
+    const scale = (size * 0.36 * zoom.value) / (LAYOUT_CONFIG.REGION_RADIUS * 1.12)
+    const center = current.coords
     const project = (point: { x: number; y: number }) => ({
       x: cx + (point.x - center.x) * scale,
       y: cy + (point.y - center.y) * scale * 0.58
