@@ -553,6 +553,20 @@ const main = async () => {
       '接受交易后接收方资源不正确'
     )
 
+    // 重复接受必须被拒绝，且不能把已接受状态覆盖成 expired
+    bob.client.send({
+      t: 'cmd',
+      seq: 7,
+      command: { type: 'player.trade.respond', offerId: tradeId, action: 'accept' }
+    })
+    const duplicateReject = (await bob.client.next(
+      m => m.t === 'reject' && m.seq === 7,
+      5000,
+      '重复接受交易'
+    )) as Extract<ServerMessage, { t: 'reject' }>
+    assert(!!duplicateReject.reason, '重复接受交易缺少拒绝原因')
+    assert(bobPlayer.playerTrades![0]!.status === 'accepted', '重复接受覆盖了已接受状态')
+
     // 复原资源，避免影响后续场景
     alicePlanet.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
     bobPlanet.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }

@@ -950,7 +950,8 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
         return fail('errors.requirementsNotMet')
       }
 
-      if (trade.status !== 'pending' || now >= trade.expiresAt) {
+      if (trade.status !== 'pending') return fail('errors.requirementsNotMet')
+      if (now >= trade.expiresAt) {
         playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'expired')
         return fail('npcBehavior.trade.expired')
       }
