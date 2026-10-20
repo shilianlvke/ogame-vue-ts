@@ -15,6 +15,7 @@ services:
   noskyman:
     image: noskyman:latest
     container_name: noskyman
+    init: true
     restart: unless-stopped
     ports:
       - "${OGAME_PORT:-25122}:25122"

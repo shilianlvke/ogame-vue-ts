@@ -35,7 +35,9 @@ ENV NODE_ENV=production \
     STATIC_DIR=/app/docs \
     DATA_DIR=/app/data
 
-RUN apk add --no-cache tini \
+# 不在运行阶段依赖 apk：部分 NAS 无法访问 Alpine CDN，
+# PID 1 / 信号回收由 compose 的 init: true 负责。
+RUN npm config set registry "$NPM_REGISTRY" \
  && npm install -g pnpm@10.13.1 \
  && pnpm config set registry "$NPM_REGISTRY"
 
@@ -56,5 +58,4 @@ EXPOSE 25122
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -qO- http://127.0.0.1:25122/health || exit 1
 
-ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server-dist/main.js"]
