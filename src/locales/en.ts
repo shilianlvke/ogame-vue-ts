@@ -2065,6 +2065,7 @@ export default {
     startQuest: 'Start Quest',
     claimRewards: 'Claim Rewards',
     objectives: 'Objectives',
+    questGuide: 'Quest Guide',
     rewards: 'Rewards',
     completed: 'Completed',
     inProgress: 'In Progress',
@@ -2200,7 +2201,9 @@ export default {
       },
       '3_4': {
         title: 'Alliance Negotiations',
-        description: 'Form a formal alliance with friendly NPCs'
+        description: 'Form a formal alliance with friendly NPCs',
+        guide:
+          'There is no separate alliance button: accept the quest with "Start Quest" in the top right of the quest panel first, then reach 80 reputation with any NPC (the relation shows as Friendly). That counts as an alliance and the quest completes automatically.\n1. Open the Diplomacy page and pick a neutral or friendly NPC (the higher the reputation, the less likely a gift is rejected).\n2. Click "Send Gift" on the NPC card, or select its planet on the Galaxy page and click "Send Gift".\n3. The Fleet page pre-fills the target and enables "Gift Mode"; choose a transport ship, load resources and send it.\n4. An accepted gift raises reputation: every 1000 resource value gives +2 (metal ×1, crystal ×1.5, deuterium ×3), up to +20 per gift, and gifts below 500 value give nothing. Gifts worth 10000+ therefore need about 4 successful deliveries to reach 80.\nTip: at 0 reputation a gift is rejected about 30% of the time, costing 5 reputation (the resources return with the fleet). Attacking, being detected while spying, stealing debris and rejecting NPC gifts also lower reputation.'
       },
       '3_5': {
         title: 'Storm Preparation',
@@ -2322,7 +2325,7 @@ export default {
       reachFriendlyRelation: 'Reach friendly status with any NPC',
       sendMultipleGifts: 'Send 3 gifts to NPCs',
       spyHostileNPC: 'Spy on 2 hostile NPCs',
-      formAlliance: 'Form alliance with a friendly NPC',
+      formAlliance: 'Reach 80 reputation with any NPC (alliance)',
       buildDefenses: 'Build defense facilities',
       buildMissileSilo: 'Build Missile Silo to level 2',
       buildCruisers: 'Build 10 Cruisers',

@@ -123,6 +123,15 @@
           </div>
         </div>
 
+        <!-- 任务指引 -->
+        <div v-if="selectedQuestGuide" class="rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <h4 class="font-semibold mb-2 flex items-center gap-2 text-primary">
+            <Info class="h-4 w-4" />
+            {{ t('campaign.questGuide') }}
+          </h4>
+          <p class="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{{ selectedQuestGuide }}</p>
+        </div>
+
         <!-- 任务奖励 -->
         <div>
           <h4 class="font-semibold mb-3 flex items-center gap-2">
@@ -168,7 +177,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { useI18n } from '@/composables/useI18n'
   import { useGameStore } from '@/stores/gameStore'
-import { dispatchCommand } from '@/core/runtime'
+  import { dispatchCommand } from '@/core/runtime'
   import { useNPCStore } from '@/stores/npcStore'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -178,7 +187,7 @@ import { dispatchCommand } from '@/core/runtime'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'
   import QuestMap from '@/components/campaign/QuestMap.vue'
   import StoryDialog from '@/components/campaign/StoryDialog.vue'
-  import { Scroll, Check, Play, Gift, Target, Star, Rocket, Lock, Circle, CheckCircle2 } from 'lucide-vue-next'
+  import { Scroll, Check, Play, Gift, Target, Star, Rocket, Lock, Circle, CheckCircle2, Info } from 'lucide-vue-next'
   import { formatNumber } from '@/utils/format'
   import { MAIN_CAMPAIGN, getQuestsByChapter, getQuestById, getTotalQuestCount } from '@/config/campaignConfig'
   import * as campaignLogic from '@/logic/campaignLogic'
@@ -221,6 +230,12 @@ import { dispatchCommand } from '@/core/runtime'
   const selectedQuest = computed(() => {
     if (!selectedQuestId.value) return null
     return getQuestById(selectedQuestId.value)
+  })
+
+  // 任务指引：把翻译键解析为当前语言的说明文本
+  const selectedQuestGuide = computed(() => {
+    const guideKey = selectedQuest.value?.guideKey
+    return guideKey ? t(guideKey) : ''
   })
 
   // 获取章节任务

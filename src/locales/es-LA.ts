@@ -2053,6 +2053,7 @@ export default {
     startQuest: 'Iniciar Misión',
     claimRewards: 'Reclamar Recompensas',
     objectives: 'Objetivos',
+    questGuide: 'Guía de la misión',
     rewards: 'Recompensas',
     completed: 'Completado',
     inProgress: 'En Progreso',
@@ -2188,7 +2189,9 @@ export default {
       },
       '3_4': {
         title: 'Negociaciones de Alianza',
-        description: 'Forma una alianza formal con NPCs amigables'
+        description: 'Forma una alianza formal con NPCs amigables',
+        guide:
+          'Una alianza no tiene botón propio: primero acepta la misión con "Iniciar Misión" arriba a la derecha del panel, luego alcanza 80 de reputación con cualquier NPC (la relación se muestra como Amigable). Eso cuenta como alianza y la misión se completa automáticamente.\n1. Abre la página Diplomacia y elige un NPC neutral o amigable (cuanta más reputación, menos probable es que rechace un regalo).\n2. Haz clic en "Enviar Regalo" en la tarjeta del NPC; también puedes seleccionar su planeta en la página Galaxia y pulsar "Enviar Regalo".\n3. La página de Flota ya trae el objetivo y el "Modo Regalo" activados; elige una nave de transporte, carga recursos y envíala.\n4. Un regalo aceptado sube la reputación: cada 1000 de valor de recursos da +2 (metal×1, cristal×1,5, deuterio×3), con un máximo de +20 por regalo; los regalos de valor inferior a 500 no aportan nada. Los regalos de valor 10000 o más necesitan unas 4 entregas exitosas para llegar a 80.\nConsejo: con reputación 0 el regalo se rechaza cerca del 30% de las veces, lo que cuesta 5 de reputación (los recursos vuelven con la flota). Atacar, ser detectado espiando, robar escombros y rechazar regalos de NPCs también bajan la reputación.'
       },
       '3_5': {
         title: 'Preparación para la Tormenta',
@@ -2310,7 +2313,7 @@ export default {
       reachFriendlyRelation: 'Alcanzar estatus amigable con cualquier NPC',
       sendMultipleGifts: 'Enviar 3 regalos a NPCs',
       spyHostileNPC: 'Espiar 2 NPCs hostiles',
-      formAlliance: 'Formar alianza con un NPC amigable',
+      formAlliance: 'Alcanza 80 de reputación con cualquier NPC (alianza)',
       buildDefenses: 'Construir instalaciones de defensa',
       buildMissileSilo: 'Construir Silo de Misiles al nivel 2',
       buildCruisers: 'Construir 10 Cruceros',

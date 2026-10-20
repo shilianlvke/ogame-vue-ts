@@ -569,6 +569,7 @@ const chapter3Quests: CampaignQuestConfig[] = [
     order: 4,
     titleKey: 'campaign.quests.3_4.title',
     descriptionKey: 'campaign.quests.3_4.description',
+    guideKey: 'campaign.quests.3_4.guide',
     requiredQuestIds: ['quest_3_3'],
     prologueDialogues: [
       {

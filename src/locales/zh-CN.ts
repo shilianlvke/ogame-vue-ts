@@ -2085,6 +2085,7 @@ export default {
     startQuest: '开始任务',
     claimRewards: '领取奖励',
     objectives: '任务目标',
+    questGuide: '任务指引',
     rewards: '任务奖励',
     completed: '已完成',
     inProgress: '进行中',
@@ -2214,7 +2215,9 @@ export default {
       },
       '3_4': {
         title: '联盟谈判',
-        description: '与友好NPC建立正式同盟'
+        description: '与友好NPC建立正式同盟',
+        guide:
+          '结盟没有单独的按钮：先点击任务详情右上角的「开始任务」接取本任务，再与任意 NPC 的好感度达到 80（关系显示为“友好”）即视为结盟，任务会自动完成。\n1. 打开「外交」页面，选择中立或友好的 NPC（好感度越高，礼物越不容易被拒绝）。\n2. 点击 NPC 卡片上的「赠送资源」；也可以在星系页选中其星球后点「赠送礼物」。\n3. 舰队页会预填目标并勾选「赠送模式」，选择运输舰、装载资源后派遣。\n4. 礼物被接受后好感度提升：资源价值每 1000 点 +2（金属×1、晶体×1.5、重氢×3），单次最多 +20，价值低于 500 的礼物不提升好感度；每次送价值 10000 以上的资源，约 4 次成功赠送即可达到 80。\n提示：好感度为 0 时礼物约有三成概率被拒，被拒会 -5 好感度（资源随舰队带回）；攻击、侦查被察觉、抢夺残骸、拒绝 NPC 的礼物同样会降低好感度。'
       },
       '3_5': {
         title: '备战风暴',
@@ -2334,7 +2337,7 @@ export default {
       reachFriendlyRelation: '与任意NPC达到友好关系',
       sendMultipleGifts: '向NPC发送3次礼物',
       spyHostileNPC: '侦查2个敌对NPC',
-      formAlliance: '与友好NPC结盟',
+      formAlliance: '与任意 NPC 好感度达到 80（结盟）',
       buildDefenses: '建造防御设施',
       buildMissileSilo: '建造导弹发射井到2级',
       buildCruisers: '建造10艘巡洋舰',

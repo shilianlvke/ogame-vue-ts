@@ -2165,6 +2165,7 @@ export default {
     startQuest: 'Quest starten',
     claimRewards: 'Belohnungen abholen',
     objectives: 'Ziele',
+    questGuide: 'Quest-Leitfaden',
     rewards: 'Belohnungen',
     completed: 'Abgeschlossen',
     inProgress: 'In Bearbeitung',
@@ -2259,7 +2260,12 @@ export default {
       '3_1': { title: 'Friedensstifter', description: 'Verbessere Beziehungen zu NPCs durch Diplomatie' },
       '3_2': { title: 'Handelsbeziehungen', description: 'Baue stabile Beziehungen zu freundlichen Fraktionen auf' },
       '3_3': { title: 'Gemeinsame Bedrohung', description: 'Entdecke potenzielle feindliche Kräfte' },
-      '3_4': { title: 'Allianzverhandlungen', description: 'Schließe eine formelle Allianz mit freundlichen NPCs' },
+      '3_4': {
+        title: 'Allianzverhandlungen',
+        description: 'Schließe eine formelle Allianz mit freundlichen NPCs',
+        guide:
+          'Für ein Bündnis gibt es keinen eigenen Knopf: Nimm die Quest zuerst über "Quest starten" oben rechts im Quest-Panel an und erreiche dann 80 Ansehen bei einem beliebigen NPC (die Beziehung wird als Freundlich angezeigt). Das gilt als Bündnis und die Quest wird automatisch abgeschlossen.\n1. Öffne die Seite Diplomatie und wähle einen neutralen oder freundlichen NPC (je höher das Ansehen, desto seltener wird ein Geschenk abgelehnt).\n2. Klicke auf der NPC-Karte auf "Geschenk senden"; alternativ kannst du auf der Galaxie-Seite den Planeten wählen und dort "Geschenk senden" anklicken.\n3. Auf der Flottenseite sind Ziel und "Geschenkmodus" schon gesetzt; wähle ein Transportschiff, lade Ressourcen und schicke es los.\n4. Ein angenommenes Geschenk erhöht das Ansehen: pro 1000 Ressourcenwert +2 (Metall×1, Kristall×1,5, Deuterium×3), höchstens +20 pro Geschenk; Geschenke unter 500 Wert bringen nichts. Geschenke im Wert von 10000+ brauchen also rund 4 erfolgreiche Lieferungen bis 80.\nHinweis: Bei Ansehen 0 wird ein Geschenk zu etwa 30% abgelehnt, das kostet 5 Ansehen (die Ressourcen kehren mit der Flotte zurück). Auch Angriffe, entdeckte Spionage, das Stehlen von Trümmern und das Ablehnen von NPC-Geschenken senken das Ansehen.'
+      },
       '3_5': { title: 'Sturmvorbereitung', description: 'Baue Verteidigungen zur Vorbereitung auf Herausforderungen' },
       '4_1': { title: 'Außenpostenangriff', description: 'Wehre den ersten Angriff feindlicher Kräfte ab' },
       '4_2': { title: 'Informationsbeschaffung', description: 'Erkunde feindliche Militäraufstellungen' },
@@ -2347,7 +2353,7 @@ export default {
       reachFriendlyRelation: 'Erreiche freundlichen Status mit einem beliebigen NPC',
       sendMultipleGifts: 'Sende 3 Geschenke an NPCs',
       spyHostileNPC: 'Spioniere 2 feindliche NPCs aus',
-      formAlliance: 'Schließe Allianz mit einem freundlichen NPC',
+      formAlliance: 'Erreiche 80 Ansehen bei einem beliebigen NPC (Bündnis)',
       buildDefenses: 'Baue Verteidigungsanlagen',
       buildMissileSilo: 'Baue Raketensilo auf Stufe 2',
       buildCruisers: 'Baue 10 Kreuzer',

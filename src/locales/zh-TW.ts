@@ -2259,6 +2259,7 @@ export default {
     claimRewards: '領取獎勵',
     objectives: '任務目標',
     objectivesLabel: '目標',
+    questGuide: '任務指引',
     rewards: '任務獎勵',
     completed: '已完成',
     inProgress: '進行中',
@@ -2388,7 +2389,9 @@ export default {
       },
       '3_4': {
         title: '聯盟談判',
-        description: '與友好NPC建立正式同盟'
+        description: '與友好NPC建立正式同盟',
+        guide:
+          '結盟沒有單獨的按鈕：先點擊任務詳情右上角的「開始任務」接取本任務，再與任意 NPC 的聲望達到 80（關係顯示為「友好」）即視為結盟，任務會自動完成。\n1. 打開「外交」頁面，選擇中立或友好的 NPC（聲望越高，禮物越不容易被拒絕）。\n2. 點擊 NPC 卡片上的「贈送禮物」；也可以在星系頁選中其星球後點「贈送禮物」。\n3. 艦隊頁會預填目標並勾選「贈送模式」，選擇運輸艦、裝載資源後派遣。\n4. 禮物被接受後聲望提升：資源價值每 1000 點 +2（金屬×1、晶體×1.5、重氫×3），單次最多 +20，價值低於 500 的禮物不提升聲望；每次送價值 10000 以上的資源，約 4 次成功贈送即可達到 80。\n提示：聲望為 0 時禮物約有三成機率被拒，被拒會 -5 聲望（資源隨艦隊帶回）；攻擊、偵查被察覺、搶奪殘骸、拒絕 NPC 的禮物同樣會降低聲望。'
       },
       '3_5': {
         title: '備戰風暴',
@@ -2510,7 +2513,7 @@ export default {
       reachFriendlyRelation: '與任意NPC達到友好關係',
       sendMultipleGifts: '向NPC發送3次禮物',
       spyHostileNPC: '偵查2個敵對NPC',
-      formAlliance: '與友好NPC結盟',
+      formAlliance: '與任意 NPC 聲望達到 80（結盟）',
       buildDefenses: '建造防禦設施',
       buildMissileSilo: '建造飛彈發射井到2級',
       buildCruisers: '建造10艘巡洋艦',

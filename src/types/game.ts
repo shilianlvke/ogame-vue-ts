@@ -1246,6 +1246,7 @@ export interface CampaignQuestConfig {
   order: number // 章节内顺序
   titleKey: string // 翻译键
   descriptionKey: string // 翻译键
+  guideKey?: string // 任务指引翻译键（可选，显示在任务详情中）
 
   // 剧情
   prologueDialogues?: StoryDialogue[] // 任务开始对话
