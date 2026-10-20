@@ -6,12 +6,12 @@
 
     <!-- 四段式滑槽切换：建筑 / 研究 / 船坞 / 防御 -->
     <div
-      class="relative mb-4 grid w-full grid-cols-4 rounded-xl border border-border bg-muted/50 p-1.5 shadow-sm sm:mb-6"
+      class="relative mb-4 grid h-9 w-full grid-cols-4 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
       role="tablist"
       :aria-label="t('nav.base')"
     >
       <span
-        class="pointer-events-none absolute inset-y-1.5 left-1.5 w-[calc((100%-0.75rem)/4)] rounded-lg bg-background shadow-sm ring-1 ring-border transition-transform duration-300 ease-out"
+        class="pointer-events-none absolute inset-y-[3px] left-[3px] w-[calc((100%-6px)/4)] rounded-md border border-border bg-background shadow-md transition-transform duration-300 ease-out"
         :style="{ transform: `translateX(${activeIndex * 100}%)` }"
         aria-hidden="true"
       />
@@ -22,7 +22,7 @@
         role="tab"
         :aria-selected="activeTab === tab.key"
         :tabindex="activeTab === tab.key ? 0 : -1"
-        class="relative z-10 flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-[11px] font-medium transition-colors duration-200 sm:h-10 sm:gap-2 sm:px-3 sm:text-sm"
+        class="relative z-10 flex h-[calc(100%-1px)] min-w-0 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-xs font-medium whitespace-nowrap transition-all sm:text-sm"
         :class="activeTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'"
         @click="selectTab(tab.key)"
         @keydown.right.prevent="selectTab(adjacentTab(index, 1))"

@@ -696,6 +696,7 @@ export default {
   },
   galaxyMap: {
     subtitle: '드래그 이동 · 휠/핀치 확대 · 클릭 선택',
+    rightClickHint: '아무 곳이나 우클릭하여 포커스 해제',
     systemView: '현재 항성계',
     regionView: '지역 성단',
     galaxyView: '은하 전체',
@@ -1792,6 +1793,10 @@ export default {
     resetHintsDesc: '모든 힌트 다시 표시',
     hintsEnabled: '힌트 활성화',
     hintsEnabledDesc: '페이지 방문 시 도움말 힌트 표시',
+    base: {
+      title: '기지',
+      message: '건설, 연구, 조선소, 방어가 기지로 통합되었습니다. 상단 스위치로 모듈을 전환하세요. 이 힌트는 기지를 처음 열 때만 표시됩니다.'
+    },
     overview: {
       title: '행성 개요',
       message: '여기서 행성 자원, 함대 상태, 생산 세부 정보를 확인할 수 있습니다. 진행 상황을 모니터링하려면 자주 확인하세요!'

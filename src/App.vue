@@ -121,7 +121,7 @@
                 :is-active="$route.path === item.path"
                 :tooltip="item.name.value"
                 :disabled="!isFeatureUnlocked(item.path)"
-                @click="router.push(item.path)"
+                @click="navigateTo(item.path)"
               >
                 <component :is="item.icon" />
                 <span>{{ item.name.value }}</span>
@@ -1150,6 +1150,12 @@
   const switchToPlanet = (planetId: string) => {
     gameStore.currentPlanetId = planetId
     router.push('/overview')
+  }
+
+  const navigateTo = (path: string): void => {
+    // 星系页是沉浸式全屏页面，点击入口时先收起菜单，再进入页面
+    if (path === '/galaxy') sidebarOpen.value = false
+    router.push(path)
   }
 
   // 切换侧边栏

@@ -706,6 +706,7 @@ export default {
   },
   galaxyMap: {
     subtitle: '拖动平移 · 滚轮缩放 · 点击选择目标',
+    rightClickHint: '右键任意区域退出聚焦',
     systemView: '当前恒星系',
     regionView: '本星系',
     galaxyView: '银河全景',
@@ -1885,6 +1886,10 @@ export default {
     resetHintsDesc: '重新显示所有提示',
     hintsEnabled: '启用提示',
     hintsEnabledDesc: '访问页面时显示帮助提示',
+    base: {
+      title: '基地',
+      message: '建筑、研究、船坞和防御已整合到基地。使用顶部滑槽切换模块；提示只会在首次打开基地时出现一次。'
+    },
     overview: {
       title: '星球总览',
       message: '在这里查看星球资源、舰队状态和生产详情。经常查看以监控进度！'

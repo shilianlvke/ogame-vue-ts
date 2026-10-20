@@ -735,6 +735,7 @@ export default {
   },
   galaxyMap: {
     subtitle: 'ドラッグで移動 · ホイール/ピンチでズーム · クリックで選択',
+    rightClickHint: '右クリックでフォーカス解除',
     systemView: '現在の恒星系',
     regionView: 'ローカル星団',
     galaxyView: '銀河全体',
@@ -1846,6 +1847,10 @@ export default {
     resetHintsDesc: 'すべてのヒントを再表示',
     hintsEnabled: 'ヒントを有効化',
     hintsEnabledDesc: 'ページ訪問時にヘルプヒントを表示',
+    base: {
+      title: '基地',
+      message: '建築・研究・造船所・防衛は基地に統合されました。上部のスイッチで切り替えられます。このヒントは初回の基地表示時のみ出ます。'
+    },
     overview: {
       title: '惑星概要',
       message: 'ここで惑星の資源、艦隊状況、生産詳細を確認できます。進捗を監視するために定期的にチェックしましょう！'

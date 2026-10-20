@@ -713,6 +713,7 @@ export default {
   },
   galaxyMap: {
     subtitle: 'Ziehen zum Verschieben · Rad/Pinch zum Zoomen · Klick zum Auswählen',
+    rightClickHint: 'Rechtsklick zum Verlassen des Fokus',
     systemView: 'Aktuelles System',
     regionView: 'Lokaler Cluster',
     galaxyView: 'Galaxieübersicht',
@@ -1832,6 +1833,10 @@ export default {
     resetHintsDesc: 'Alle Hinweise wieder anzeigen',
     hintsEnabled: 'Hinweise aktivieren',
     hintsEnabledDesc: 'Hilfreiche Hinweise beim Seitenbesuch anzeigen',
+    base: {
+      title: 'Basis',
+      message: 'Gebäude, Forschung, Werft und Verteidigung sind in der Basis zusammengefasst. Wechsle oben zwischen den Modulen; dieser Hinweis erscheint nur beim ersten Öffnen.'
+    },
     overview: {
       title: 'Planetenübersicht',
       message:

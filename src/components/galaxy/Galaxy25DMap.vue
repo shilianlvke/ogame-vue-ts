@@ -8,6 +8,7 @@
     @pointercancel="onPointerUp"
     @pointerleave="onPointerLeave"
     @wheel.prevent="onWheel"
+    @contextmenu.prevent="onContextMenu"
   >
     <canvas ref="canvasRef" class="absolute inset-0 h-full w-full" />
 
@@ -70,12 +71,14 @@
     selectedPlanetId?: string | null
     selectedSystemId?: string | null
     selectedRegion?: number | null
+    focusedSlotPosition?: number | null
   }>()
 
   const emit = defineEmits<{
     (e: 'select-slot', slot: GalaxyMapSlot): void
     (e: 'select-system', system: StarSystem): void
     (e: 'select-region', region: RegionLayout): void
+    (e: 'exit-focus'): void
   }>()
 
   const gameStore = useGameStore()
@@ -110,6 +113,69 @@
   let moved = false
   let pan = { x: 0, y: 0 }
   let pinchDistance = 0
+
+  // 恒星系视图：缓慢公转 + 入场/聚焦镜头
+  let motionRaf = 0
+  let introStartedAt = performance.now()
+  let systemStartedAt = performance.now()
+  let focusStartedAt = performance.now()
+  const introDuration = 1500
+  const focusDuration = 900
+
+  interface OrbitVisual {
+    position: number
+    radiusFactor: number
+    speed: number
+    startAngle: number
+    size: number
+  }
+
+  const seededRandom = (seed: number): (() => number) => {
+    let value = seed >>> 0
+    return () => {
+      value += 0x6d2b79f5
+      let t = value
+      t = Math.imul(t ^ (t >>> 15), t | 1)
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+  }
+
+  const orbitVisuals = computed<OrbitVisual[]>(() => {
+    const random = seededRandom(props.galaxy * 100003 + props.system * 7919 + cycle.value * 104729)
+    let radiusFactor = 0.2
+    return Array.from({ length: 10 }, (_, index) => {
+      if (index > 0) radiusFactor += 0.045 + random() * 0.035
+      const direction = random() > 0.18 ? 1 : -1
+      return {
+        position: index + 1,
+        radiusFactor,
+        speed: direction * (0.018 + random() * 0.035),
+        startAngle: random() * Math.PI * 2,
+        size: 3.4 + random() * 4.4
+      }
+    })
+  })
+
+  const easeOutCubic = (value: number): number => 1 - Math.pow(1 - Math.min(1, Math.max(0, value)), 3)
+
+  const scheduleMotion = (): void => {
+    if (motionRaf) return
+    const now = performance.now()
+    const animatingFocus = now - focusStartedAt < focusDuration
+    const animatingIntro = props.view === 'system' && now - introStartedAt < introDuration
+    if (props.view !== 'system' && !animatingFocus) return
+    if (!animatingFocus && !animatingIntro && props.view !== 'system') return
+    motionRaf = window.requestAnimationFrame(() => {
+      motionRaf = 0
+      draw()
+    })
+  }
+
+  const onContextMenu = (): void => {
+    hover.value = null
+    emit('exit-focus')
+  }
 
   interface MapPalette {
     backgroundTop: string
@@ -372,8 +438,11 @@
     }
 
     hitTargets = []
-    drawScene({ view: props.view, galaxy: props.galaxy, system: props.system }, 1, 1)
+    const introProgress = props.view === 'system' ? (performance.now() - introStartedAt) / introDuration : 1
+    const introScale = props.view === 'system' ? 0.025 + easeOutCubic(introProgress) * 0.975 : 1
+    drawScene({ view: props.view, galaxy: props.galaxy, system: props.system }, 1, introScale)
     lastRendered = { view: props.view, galaxy: props.galaxy, system: props.system }
+    scheduleMotion()
   }
 
   const drawScene = (state: MapState, alpha: number, scale: number): void => {
@@ -431,38 +500,65 @@
   const drawSystem = (state: MapState, interactive: boolean): void => {
     if (!ctx) return
     const { width, height } = canvasSize.value
+    const now = performance.now()
+    const size = Math.min(width, height)
+    const elapsed = (now - systemStartedAt) / 1000
+    const focusPosition = props.focusedSlotPosition ?? null
+    const focusProgress = focusPosition ? easeOutCubic((now - focusStartedAt) / focusDuration) : 0
+    const cameraZoom = 1 + focusProgress * 1.35
+    const baseOrbit = size * 0.47 * zoom.value
+    const star = currentStar.value
+    const slots = props.slots.length > 0 ? props.slots : Array.from({ length: 10 }, (_, i) => ({ position: i + 1, planet: null, moon: null }))
+    const slotByPosition = new Map(slots.map(slot => [slot.position, slot]))
+    const visuals = orbitVisuals.value
+    const positioned = visuals.map(visual => {
+      const slot = slotByPosition.get(visual.position)
+      const angle = visual.startAngle + elapsed * visual.speed
+      const radius = baseOrbit * visual.radiusFactor
+      return {
+        visual,
+        slot,
+        angle,
+        relX: Math.cos(angle) * radius,
+        relY: Math.sin(angle) * radius * 0.58
+      }
+    })
+    const focused = focusPosition ? positioned.find(item => item.visual.position === focusPosition) : undefined
     const cx = width / 2 + pan.x
     const cy = height / 2 + pan.y
-    const size = Math.min(width, height)
-    const orbitBase = size * 0.4 * zoom.value
-    const star = currentStar.value
+    const starX = focused ? cx - focused.relX * cameraZoom : cx
+    const starY = focused ? cy - focused.relY * cameraZoom : cy
+    const starRadius = Math.max(8, size * 0.036)
 
-    // 恒星光晕
-    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.22)
+    // 恒星光晕：进入聚焦后依然保留，但镜头跟随目标
+    const glowRadius = size * 0.2 * cameraZoom
+    const glow = ctx.createRadialGradient(starX, starY, 0, starX, starY, glowRadius)
     glow.addColorStop(0, COLORS.starGlow0)
-    glow.addColorStop(0.16, COLORS.starGlow1)
+    glow.addColorStop(0.17, COLORS.starGlow1)
     glow.addColorStop(1, COLORS.starGlow2)
     ctx.fillStyle = glow
     ctx.beginPath()
-    ctx.arc(cx, cy, size * 0.22, 0, Math.PI * 2)
+    ctx.arc(starX, starY, glowRadius, 0, Math.PI * 2)
     ctx.fill()
 
-    // 星体
+    // 星体与日冕
     ctx.fillStyle = COLORS.star
     ctx.beginPath()
-    ctx.arc(cx, cy, Math.max(10, size * 0.045), 0, Math.PI * 2)
+    ctx.arc(starX, starY, starRadius, 0, Math.PI * 2)
     ctx.fill()
     ctx.strokeStyle = COLORS.starStroke
-    ctx.lineWidth = 1
+    ctx.lineWidth = 1.5
     ctx.stroke()
 
-    drawCenteredLabel(star ? systemName(star) : `${state.galaxy}:${state.system}`, cx, cy + size * 0.08, 15, COLORS.starLabel, '600')
+    const starLabelX = starX
+    const starLabelY = starY + starRadius + Math.max(18, size * 0.03)
+    drawCenteredLabel(star ? systemName(star) : `${state.galaxy}:${state.system}`, starLabelX, starLabelY, 15, COLORS.starLabel, '600')
     ctx.fillStyle = COLORS.labelMuted
     ctx.font = '11px ui-sans-serif, system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(`[${state.galaxy}:${state.system}]`, cx, cy + size * 0.08 + 17)
+    ctx.fillText(`[${state.galaxy}:${state.system}]`, starLabelX, starLabelY + 17)
 
-    // 恒星系外围的航线方向指示
+    // 航线方向提示
     const currentId = systemIdOf(state.galaxy, state.system)
     const adjacent = layout.value.adjacency.get(currentId) ?? []
     ctx.save()
@@ -472,69 +568,92 @@
       const other = layout.value.systemIndex.get(otherId)
       if (!other) continue
       const angle = Math.atan2(other.coords.y - (star?.coords.y ?? 0), other.coords.x - (star?.coords.x ?? 0))
-      const len = size * 0.46
+      const len = size * 0.46 * cameraZoom
       ctx.strokeStyle = lane.kind === 'gate' ? COLORS.gateSoft : COLORS.laneSoft
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(cx + Math.cos(angle) * size * 0.1, cy + Math.sin(angle) * size * 0.08)
-      ctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len)
+      ctx.moveTo(starX + Math.cos(angle) * size * 0.1 * cameraZoom, starY + Math.sin(angle) * size * 0.08 * cameraZoom)
+      ctx.lineTo(starX + Math.cos(angle) * len, starY + Math.sin(angle) * len)
       ctx.stroke()
     }
     ctx.restore()
 
-    const slots = props.slots.length > 0 ? props.slots : Array.from({ length: 10 }, (_, i) => ({ position: i + 1, planet: null, moon: null }))
-    const angleOffset = -Math.PI / 2 + 0.2
-    slots.forEach((slot, index) => {
-      const ratio = (index + 1) / slots.length
-      const rx = orbitBase * (0.24 + ratio * 0.75)
-      const ry = rx * 0.58
-      ctx.strokeStyle = COLORS.orbit
-      ctx.lineWidth = 1
+    // 轨道 + 行星
+    positioned.forEach(({ visual, slot, relX, relY }) => {
+      const isSelected = !!slot && slot.position === focusPosition
+      const orbitX = relX * cameraZoom
+      const orbitY = relY * cameraZoom
+      // 轨道椭圆半径和行星当前位置独立计算，避免行星角变化时轨道抖动
+      const orbitRadius = baseOrbit * visual.radiusFactor * cameraZoom
+      ctx.strokeStyle = isSelected ? COLORS.selected : COLORS.orbit
+      ctx.globalAlpha = isSelected ? 0.85 : 0.46
+      ctx.lineWidth = isSelected ? 1.5 : 1
       ctx.beginPath()
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+      ctx.ellipse(starX, starY, orbitRadius, orbitRadius * 0.58, 0, 0, Math.PI * 2)
       ctx.stroke()
+      ctx.globalAlpha = 1
 
-      const angle = angleOffset + index * ((Math.PI * 2) / slots.length)
-      const x = cx + Math.cos(angle) * rx
-      const y = cy + Math.sin(angle) * ry
-      const isSelected = !!slot.planet && slot.planet.id === props.selectedPlanetId
+      const x = starX + orbitX
+      const y = starY + orbitY
       const scanned = !!discoveredOf(state.galaxy, state.system)
-      const showLabel = isOwnPlanet(slot.planet) || scanned || isSelected
-      const color = ownerColor(slot.planet)
-      const planetRadius = Math.max(3.2, Math.min(7, size * 0.012))
+      const showLabel = !!slot?.planet && (isOwnPlanet(slot.planet) || scanned || isSelected)
+      const color = slot?.planet ? ownerColor(slot.planet) : COLORS.emptyDot
+      const pulse = 1 + Math.sin(now / 900 + visual.position) * 0.08
+      const planetRadius = Math.max(3, visual.size * Math.min(1.25, size / 1100) * pulse * (isSelected ? 1.35 : 1))
 
-      if (slot.planet) {
-        ctx.shadowColor = color
-        ctx.shadowBlur = isSelected ? 16 : 8
+      if (slot?.planet) {
+        const planetGlow = ctx.createRadialGradient(x - planetRadius * 0.35, y - planetRadius * 0.4, planetRadius * 0.1, x, y, planetRadius * 1.6)
+        planetGlow.addColorStop(0, COLORS.label)
+        planetGlow.addColorStop(0.22, color)
+        planetGlow.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = planetGlow
+        ctx.beginPath()
+        ctx.arc(x, y, planetRadius * 1.8, 0, Math.PI * 2)
+        ctx.fill()
         ctx.fillStyle = color
+        ctx.shadowColor = color
+        ctx.shadowBlur = isSelected ? 24 : 10
         ctx.beginPath()
         ctx.arc(x, y, planetRadius, 0, Math.PI * 2)
         ctx.fill()
         ctx.shadowBlur = 0
       } else {
-        ctx.fillStyle = COLORS.emptyDot
+        // 即使当前没有星球数据，也保留一颗暗色“未探索星球”，形成完整十星系统
+        const emptyRadius = Math.max(2.4, planetRadius * 0.78)
+        const emptyGlow = ctx.createRadialGradient(x - emptyRadius * 0.35, y - emptyRadius * 0.4, 0, x, y, emptyRadius * 1.3)
+        emptyGlow.addColorStop(0, 'rgba(148,163,184,0.5)')
+        emptyGlow.addColorStop(0.5, COLORS.empty)
+        emptyGlow.addColorStop(1, 'rgba(15,23,42,0)')
+        ctx.fillStyle = emptyGlow
         ctx.beginPath()
-        ctx.arc(x, y, 2.3, 0, Math.PI * 2)
+        ctx.arc(x, y, emptyRadius * 1.5, 0, Math.PI * 2)
         ctx.fill()
+        ctx.fillStyle = COLORS.empty
+        ctx.beginPath()
+        ctx.arc(x, y, emptyRadius, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(148,163,184,0.35)'
+        ctx.lineWidth = 0.8
+        ctx.stroke()
       }
 
-      if (slot.moon) {
+      if (slot?.moon) {
         ctx.fillStyle = COLORS.moon
         ctx.beginPath()
-        ctx.arc(x + 9, y - 8, 2.1, 0, Math.PI * 2)
+        ctx.arc(x + planetRadius + 3, y - planetRadius - 2, 2.1, 0, Math.PI * 2)
         ctx.fill()
       }
 
       if (showLabel) {
         ctx.fillStyle = isSelected ? COLORS.selected : color
-        ctx.font = isSelected ? '600 11px ui-sans-serif, system-ui, sans-serif' : '11px ui-sans-serif, system-ui, sans-serif'
+        ctx.font = isSelected ? '600 12px ui-sans-serif, system-ui, sans-serif' : '11px ui-sans-serif, system-ui, sans-serif'
         ctx.textAlign = 'left'
-        const text = slotLabel(slot)
-        ctx.fillText(text.length > 16 ? `${text.slice(0, 15)}…` : text, x + 9, y + 3)
-        if (slot.moon) {
+        const text = slot ? slotLabel(slot) : ''
+        ctx.fillText(text.length > 18 ? `${text.slice(0, 17)}…` : text, x + planetRadius + 8, y + 4)
+        if (slot?.moon) {
           ctx.fillStyle = COLORS.labelMuted
           ctx.font = '9px ui-sans-serif, system-ui, sans-serif'
-          ctx.fillText(t('galaxyMap.moon'), x + 9, y + 14)
+          ctx.fillText(t('galaxyMap.moon'), x + planetRadius + 8, y + 15)
         }
       }
 
@@ -547,7 +666,7 @@
       }
 
       if (interactive) {
-        hitTargets.push({ kind: 'slot', x, y, radius: Math.max(14, planetRadius + 10), slot })
+        hitTargets.push({ kind: 'slot', x, y, radius: Math.max(16, planetRadius + 12), slot: slot ?? { position: visual.position, planet: null, moon: null } })
       }
     })
 
@@ -563,12 +682,14 @@
     if (!region) return
     const current = region.systems.find(item => item.index === state.system) ?? region.systems[0]
     if (!current) return
+    const selected = props.selectedSystemId ? region.systems.find(item => item.id === props.selectedSystemId) : null
+    const focusProgress = selected ? easeOutCubic((performance.now() - focusStartedAt) / focusDuration) : 0
     const cx = width / 2 + pan.x
     const cy = height / 2 + pan.y
     const size = Math.min(width, height)
-    // 本星系视图以“当前恒星系”为镜头中心；玩家仍可拖拽/缩放查看整个星区。
-    const scale = (size * 0.36 * zoom.value) / (LAYOUT_CONFIG.REGION_RADIUS * 1.12)
-    const center = current.coords
+    // 未聚焦时展示完整星区；选中后镜头推向目标并放大。
+    const scale = ((size * 0.44 * zoom.value) / (LAYOUT_CONFIG.REGION_RADIUS * 1.12)) * (1 + focusProgress * 0.95)
+    const center = selected?.coords ?? region.center
     const project = (point: { x: number; y: number }) => ({
       x: cx + (point.x - center.x) * scale,
       y: cy + (point.y - center.y) * scale * 0.58
@@ -658,11 +779,11 @@
       if (interactive) hitTargets.push({ kind: 'system', x: p.x, y: p.y, radius: 16, system })
     }
 
-    drawCenteredLabel(`${regionName(region)} · ${t('galaxyMap.regionLabel')}`, cx, 24, 15, COLORS.label, '600')
+    drawCenteredLabel(`${regionName(region)} · ${t('galaxyMap.regionLabel')}`, cx, 96, 15, COLORS.label, '600')
     ctx.fillStyle = COLORS.labelMuted
     ctx.font = '11px ui-sans-serif, system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(`${scannedCount} / ${region.systems.length} ${t('galaxyMap.scannedSystems')}`, cx, 43)
+    ctx.fillText(`${scannedCount} / ${region.systems.length} ${t('galaxyMap.scannedSystems')}`, cx, 115)
     drawCompass(ctx, width - 36, height - 36, 13, -Math.PI / 2)
   }
 
@@ -673,8 +794,12 @@
     const cy = height / 2 + pan.y
     const size = Math.min(width, height)
     const space = LAYOUT_CONFIG.SPACE
-    const center = { x: space / 2, y: space / 2 }
-    const scale = (size * 0.39 * zoom.value) / (space * 0.47)
+    const selectedRegionLayout = props.selectedRegion
+      ? layout.value.regions.find(region => region.region === props.selectedRegion)
+      : null
+    const focusProgress = selectedRegionLayout ? easeOutCubic((performance.now() - focusStartedAt) / focusDuration) : 0
+    const center = selectedRegionLayout?.center ?? { x: space / 2, y: space / 2 }
+    const scale = ((size * 0.5 * zoom.value) / (space * 0.47)) * (1 + focusProgress * 0.6)
     const project = (point: { x: number; y: number }) => ({
       x: cx + (point.x - center.x) * scale,
       y: cy + (point.y - center.y) * scale * 0.58
@@ -749,11 +874,11 @@
       if (interactive) hitTargets.push({ kind: 'region', x: p.x, y: p.y, radius: 17, region })
     }
 
-    drawCenteredLabel(t('galaxyMap.galaxyLabel'), cx, 24, 15, COLORS.label, '600')
+    drawCenteredLabel(t('galaxyMap.galaxyLabel'), cx, 96, 15, COLORS.label, '600')
     ctx.fillStyle = COLORS.labelMuted
     ctx.font = '11px ui-sans-serif, system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(t('galaxyMap.galaxyHint'), cx, 43)
+    ctx.fillText(t('galaxyMap.galaxyHint'), cx, 115)
     drawCompass(ctx, width - 36, height - 36, 13, -Math.PI / 2)
   }
 
@@ -928,6 +1053,7 @@
     }
     if (!wasMoved) {
       const target = hitAt(point.x, point.y)
+      hover.value = null
       if (target?.kind === 'slot') emit('select-slot', target.slot)
       else if (target?.kind === 'system') emit('select-system', target.system)
       else if (target?.kind === 'region') emit('select-region', target.region)
@@ -968,6 +1094,9 @@
       const from = { ...lastRendered }
       pan = { x: 0, y: 0 }
       zoom.value = 1
+      introStartedAt = performance.now()
+      systemStartedAt = performance.now()
+      focusStartedAt = performance.now()
       transition = {
         from,
         to: { view, galaxy: props.galaxy, system: props.system },
@@ -978,7 +1107,33 @@
   )
 
   watch(
-    () => [props.galaxy, props.system, props.slots, props.selectedPlanetId],
+    () => [props.galaxy, props.system],
+    () => {
+      introStartedAt = performance.now()
+      systemStartedAt = performance.now()
+      focusStartedAt = performance.now()
+      if (!transition) requestDraw()
+    }
+  )
+
+  watch(
+    () => props.focusedSlotPosition,
+    () => {
+      focusStartedAt = performance.now()
+      requestDraw()
+    }
+  )
+
+  watch(
+    () => [props.selectedSystemId, props.selectedRegion],
+    () => {
+      focusStartedAt = performance.now()
+      requestDraw()
+    }
+  )
+
+  watch(
+    () => [props.slots, props.selectedPlanetId],
     () => {
       if (!transition) requestDraw()
     },
@@ -986,6 +1141,9 @@
   )
 
   onMounted(() => {
+    introStartedAt = performance.now()
+    systemStartedAt = performance.now()
+    focusStartedAt = performance.now()
     resizeObserver = new ResizeObserver(resize)
     if (wrapRef.value) resizeObserver.observe(wrapRef.value)
     resize()
@@ -993,6 +1151,7 @@
 
   onBeforeUnmount(() => {
     if (raf) window.cancelAnimationFrame(raf)
+    if (motionRaf) window.cancelAnimationFrame(motionRaf)
     resizeObserver?.disconnect()
   })
 </script>

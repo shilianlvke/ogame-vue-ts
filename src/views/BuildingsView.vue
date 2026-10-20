@@ -47,7 +47,6 @@
               </Badge>
             </div>
           </div>
-          <CardDescription class="text-xs sm:text-sm">{{ BUILDINGS[buildingType].description }}</CardDescription>
         </CardHeader>
         <CardContent>
           <div class="space-y-3">
@@ -226,7 +225,7 @@
   import { computed, ref } from 'vue'
   import { BuildingType, TechnologyType } from '@/types/game'
   import type { Resources, Planet } from '@/types/game'
-  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'

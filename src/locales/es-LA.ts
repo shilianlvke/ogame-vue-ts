@@ -706,6 +706,7 @@ export default {
   },
   galaxyMap: {
     subtitle: 'Arrastra para mover · rueda/pinza para zoom · clic para seleccionar',
+    rightClickHint: 'Clic derecho para salir del enfoque',
     systemView: 'Sistema actual',
     regionView: 'Cúmulo local',
     galaxyView: 'Vista galáctica',
@@ -1841,6 +1842,10 @@ export default {
     resetHintsDesc: 'Mostrar todos los consejos nuevamente',
     hintsEnabled: 'Habilitar Consejos',
     hintsEnabledDesc: 'Mostrar consejos útiles al visitar páginas',
+    base: {
+      title: 'Base',
+      message: 'Edificios, investigación, astillero y defensa están unidos en Base. Usa el selector superior para cambiar de módulo; este consejo solo aparece la primera vez.'
+    },
     overview: {
       title: 'Resumen del Planeta',
       message:

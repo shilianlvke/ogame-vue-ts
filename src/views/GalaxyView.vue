@@ -1,76 +1,107 @@
 <template>
-  <div class="container mx-auto space-y-3 p-3 sm:p-6">
-    <!-- 顶部：视图切换 -->
-    <div>
-      <h1 class="text-2xl font-bold sm:text-3xl">{{ t('galaxyView.title') }}</h1>
-      <p class="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-        {{ generateGalaxyName(currentCycle) }} · {{ t('galaxyMap.subtitle') }}
-      </p>
+  <div class="fixed inset-0 z-[45] overflow-hidden bg-background" @contextmenu.prevent="closeFocus">
+    <Galaxy25DMap
+      ref="mapRef"
+      :view="mapView"
+      :galaxy="currentGalaxy"
+      :system="currentSystem"
+      :slots="systemSlots"
+      :focused-slot-position="focusKind === 'planet' ? selectedSlotPosition : null"
+      :selected-planet-id="focusKind === 'planet' ? selectedSlot?.planet?.id ?? null : null"
+      :selected-system-id="focusKind === 'system' ? selectedSystemId : null"
+      :selected-region="focusKind === 'region' ? selectedRegion : null"
+      @select-slot="onSelectSlot"
+      @select-system="onSelectSystem"
+      @select-region="onSelectRegion"
+      @exit-focus="closeFocus"
+    />
+
+    <!-- 沉浸式顶部渐隐层 -->
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/70 via-black/25 to-transparent" />
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
+
+    <!-- 左上：返回 + 位置 -->
+    <div class="absolute left-4 top-4 z-20 flex items-center gap-3 sm:left-6 sm:top-6">
+      <Button
+        size="icon"
+        variant="ghost"
+        class="h-9 w-9 border border-white/15 bg-black/30 text-white backdrop-blur hover:bg-black/50 hover:text-white"
+        :title="t('nav.overview')"
+        @click="exitGalaxy"
+      >
+        <ArrowLeft class="h-4 w-4" />
+      </Button>
+      <div class="hidden min-w-0 text-white drop-shadow sm:block">
+        <div class="truncate text-sm font-semibold sm:text-base">{{ t('galaxyView.title') }}</div>
+        <div class="truncate text-[10px] text-white/65 sm:text-xs">
+          {{ generateGalaxyName(currentCycle) }} · [{{ currentGalaxy }}:{{ currentSystem }}] · {{ currentRegionName }}
+        </div>
+      </div>
     </div>
 
-    <!-- 视图切换放在左侧，避免被右上角引导提示遮挡 -->
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex flex-wrap items-center gap-2">
-        <Button
+    <!-- 顶部中央：三级视图切换 -->
+    <div class="absolute left-1/2 top-4 z-20 -translate-x-1/2 sm:top-6">
+      <div class="flex items-center gap-1 rounded-full border border-white/15 bg-black/35 p-1 shadow-2xl backdrop-blur-md">
+        <button
           v-for="view in viewTabs"
           :key="view.key"
-          size="sm"
-          :variant="mapView === view.key ? 'default' : 'outline'"
+          type="button"
+          :title="t(view.labelKey)"
+          :aria-label="t(view.labelKey)"
+          class="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium transition-all sm:px-4 sm:py-2 sm:text-xs"
+          :class="
+            mapView === view.key
+              ? 'bg-white/90 text-slate-950 shadow-md'
+              : 'text-white/70 hover:bg-white/10 hover:text-white'
+          "
           @click="setView(view.key)"
         >
-          <component :is="view.icon" class="mr-1.5 h-4 w-4" />
-          {{ t(view.labelKey) }}
-        </Button>
+          <component :is="view.icon" class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span class="hidden xs:inline sm:inline">{{ t(view.labelKey) }}</span>
+        </button>
       </div>
-      <div class="hidden text-[11px] text-muted-foreground sm:block">{{ t('galaxyMap.dragHint') }}</div>
     </div>
 
-    <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <!-- 2.5D 星图 -->
-      <Card class="relative h-[58vh] min-h-[380px] overflow-hidden p-0 lg:h-[calc(100vh-9rem)]">
-        <Galaxy25DMap
-          ref="mapRef"
-          :view="mapView"
-          :galaxy="currentGalaxy"
-          :system="currentSystem"
-          :slots="systemSlots"
-          :selected-planet-id="selectedSlot?.planet?.id ?? null"
-          :selected-system-id="selectedSystemId"
-          :selected-region="selectedRegion"
-          @select-slot="onSelectSlot"
-          @select-system="onSelectSystem"
-          @select-region="onSelectRegion"
-        />
+    <!-- 右上：缩放与重置 -->
+    <div class="absolute right-4 top-4 z-20 flex gap-1.5 sm:right-6 sm:top-6">
+      <Button size="icon" variant="ghost" class="h-8 w-8 border border-white/15 bg-black/30 text-white backdrop-blur hover:bg-black/50 hover:text-white" @click="mapRef?.zoomIn()">
+        <Plus class="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="ghost" class="h-8 w-8 border border-white/15 bg-black/30 text-white backdrop-blur hover:bg-black/50 hover:text-white" @click="mapRef?.zoomOut()">
+        <Minus class="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="ghost" class="h-8 w-8 border border-white/15 bg-black/30 text-white backdrop-blur hover:bg-black/50 hover:text-white" @click="mapRef?.resetView()">
+        <Maximize2 class="h-4 w-4" />
+      </Button>
+    </div>
 
-        <!-- 当前坐标 -->
-        <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-          <div class="pointer-events-auto rounded-lg border border-border bg-background/80 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
-            <div class="font-medium">{{ currentSystemLabel }}</div>
-            <div class="mt-0.5 text-[10px] text-muted-foreground">[{{ currentGalaxy }}:{{ currentSystem }}] · {{ currentRegionName }}</div>
+    <!-- 底部提示与图例 -->
+    <div class="pointer-events-none absolute bottom-4 left-4 z-20 hidden items-center gap-4 text-[10px] text-white/55 sm:flex">
+      <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-blue-400" />{{ t('galaxyMap.legendOwn') }}</span>
+      <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-amber-400" />{{ t('galaxyMap.legendNpc') }}</span>
+      <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-cyan-300" />{{ t('galaxyMap.legendScanned') }}</span>
+      <span class="text-white/35">·</span>
+      <span>{{ t('galaxyMap.rightClickHint') }}</span>
+    </div>
+
+    <!-- 聚焦后的上下文面板：渐显，不占固定布局 -->
+    <Transition name="galaxy-panel">
+      <aside
+        v-if="contextOpen"
+        class="absolute z-30 overflow-hidden rounded-2xl border border-white/15 bg-background/80 shadow-2xl backdrop-blur-xl
+          inset-x-3 bottom-3 max-h-[45vh]
+          sm:inset-x-auto sm:right-4 sm:top-20 sm:bottom-auto sm:w-[380px] sm:max-h-[calc(100vh-7rem)]
+          lg:right-6 lg:top-24 lg:max-h-[calc(100vh-8rem)]"
+      >
+        <div class="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <div class="truncate text-sm font-semibold">
+            {{ mapView === 'system' ? slotDisplayName : mapView === 'region' ? selectedSystemName : selectedRegionInfo ? regionName(selectedRegionInfo) : '' }}
           </div>
-          <div class="pointer-events-auto flex gap-1.5">
-            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.zoomIn()">
-              <Plus class="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.zoomOut()">
-              <Minus class="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant="outline" class="h-8 w-8 bg-background/80" @click="mapRef?.resetView()">
-              <Maximize2 class="h-4 w-4" />
-            </Button>
-          </div>
+          <Button size="icon" variant="ghost" class="h-7 w-7" :title="t('common.close')" @click="closeFocus">
+            <X class="h-4 w-4" />
+          </Button>
         </div>
-
-        <!-- 图例 -->
-        <div class="pointer-events-none absolute bottom-3 right-3 hidden rounded-lg border border-border bg-background/80 px-2.5 py-2 text-[10px] text-muted-foreground shadow-sm backdrop-blur sm:block">
-          <div class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400" />{{ t('galaxyMap.legendOwn') }}</div>
-          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-600 dark:bg-amber-400" />{{ t('galaxyMap.legendNpc') }}</div>
-          <div class="mt-1 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-cyan-700 dark:bg-cyan-300" />{{ t('galaxyMap.legendScanned') }}</div>
-        </div>
-      </Card>
-
-      <!-- 右侧上下文操作面板：留出右下角固定通知按钮的空间 -->
-      <div class="space-y-3 pr-[10%] lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
+        <div class="max-h-[calc(45vh-3rem)] space-y-3 overflow-y-auto p-3 sm:max-h-[calc(100vh-11rem)]">
         <!-- 恒星系视图：选中轨道/星球 -->
         <Card v-if="mapView === 'system'">
           <CardHeader class="pb-2">
@@ -321,15 +352,9 @@
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent class="flex flex-wrap gap-2 p-3 text-[11px] text-muted-foreground">
-            <span class="sm:hidden"><MousePointer2 class="mr-1 inline h-3.5 w-3.5" />{{ t('galaxyMap.dragHint') }}</span>
-            <span class="hidden sm:inline"><Eye class="mr-1 inline h-3.5 w-3.5" />{{ t('galaxyMap.hoverHint') }}</span>
-            <span class="hidden sm:inline"><MousePointer2 class="mr-1 inline h-3.5 w-3.5" />{{ t('galaxyMap.dragHint') }}</span>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        </div>
+      </aside>
+    </Transition>
 
     <!-- 快速派遣确认 -->
     <AlertDialog :open="alertDialogOpen" @update:open="alertDialogOpen = $event">
@@ -428,6 +453,7 @@
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { Button } from '@/components/ui/button'
+  import { useSidebar } from '@/components/ui/sidebar'
   import { Badge } from '@/components/ui/badge'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { Input } from '@/components/ui/input'
@@ -451,6 +477,7 @@
   import { toast } from 'vue-sonner'
   import {
     AlertTriangle,
+    ArrowLeft,
     Bomb,
     Eye,
     Gift,
@@ -459,14 +486,14 @@
     Maximize2,
     Minus,
     Moon,
-    MousePointer2,
     Navigation,
     Orbit,
     Plus,
     Radar,
     Recycle,
     Rocket,
-    Sword
+    Sword,
+    X
   } from 'lucide-vue-next'
 
   const gameStore = useGameStore()
@@ -476,6 +503,7 @@
   const router = useRouter()
   const route = useRoute()
   const { t } = useI18n()
+  const { setOpen: setSidebarOpen, setOpenMobile } = useSidebar()
 
   const mapRef = ref<InstanceType<typeof Galaxy25DMap> | null>(null)
   const mapView = ref<GalaxyMapView>('system')
@@ -484,6 +512,7 @@
   const selectedSlotPosition = ref<number | null>(null)
   const selectedSystemId = ref<string | null>(null)
   const selectedRegion = ref<number | null>(null)
+  const focusKind = ref<'planet' | 'system' | 'region' | null>(null)
   const renameDraft = ref('')
   const highlightNpcId = ref<string | undefined>(undefined)
 
@@ -501,6 +530,7 @@
   const scanInFlight = ref(false)
   let scanInFlightTimer: number | undefined
 
+  const contextOpen = computed(() => focusKind.value !== null)
   const currentCycle = computed(() => gameStore.player.cycle ?? 1)
   const layout = computed(() => buildCycleLayout(DEFAULT_LAYOUT_SEED, currentCycle.value))
   const currentRegion = computed(() => regionOfGalaxy(currentGalaxy.value))
@@ -659,7 +689,16 @@
     return String(Math.floor(value))
   }
 
+  const closeFocus = (): void => {
+    focusKind.value = null
+  }
+
+  const exitGalaxy = (): void => {
+    router.push('/overview')
+  }
+
   const setView = (view: GalaxyMapView): void => {
+    focusKind.value = null
     if (view === 'galaxy') {
       selectedRegion.value = currentRegion.value
     }
@@ -675,26 +714,17 @@
   const onSelectSlot = (slot: GalaxyMapSlot): void => {
     selectedSlotPosition.value = slot.position
     selectedSystemId.value = currentSystemId.value
+    focusKind.value = 'planet'
   }
 
   const onSelectSystem = (system: StarSystem): void => {
     selectedSystemId.value = system.id
-    currentGalaxy.value = system.galaxy
-    currentSystem.value = system.index
-    selectedSlotPosition.value = null
+    focusKind.value = 'system'
   }
 
   const onSelectRegion = (region: { region: number }): void => {
-    const regionLayout = layout.value.regions.find(item => item.region === region.region)
-    const preserveCurrent = currentRegion.value === region.region ? currentSystem.value : null
     selectedRegion.value = region.region
-    currentGalaxy.value = (currentCycle.value - 1) * GALAXY_CONFIG.REGIONS_PER_CYCLE + region.region
-    const nextSystem = preserveCurrent ?? regionLayout?.systems[0]?.index ?? 1
-    currentSystem.value = nextSystem
-    selectedSystemId.value =
-      regionLayout?.systems.find(system => system.index === nextSystem)?.id ?? regionLayout?.systems[0]?.id ?? null
-    selectedSlotPosition.value = null
-    mapView.value = 'region'
+    focusKind.value = 'region'
   }
 
   const enterSelectedSystem = (): void => {
@@ -704,16 +734,28 @@
     currentSystem.value = system.index
     selectedSystemId.value = system.id
     selectedSlotPosition.value = systemSlots.value.find(slot => slot.planet)?.position ?? 1
+    focusKind.value = null
     mapView.value = 'system'
   }
 
   const enterSelectedRegion = (): void => {
     if (!selectedRegionInfo.value) return
-    onSelectRegion(selectedRegionInfo.value)
+    const regionLayout = selectedRegionInfo.value
+    selectedRegion.value = regionLayout.region
+    currentGalaxy.value = (currentCycle.value - 1) * GALAXY_CONFIG.REGIONS_PER_CYCLE + regionLayout.region
+    const nextSystem = regionLayout.systems[0]?.index ?? 1
+    currentSystem.value = nextSystem
+    selectedSystemId.value = regionLayout.systems[0]?.id ?? null
+    selectedSlotPosition.value = null
+    focusKind.value = null
+    mapView.value = 'region'
   }
 
   const focusRegionSystem = (system: StarSystem): void => {
-    onSelectSystem(system)
+    currentGalaxy.value = system.galaxy
+    currentSystem.value = system.index
+    selectedSystemId.value = system.id
+    focusKind.value = 'system'
     mapView.value = 'region'
   }
 
@@ -966,7 +1008,17 @@
     if (!highlightedPlanet) selectedSlotPosition.value = gameStore.currentPlanet?.position.position ?? 1
   }
 
+  const handleKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && focusKind.value) {
+      closeFocus()
+    }
+  }
+
   onMounted(() => {
+    setSidebarOpen(false)
+    setOpenMobile(false)
+    document.documentElement.classList.add('galaxy-immersive')
+    window.addEventListener('keydown', handleKeydown)
     loadQueryOrHome()
     const first = systemSlots.value.find(slot => slot.planet)
     if (!selectedSlotPosition.value) selectedSlotPosition.value = first?.position ?? 1
@@ -982,7 +1034,29 @@
 
   onBeforeUnmount(() => {
     if (scanInFlightTimer) window.clearTimeout(scanInFlightTimer)
+    window.removeEventListener('keydown', handleKeydown)
+    document.documentElement.classList.remove('galaxy-immersive')
   })
-
-
 </script>
+
+<style scoped>
+  .galaxy-panel-enter-active,
+  .galaxy-panel-leave-active {
+    transition:
+      opacity 0.42s ease,
+      transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .galaxy-panel-enter-from,
+  .galaxy-panel-leave-to {
+    opacity: 0;
+    transform: translateX(26px) scale(0.98);
+  }
+
+  @media (max-width: 639px) {
+    .galaxy-panel-enter-from,
+    .galaxy-panel-leave-to {
+      transform: translateY(26px) scale(0.98);
+    }
+  }
+</style>

@@ -45,7 +45,6 @@
               </Badge>
             </div>
           </div>
-          <CardDescription class="text-xs sm:text-sm">{{ DEFENSES[defenseType].description }}</CardDescription>
         </CardHeader>
         <CardContent>
           <div class="space-y-3 sm:space-y-4">
@@ -197,7 +196,7 @@
   import { useGameConfig } from '@/composables/useGameConfig'
   import { computed, ref } from 'vue'
   import { DefenseType, BuildingType } from '@/types/game'
-  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'

@@ -716,6 +716,7 @@ export default {
   },
   galaxyMap: {
     subtitle: 'Drag to pan · wheel/pinch to zoom · click to select',
+    rightClickHint: 'Right-click anywhere to exit focus',
     systemView: 'Current System',
     regionView: 'Local Cluster',
     galaxyView: 'Galaxy Overview',
@@ -1860,6 +1861,10 @@ export default {
     resetHintsDesc: 'Show all hints again',
     hintsEnabled: 'Enable Hints',
     hintsEnabledDesc: 'Show helpful hints when visiting pages',
+    base: {
+      title: 'Base',
+      message: 'Buildings, research, shipyard and defense are combined in Base. Use the top switch to change modules; this hint appears only the first time you open Base.'
+    },
     overview: {
       title: 'Planet Overview',
       message: 'Here you can see your planet resources, fleet status, and production details. Check back often to monitor your progress!'

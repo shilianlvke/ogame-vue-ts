@@ -240,3 +240,10 @@ aside nav a:hover button {
 [data-radix-portal] > * {
   pointer-events: auto;
 }
+
+/* 星系沉浸页：锁定页面滚动，避免穿透 */
+html.galaxy-immersive,
+html.galaxy-immersive body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}

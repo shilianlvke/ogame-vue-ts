@@ -10,7 +10,6 @@ import { useGameStore } from '@/stores/gameStore'
 export interface Hint {
   id: string
   route: string // 显示此提示的路由路径
-  tab?: string // 同一路由下按 tab 区分（基地页）
   titleKey: string // 标题的 i18n 键
   messageKey: string // 消息的 i18n 键
   icon?: string // 可选的图标名称
@@ -28,30 +27,11 @@ const hints: Hint[] = [
     delay: 1000
   },
   {
-    id: 'buildings_intro',
+    id: 'base_intro',
     route: '/base',
-    tab: 'buildings',
-    titleKey: 'hints.buildings.title',
-    messageKey: 'hints.buildings.message',
+    titleKey: 'hints.base.title',
+    messageKey: 'hints.base.message',
     icon: 'building',
-    delay: 500
-  },
-  {
-    id: 'research_intro',
-    route: '/base',
-    tab: 'research',
-    titleKey: 'hints.research.title',
-    messageKey: 'hints.research.message',
-    icon: 'flask',
-    delay: 500
-  },
-  {
-    id: 'shipyard_intro',
-    route: '/base',
-    tab: 'shipyard',
-    titleKey: 'hints.shipyard.title',
-    messageKey: 'hints.shipyard.message',
-    icon: 'rocket',
     delay: 500
   },
   {
@@ -84,15 +64,6 @@ const hints: Hint[] = [
     titleKey: 'hints.messages.title',
     messageKey: 'hints.messages.message',
     icon: 'mail',
-    delay: 500
-  },
-  {
-    id: 'defense_intro',
-    route: '/base',
-    tab: 'defense',
-    titleKey: 'hints.defense.title',
-    messageKey: 'hints.defense.message',
-    icon: 'shield',
     delay: 500
   },
   {
@@ -159,6 +130,44 @@ const isHintVisible = ref(false)
 
 let hintTimeout: ReturnType<typeof setTimeout> | null = null
 
+// 不要以 pkg.name 开头：saveStorage 会把该前缀的 localStorage 当成旧存档迁移到 IndexedDB。
+const HINT_STORAGE_PREFIX = 'ogame-hints-v1:'
+let lastAccountKey: string | null = null
+
+interface HintStorage {
+  read: (key: string) => string[]
+  write: (key: string, ids: string[]) => void
+  remove: (key: string) => void
+}
+
+const hintStorage: HintStorage = {
+  read(key) {
+    if (typeof localStorage === 'undefined') return []
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) ?? '[]')
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+    } catch {
+      return []
+    }
+  },
+  write(key, ids) {
+    if (typeof localStorage === 'undefined') return
+    try {
+      localStorage.setItem(key, JSON.stringify([...new Set(ids)]))
+    } catch {
+      // 隐私模式等场景下写入失败时，当前会话仍然有效
+    }
+  },
+  remove(key) {
+    if (typeof localStorage === 'undefined') return
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export const useHints = () => {
   const router = useRouter()
   const gameStore = useGameStore()
@@ -172,6 +181,44 @@ export const useHints = () => {
   if (gameStore.player.hintsEnabled === undefined) {
     gameStore.player.hintsEnabled = true
   }
+
+  const accountKey = (): string => `${HINT_STORAGE_PREFIX}${gameStore.player.id || 'local'}`
+
+  /**
+   * 提示进度按账号存在 localStorage：
+   * - 同一账号重新登录、换页面后不会重新出现；
+   * - 不同账号之间不共享已读提示。
+   */
+  const syncAccountHints = (): void => {
+    const key = accountKey()
+    const stored = hintStorage.read(key)
+
+    if (lastAccountKey === null) {
+      // 首次加载：严格读取该账号的记录，避免把上一个账号的已读提示带进来
+      gameStore.player.dismissedHints = stored
+    } else if (lastAccountKey !== key) {
+      // 切换账号：严格使用新账号的已读记录，避免串号
+      gameStore.player.dismissedHints = stored
+    } else if (stored.length > 0) {
+      gameStore.player.dismissedHints = [...new Set([...(gameStore.player.dismissedHints ?? []), ...stored])]
+    }
+
+    lastAccountKey = key
+  }
+
+  const persistAccountHints = (): void => {
+    hintStorage.write(accountKey(), gameStore.player.dismissedHints ?? [])
+  }
+
+  const markHintSeen = (hintId: string): void => {
+    if (!gameStore.player.dismissedHints) gameStore.player.dismissedHints = []
+    if (!gameStore.player.dismissedHints.includes(hintId)) {
+      gameStore.player.dismissedHints.push(hintId)
+    }
+    persistAccountHints()
+  }
+
+  syncAccountHints()
 
   // 检查提示是否已被关闭
   const isHintDismissed = (hintId: string): boolean => {
@@ -192,18 +239,17 @@ export const useHints = () => {
     isHintVisible.value = false
     currentHint.value = null
 
-    const currentTab = String(router.currentRoute.value.query.tab ?? 'buildings')
-
-    // 查找此路由对应的提示；基地页的四个子页共用 /base，需要按 tab 区分
-    const hint = hints.find(h => routePath.startsWith(h.route) && (!h.tab || h.tab === currentTab))
+    // 基地已合并为一个栏目，只使用一条 Base 提示
+    const hint = hints.find(h => routePath.startsWith(h.route))
     if (!hint) return
 
-    // 检查是否已经关闭过
+    // 检查是否已经看过
     if (isHintDismissed(hint.id)) return
 
-    // 延迟后显示提示
+    // 延迟后显示提示；显示即视为已读，后续登录不再重复弹出
     const delay = hint.delay ?? 500
     hintTimeout = setTimeout(() => {
+      markHintSeen(hint.id)
       currentHint.value = hint
       isHintVisible.value = true
     }, delay)
@@ -212,18 +258,13 @@ export const useHints = () => {
   // 关闭当前提示（不再显示）
   const dismissHint = (dontShowAgain = true) => {
     if (currentHint.value && dontShowAgain) {
-      if (!gameStore.player.dismissedHints) {
-        gameStore.player.dismissedHints = []
-      }
-      if (!gameStore.player.dismissedHints.includes(currentHint.value.id)) {
-        gameStore.player.dismissedHints.push(currentHint.value.id)
-      }
+      markHintSeen(currentHint.value.id)
     }
     isHintVisible.value = false
     currentHint.value = null
   }
 
-  // 暂时关闭提示（下次访问还会显示）
+  // 暂时关闭提示（本次不显示）
   const closeHint = () => {
     isHintVisible.value = false
     currentHint.value = null
@@ -232,6 +273,7 @@ export const useHints = () => {
   // 重置所有提示（重新显示）
   const resetHints = () => {
     gameStore.player.dismissedHints = []
+    hintStorage.remove(accountKey())
   }
 
   // 切换提示开关
@@ -243,11 +285,17 @@ export const useHints = () => {
     }
   }
 
-  // 监听路由变化（基地页还要监听 tab query）
+  // 账号切换时重新加载该账号的提示记录
   watch(
-    () => [router.currentRoute.value.path, router.currentRoute.value.query.tab],
-    ([newPath]) => {
-      checkForHint(String(newPath))
+    () => gameStore.player.id,
+    () => syncAccountHints()
+  )
+
+  // 监听路由变化
+  watch(
+    () => router.currentRoute.value.path,
+    newPath => {
+      checkForHint(newPath)
     },
     { immediate: true }
   )
