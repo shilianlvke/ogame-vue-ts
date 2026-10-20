@@ -126,6 +126,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import ActionIcon from '@/components/common/ActionIcon.vue'
   import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
+  import { formatRequirementHint, formatResourceShortfall } from '@/logic/actionHintLogic'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   const { notifyDisabled } = useDisabledActionHint()
@@ -419,36 +420,34 @@
     return true
   }
 
-  const getRequirementReason = (techType: TechnologyType): string => {
-    const missing = getRequirementsList(techType)
-      .filter(requirement => !requirement.met)
-      .map(requirement => `${requirement.name} Lv${requirement.requiredLevel}`)
-    return missing.length > 0 ? `${t('errors.requirementsNotMet')}: ${missing.join(', ')}` : t('errors.requirementsNotMet')
-  }
+  const getRequirementReason = (techType: TechnologyType): string =>
+    formatRequirementHint(
+      getRequirementsList(techType).map(requirement => ({
+        name: requirement.name,
+        required: requirement.requiredLevel,
+        current: requirement.currentLevel
+      })),
+      t
+    )
 
   const getResearchDisabledReason = (techType: TechnologyType): string => {
     if (!planet.value) return t('baseHints.unknown')
     const config = TECHNOLOGIES.value[techType]
-    if (config.maxLevel !== undefined && getTechLevel(techType) >= config.maxLevel) {
-      return t('researchView.maxLevelReached')
+    const currentLevel = getTechLevel(techType)
+    if (config.maxLevel !== undefined && currentLevel >= config.maxLevel) {
+      return t('baseHints.maxLevel', { max: config.maxLevel, current: currentLevel })
     }
     if (player.value.researchQueue.some(item => item.type === 'technology' && item.itemType === techType)) {
-      return t('researchView.researching')
+      return t('baseHints.alreadyQueued')
     }
     const maxQueue = publicLogic.getMaxResearchQueue(gameStore.player.technologies)
-    if (player.value.researchQueue.length >= maxQueue) return t('errors.researchQueueFull')
+    if (player.value.researchQueue.length >= maxQueue) {
+      return t('baseHints.researchQueueFull', { current: player.value.researchQueue.length, max: maxQueue })
+    }
     if (!checkUpgradeRequirements(techType)) return getRequirementReason(techType)
 
-    const cost = getTechnologyCost(techType, getTechLevel(techType) + 1)
-    if (
-      planet.value.resources.metal < cost.metal ||
-      planet.value.resources.crystal < cost.crystal ||
-      planet.value.resources.deuterium < cost.deuterium ||
-      planet.value.resources.darkMatter < cost.darkMatter
-    ) {
-      return t('errors.insufficientResources')
-    }
-    return t('baseHints.unknown')
+    const cost = getTechnologyCost(techType, currentLevel + 1)
+    return formatResourceShortfall(planet.value.resources, cost, t) ?? t('baseHints.unknown')
   }
 
   const getWaitingDisabledReason = (techType: TechnologyType): string => {
@@ -465,11 +464,13 @@
     const targetLevel = currentLevel + upgradesInResearchQueue + upgradesInWaitingQueue + 1
 
     if (config.maxLevel !== undefined && targetLevel > config.maxLevel) {
-      return t('researchView.maxLevelReached')
+      return t('baseHints.maxLevel', { max: config.maxLevel, current: currentLevel })
     }
     if (!checkUpgradeRequirements(techType)) return getRequirementReason(techType)
     const maxWaitingQueue = waitingQueueLogic.getMaxResearchWaitingQueue(player.value.technologies)
-    if (waitingQueue.length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    if (waitingQueue.length >= maxWaitingQueue) {
+      return t('baseHints.waitingQueueFull', { current: waitingQueue.length, max: maxWaitingQueue })
+    }
     return t('baseHints.unknown')
   }
 

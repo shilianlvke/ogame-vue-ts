@@ -76,6 +76,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: '자원이 충분합니다. 대기열 없이 바로 건설할 수 있습니다.',
+    requirements: '선행 조건 미충족: {requirements}',
+    requirementItem: '{name} Lv{required} (현재 Lv{current})',
+    buildQueueFull: '건설 대기열이 가득 찼습니다 ({current}/{max})',
+    researchQueueFull: '연구 대기열이 가득 찼습니다 ({current}/{max})',
+    waitingQueueFull: '대기열이 가득 찼습니다 ({current}/{max})',
+    resourcesMissing: '자원 부족: {resources}',
+    resourceItem: '{name} {amount} 부족',
+    maxLevel: '최고 레벨 {max} 도달 (현재 {current})',
+    alreadyQueued: '이 대상은 이미 대기열에 있습니다. 기다리거나 현재 작업을 취소하세요.',
+    insufficientUnitsDetail: '해체 가능한 수량 부족: 필요 {required}, 보유 {available}',
+    fleetStorage: '함대 저장 공간 부족: 필요 {required}, 남은 공간 {available}',
     invalidQuantity: '유효한 수량을 입력하세요.',
     insufficientUnits: '해체할 함선/방어 시설이 부족합니다.',
     unknown: '현재 이 작업을 수행할 수 없습니다. 선행 조건, 자원, 대기열을 확인하세요.'

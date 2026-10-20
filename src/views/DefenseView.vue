@@ -188,6 +188,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import ActionIcon from '@/components/common/ActionIcon.vue'
   import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
+  import { collectRequirementProgress, formatRequirementHint, formatResourceShortfall } from '@/logic/actionHintLogic'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   const { notifyDisabled } = useDisabledActionHint()
@@ -224,7 +225,7 @@
   const gameStore = useGameStore()
   const detailDialog = useDetailDialogStore()
   const { t } = useI18n()
-  const { DEFENSES } = useGameConfig()
+  const { DEFENSES, BUILDINGS, TECHNOLOGIES } = useGameConfig()
   const planet = computed(() => gameStore.currentPlanet)
 
   // 导弹容量相关计算
@@ -390,6 +391,20 @@
     return !canBuild(defenseType)
   }
 
+  const getDefenseRequirementReason = (defenseType: DefenseType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    return formatRequirementHint(
+      collectRequirementProgress(
+        planet.value,
+        gameStore.player.technologies,
+        DEFENSES.value[defenseType].requirements,
+        BUILDINGS.value,
+        TECHNOLOGIES.value
+      ),
+      t
+    )
+  }
+
   const getBuildDisabledReason = (defenseType: DefenseType): string => {
     if (!planet.value) return t('baseHints.unknown')
     const quantity = quantities.value[defenseType]
@@ -400,9 +415,9 @@
     }
     const config = DEFENSES.value[defenseType]
     if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
-      return t('errors.requirementsNotMet')
+      return getDefenseRequirementReason(defenseType)
     }
-    return t('errors.insufficientResources')
+    return formatResourceShortfall(planet.value.resources, getTotalCost(defenseType), t) ?? t('errors.insufficientResources')
   }
 
   const getWaitingDisabledReason = (defenseType: DefenseType): string => {
@@ -415,13 +430,16 @@
     }
     const config = DEFENSES.value[defenseType]
     if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
-      return t('errors.requirementsNotMet')
+      return getDefenseRequirementReason(defenseType)
     }
     const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
     const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
-    if ((planet.value.waitingBuildQueue || []).length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    const waitingCount = (planet.value.waitingBuildQueue || []).length
+    if (waitingCount >= maxWaitingQueue) {
+      return t('baseHints.waitingQueueFull', { current: waitingCount, max: maxWaitingQueue })
+    }
     if (canBuild(defenseType)) return t('baseHints.resourcesEnough')
-    return t('errors.insufficientResources')
+    return formatResourceShortfall(planet.value.resources, getTotalCost(defenseType), t) ?? t('errors.insufficientResources')
   }
 
   // 添加到等待队列

@@ -82,6 +82,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: 'You already have enough resources; build directly without using the waiting queue.',
+    requirements: 'Requirements not met: {requirements}',
+    requirementItem: '{name} Lv{required} (current Lv{current})',
+    buildQueueFull: 'Build queue is full ({current}/{max})',
+    researchQueueFull: 'Research queue is full ({current}/{max})',
+    waitingQueueFull: 'Waiting queue is full ({current}/{max})',
+    resourcesMissing: 'Insufficient resources: {resources}',
+    resourceItem: '{name} short by {amount}',
+    maxLevel: 'Maximum level {max} reached (current {current})',
+    alreadyQueued: 'This target is already queued. Wait for it or cancel the current task.',
+    insufficientUnitsDetail: 'Not enough units to scrap: required {required}, available {available}',
+    fleetStorage: 'Insufficient fleet storage: required {required}, available {available}',
     invalidQuantity: 'Please enter a valid quantity.',
     insufficientUnits: 'Not enough ships/defenses to scrap.',
     unknown: 'This action is currently unavailable. Check requirements, resources, and queues.'

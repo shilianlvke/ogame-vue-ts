@@ -76,6 +76,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: '資源は足りています。待機キューを使わず直接建造できます。',
+    requirements: '前提条件を満たしていません：{requirements}',
+    requirementItem: '{name} Lv{required}（現在 Lv{current}）',
+    buildQueueFull: '建造キューが満杯です（{current}/{max}）',
+    researchQueueFull: '研究キューが満杯です（{current}/{max}）',
+    waitingQueueFull: '待機キューが満杯です（{current}/{max}）',
+    resourcesMissing: '資源不足：{resources}',
+    resourceItem: '{name}が {amount} 不足',
+    maxLevel: '最高レベル {max} に達しています（現在 {current}）',
+    alreadyQueued: 'この対象はすでにキューにあります。待つか現在のタスクをキャンセルしてください。',
+    insufficientUnitsDetail: '解体できる数が不足：必要 {required}、利用可能 {available}',
+    fleetStorage: '艦隊倉庫が不足：必要 {required}、残り {available}',
     invalidQuantity: '有効な数量を入力してください。',
     insufficientUnits: '解体できる艦船/防衛設備が不足しています。',
     unknown: '現在この操作は実行できません。前提条件・資源・キューを確認してください。'

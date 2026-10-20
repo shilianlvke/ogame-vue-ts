@@ -77,6 +77,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: 'Ресурсов достаточно — можно строить сразу, очередь ожидания не нужна.',
+    requirements: 'Не выполнены требования: {requirements}',
+    requirementItem: '{name} ур.{required} (сейчас ур.{current})',
+    buildQueueFull: 'Очередь строительства заполнена ({current}/{max})',
+    researchQueueFull: 'Очередь исследований заполнена ({current}/{max})',
+    waitingQueueFull: 'Очередь ожидания заполнена ({current}/{max})',
+    resourcesMissing: 'Недостаточно ресурсов: {resources}',
+    resourceItem: '{name}: не хватает {amount}',
+    maxLevel: 'Достигнут максимальный уровень {max} (сейчас {current})',
+    alreadyQueued: 'Эта цель уже в очереди. Дождитесь или отмените текущую задачу.',
+    insufficientUnitsDetail: 'Недостаточно единиц для разбора: нужно {required}, доступно {available}',
+    fleetStorage: 'Недостаточно места на складе флота: нужно {required}, доступно {available}',
     invalidQuantity: 'Укажите корректное количество.',
     insufficientUnits: 'Недостаточно кораблей/обороны для разбора.',
     unknown: 'Действие сейчас недоступно. Проверьте требования, ресурсы и очереди.'

@@ -77,6 +77,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: '資源已足夠，可以直接建造，無需加入等待佇列。',
+    requirements: '前置條件不足：{requirements}',
+    requirementItem: '{name} Lv{required}（目前 Lv{current}）',
+    buildQueueFull: '建造佇列已滿（{current}/{max}）',
+    researchQueueFull: '研究佇列已滿（{current}/{max}）',
+    waitingQueueFull: '等待佇列已滿（{current}/{max}）',
+    resourcesMissing: '資源不足：{resources}',
+    resourceItem: '{name}還差 {amount}',
+    maxLevel: '已達到最高等級 {max}（目前 {current}）',
+    alreadyQueued: '該目標已在佇列中，請先等待或取消目前任務。',
+    insufficientUnitsDetail: '可拆除數量不足：需要 {required}，目前 {available}',
+    fleetStorage: '艦隊倉儲不足：需要 {required}，目前剩餘 {available}',
     invalidQuantity: '請先填寫有效的數量。',
     insufficientUnits: '可拆除的艦船/防禦數量不足。',
     unknown: '目前無法執行此操作，請檢查前置條件、資源和佇列狀態。'

@@ -216,6 +216,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import ActionIcon from '@/components/common/ActionIcon.vue'
   import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
+  import { formatRequirementHint, formatResourceShortfall } from '@/logic/actionHintLogic'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   const { notifyDisabled } = useDisabledActionHint()
@@ -576,19 +577,22 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     return true
   }
 
-  const getRequirementReason = (buildingType: BuildingType): string => {
-    const missing = getRequirementsList(buildingType)
-      .filter(requirement => !requirement.met)
-      .map(requirement => `${requirement.name} Lv${requirement.requiredLevel}`)
-    return missing.length > 0 ? `${t('errors.requirementsNotMet')}: ${missing.join(', ')}` : t('errors.requirementsNotMet')
-  }
+  const getRequirementReason = (buildingType: BuildingType): string =>
+    formatRequirementHint(
+      getRequirementsList(buildingType).map(requirement => ({
+        name: requirement.name,
+        required: requirement.requiredLevel,
+        current: requirement.currentLevel
+      })),
+      t
+    )
 
   const getUpgradeDisabledReason = (buildingType: BuildingType): string => {
     if (!planet.value) return t('baseHints.unknown')
     const config = BUILDINGS.value[buildingType]
     const currentLevel = getBuildingLevel(buildingType)
     if (config.maxLevel !== undefined && currentLevel >= config.maxLevel) {
-      return t('buildingsView.maxLevelReached')
+      return t('baseHints.maxLevel', { max: config.maxLevel, current: currentLevel })
     }
 
     const validation = buildingValidation.validateBuildingUpgrade(
@@ -599,7 +603,21 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     )
     if (!validation.valid) {
       if (validation.reason === 'errors.requirementsNotMet') return getRequirementReason(buildingType)
-      if (validation.reason === 'errors.buildingAlreadyInQueue') return t('errors.hasBuildQueue')
+      if (validation.reason === 'errors.buildingAlreadyInQueue') return t('baseHints.alreadyQueued')
+      if (validation.reason === 'errors.insufficientResources') {
+        return (
+          formatResourceShortfall(planet.value.resources, getBuildingCost(buildingType, currentLevel + 1), t) ??
+          t('errors.insufficientResources')
+        )
+      }
+      if (validation.reason === 'errors.buildQueueFull') {
+        const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
+        const max = publicLogic.getMaxBuildQueue(planet.value, bonuses.additionalBuildQueue)
+        const current = planet.value.buildQueue.filter(
+          queueItem => queueItem.type === 'building' || queueItem.type === 'demolish'
+        ).length
+        return t('baseHints.buildQueueFull', { current, max })
+      }
       return t(validation.reason ?? 'baseHints.unknown')
     }
     return t('baseHints.unknown')
@@ -619,13 +637,15 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     const targetLevel = currentLevel + upgradesInBuildQueue + upgradesInWaitingQueue + 1
 
     if (config.maxLevel !== undefined && targetLevel > config.maxLevel) {
-      return t('buildingsView.maxLevelReached')
+      return t('baseHints.maxLevel', { max: config.maxLevel, current: currentLevel })
     }
     if (!checkUpgradeRequirements(buildingType)) return getRequirementReason(buildingType)
 
     const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
     const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
-    if (waitingQueue.length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    if (waitingQueue.length >= maxWaitingQueue) {
+      return t('baseHints.waitingQueueFull', { current: waitingQueue.length, max: maxWaitingQueue })
+    }
 
     const item = waitingQueueLogic.createBuildingWaitingItem(buildingType, targetLevel, planet.value.id)
     const result = waitingQueueLogic.canAddToBuildWaitingQueue(planet.value, item, gameStore.player.officers)
@@ -642,7 +662,7 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     const buildingQueueCount = planet.value.buildQueue.filter(
       queueItem => queueItem.type === 'building' || queueItem.type === 'demolish'
     ).length
-    if (buildingQueueCount >= maxQueue) return t('errors.buildQueueFull')
+    if (buildingQueueCount >= maxQueue) return t('baseHints.buildQueueFull', { current: buildingQueueCount, max: maxQueue })
     return t('baseHints.unknown')
   }
 

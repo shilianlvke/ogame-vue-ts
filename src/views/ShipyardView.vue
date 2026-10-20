@@ -233,6 +233,7 @@
   import { useGameStore } from '@/stores/gameStore'
   import ActionIcon from '@/components/common/ActionIcon.vue'
   import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
+  import { collectRequirementProgress, formatRequirementHint, formatResourceShortfall } from '@/logic/actionHintLogic'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   const { notifyDisabled } = useDisabledActionHint()
@@ -270,7 +271,7 @@
   const gameStore = useGameStore()
   const detailDialog = useDetailDialogStore()
   const { t } = useI18n()
-  const { SHIPS } = useGameConfig()
+  const { SHIPS, BUILDINGS, TECHNOLOGIES } = useGameConfig()
   const planet = computed(() => gameStore.currentPlanet)
 
   // AlertDialog 状态
@@ -507,18 +508,42 @@
     return available >= quantity
   }
 
+  const getShipRequirementReason = (shipType: ShipType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    return formatRequirementHint(
+      collectRequirementProgress(
+        planet.value,
+        gameStore.player.technologies,
+        SHIPS.value[shipType].requirements,
+        BUILDINGS.value,
+        TECHNOLOGIES.value
+      ),
+      t
+    )
+  }
+
+  const getFleetStorageReason = (shipType: ShipType, quantity: number): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const maxStorage = fleetStorageLogic.calculateMaxFleetStorage(planet.value, gameStore.player.technologies)
+    const currentUsage = fleetStorageLogic.calculateFleetStorageUsage(planet.value.fleet)
+    const queueUsage = fleetStorageLogic.calculateQueueFleetStorageUsage(planet.value.buildQueue)
+    const required = SHIPS.value[shipType].storageUsage * quantity
+    const available = Math.max(0, maxStorage - currentUsage - queueUsage)
+    return t('baseHints.fleetStorage', { required: formatNumber(required), available: formatNumber(available) })
+  }
+
   const getBuildDisabledReason = (shipType: ShipType): string => {
     if (!planet.value) return t('baseHints.unknown')
     const quantity = quantities.value[shipType]
     if (quantity <= 0) return t('baseHints.invalidQuantity')
     const config = SHIPS.value[shipType]
     if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
-      return t('errors.requirementsNotMet')
+      return getShipRequirementReason(shipType)
     }
     if (!fleetStorageLogic.hasEnoughFleetStorage(planet.value, shipType, quantity, gameStore.player.technologies)) {
-      return t('errors.insufficientFleetStorage')
+      return getFleetStorageReason(shipType, quantity)
     }
-    return t('errors.insufficientResources')
+    return formatResourceShortfall(planet.value.resources, getTotalCost(shipType), t) ?? t('errors.insufficientResources')
   }
 
   const getWaitingDisabledReason = (shipType: ShipType): string => {
@@ -527,23 +552,29 @@
     if (quantity <= 0) return t('baseHints.invalidQuantity')
     const config = SHIPS.value[shipType]
     if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
-      return t('errors.requirementsNotMet')
+      return getShipRequirementReason(shipType)
     }
     if (!fleetStorageLogic.hasEnoughFleetStorage(planet.value, shipType, quantity, gameStore.player.technologies)) {
-      return t('errors.insufficientFleetStorage')
+      return getFleetStorageReason(shipType, quantity)
     }
     const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
     const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
-    if ((planet.value.waitingBuildQueue || []).length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    const waitingCount = (planet.value.waitingBuildQueue || []).length
+    if (waitingCount >= maxWaitingQueue) {
+      return t('baseHints.waitingQueueFull', { current: waitingCount, max: maxWaitingQueue })
+    }
     if (canBuild(shipType)) return t('baseHints.resourcesEnough')
-    return t('errors.insufficientResources')
+    return formatResourceShortfall(planet.value.resources, getTotalCost(shipType), t) ?? t('errors.insufficientResources')
   }
 
   const getScrapDisabledReason = (shipType: ShipType): string => {
     if (!planet.value) return t('baseHints.unknown')
     const quantity = scrapQuantities.value[shipType]
     if (quantity <= 0) return t('baseHints.invalidQuantity')
-    if ((planet.value.fleet[shipType] || 0) < quantity) return t('baseHints.insufficientUnits')
+    const available = planet.value.fleet[shipType] || 0
+    if (available < quantity) {
+      return t('baseHints.insufficientUnitsDetail', { required: quantity, available })
+    }
     return t('baseHints.unknown')
   }
 

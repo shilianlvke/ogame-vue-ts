@@ -76,6 +76,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: 'Ressourcen reichen aus; direkt bauen, keine Warteschlange nötig.',
+    requirements: 'Voraussetzungen nicht erfüllt: {requirements}',
+    requirementItem: '{name} Lv{required} (aktuell Lv{current})',
+    buildQueueFull: 'Bauwarteschlange voll ({current}/{max})',
+    researchQueueFull: 'Forschungswarteschlange voll ({current}/{max})',
+    waitingQueueFull: 'Warteschlange voll ({current}/{max})',
+    resourcesMissing: 'Ressourcen fehlen: {resources}',
+    resourceItem: '{name} fehlt noch {amount}',
+    maxLevel: 'Höchststufe {max} erreicht (aktuell {current})',
+    alreadyQueued: 'Dieses Ziel ist bereits in der Warteschlange. Warte oder brich den aktuellen Auftrag ab.',
+    insufficientUnitsDetail: 'Nicht genug Einheiten zum Abwracken: benötigt {required}, verfügbar {available}',
+    fleetStorage: 'Flottenlager reicht nicht: benötigt {required}, verfügbar {available}',
     invalidQuantity: 'Bitte eine gültige Menge eingeben.',
     insufficientUnits: 'Nicht genügend Schiffe/Verteidigung zum Abwracken.',
     unknown: 'Diese Aktion ist derzeit nicht möglich. Prüfe Voraussetzungen, Ressourcen und Warteschlangen.'

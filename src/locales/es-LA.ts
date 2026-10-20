@@ -75,6 +75,17 @@ export default {
   },
   baseHints: {
     resourcesEnough: 'Ya tienes recursos suficientes; construye directamente sin la cola de espera.',
+    requirements: 'Requisitos no cumplidos: {requirements}',
+    requirementItem: '{name} Lv{required} (actual Lv{current})',
+    buildQueueFull: 'Cola de construcción llena ({current}/{max})',
+    researchQueueFull: 'Cola de investigación llena ({current}/{max})',
+    waitingQueueFull: 'Cola de espera llena ({current}/{max})',
+    resourcesMissing: 'Recursos insuficientes: {resources}',
+    resourceItem: 'Faltan {amount} de {name}',
+    maxLevel: 'Nivel máximo {max} alcanzado (actual {current})',
+    alreadyQueued: 'Este objetivo ya está en la cola. Espera o cancela la tarea actual.',
+    insufficientUnitsDetail: 'Unidades insuficientes para desguazar: se necesitan {required}, disponibles {available}',
+    fleetStorage: 'Almacén de flota insuficiente: se necesitan {required}, disponibles {available}',
     invalidQuantity: 'Introduce una cantidad válida.',
     insufficientUnits: 'No hay suficientes naves/defensas para desguazar.',
     unknown: 'Esta acción no está disponible. Revisa requisitos, recursos y colas.'
