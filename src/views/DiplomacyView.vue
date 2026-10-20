@@ -1,41 +1,5 @@
 <template>
-  <div class="container mx-auto p-4 sm:p-6 space-y-6">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <p class="text-sm text-muted-foreground">{{ t('diplomacy.description') }}</p>
-      </div>
-      <!-- 视图切换和诊断按钮 -->
-      <div class="flex items-center gap-2 shrink-0">
-        <!-- 视图模式切换 -->
-        <div class="flex items-center border rounded-md">
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-8 px-2 rounded-r-none"
-            :class="{ 'bg-accent': viewMode === 'list' }"
-            @click="viewMode = 'list'"
-            :title="t('diplomacy.viewMode.list')"
-          >
-            <List class="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-8 px-2 rounded-l-none border-l"
-            :class="{ 'bg-accent': viewMode === 'card' }"
-            @click="viewMode = 'card'"
-            :title="t('diplomacy.viewMode.card')"
-          >
-            <LayoutGrid class="h-4 w-4" />
-          </Button>
-        </div>
-        <!-- NPC诊断按钮 -->
-        <Button @click="showNPCDiagnostic" variant="outline" size="sm">
-          <Activity class="h-4 w-4 sm:mr-2" />
-          <span class="hidden sm:inline">{{ t('diplomacy.diagnostic.button') }}</span>
-        </Button>
-      </div>
-    </div>
+  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col gap-4 overflow-hidden p-4 sm:p-6">
 
     <!-- NPC诊断对话框 -->
     <Dialog v-model:open="npcDiagnosticOpen">
@@ -188,8 +152,8 @@
         <Input v-model="searchQuery" type="text" :placeholder="t('diplomacy.searchPlaceholder')" class="pl-10" />
       </div>
 
-      <!-- 排序控制 -->
-      <div class="flex gap-2">
+      <!-- 排序、视图切换、NPC 诊断 -->
+      <div class="flex flex-wrap items-center gap-2">
         <Select v-model="sortBy">
           <SelectTrigger class="w-[140px]">
             <SelectValue :placeholder="t('diplomacy.sort.label')" />
@@ -210,12 +174,40 @@
         >
           <ArrowUpDown class="h-4 w-4" />
         </Button>
+        <!-- 视图模式切换 -->
+        <div class="flex items-center border rounded-md shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            class="h-8 px-2 rounded-r-none"
+            :class="{ 'bg-accent': viewMode === 'list' }"
+            @click="viewMode = 'list'"
+            :title="t('diplomacy.viewMode.list')"
+          >
+            <List class="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="h-8 px-2 rounded-l-none border-l"
+            :class="{ 'bg-accent': viewMode === 'card' }"
+            @click="viewMode = 'card'"
+            :title="t('diplomacy.viewMode.card')"
+          >
+            <LayoutGrid class="h-4 w-4" />
+          </Button>
+        </div>
+        <!-- NPC诊断按钮 -->
+        <Button @click="showNPCDiagnostic" variant="outline" size="sm" class="shrink-0">
+          <Activity class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">{{ t('diplomacy.diagnostic.button') }}</span>
+        </Button>
       </div>
     </div>
 
     <!-- 关系状态过滤标签 -->
-    <Tabs v-model="activeTab" class="w-full">
-      <TabsList class="grid w-full grid-cols-4">
+    <Tabs v-model="activeTab" class="flex min-h-0 w-full flex-1 flex-col">
+      <TabsList class="grid w-full shrink-0 grid-cols-4">
         <TabsTrigger value="all">
           {{ t('diplomacy.tabs.all') }}
           <Badge
@@ -255,7 +247,7 @@
       </TabsList>
 
       <!-- 全部NPC -->
-      <TabsContent value="all" class="space-y-4 mt-6">
+      <TabsContent value="all" class="mt-4 min-h-0 space-y-4 overflow-y-auto">
         <Empty v-if="allNpcs.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Users class="h-10 w-10 text-muted-foreground" />
@@ -289,7 +281,7 @@
       </TabsContent>
 
       <!-- 友好NPC -->
-      <TabsContent value="friendly" class="space-y-4 mt-6">
+      <TabsContent value="friendly" class="mt-4 min-h-0 space-y-4 overflow-y-auto">
         <Empty v-if="friendlyNpcs.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Heart class="h-10 w-10 text-muted-foreground" />
@@ -323,7 +315,7 @@
       </TabsContent>
 
       <!-- 中立NPC -->
-      <TabsContent value="neutral" class="space-y-4 mt-6">
+      <TabsContent value="neutral" class="mt-4 min-h-0 space-y-4 overflow-y-auto">
         <Empty v-if="neutralNpcs.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Minus class="h-10 w-10 text-muted-foreground" />
@@ -357,7 +349,7 @@
       </TabsContent>
 
       <!-- 敌对NPC -->
-      <TabsContent value="hostile" class="space-y-4 mt-6">
+      <TabsContent value="hostile" class="mt-4 min-h-0 space-y-4 overflow-y-auto">
         <Empty v-if="hostileNpcs.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Swords class="h-10 w-10 text-muted-foreground" />

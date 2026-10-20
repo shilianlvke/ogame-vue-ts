@@ -1,12 +1,8 @@
 <template>
-  <div class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <div class="flex flex-row items-center justify-end gap-4">
-      <div class="flex items-center gap-2">{{ unlockedCount }} / {{ totalCount }} {{ t('achievements.unlocked') }}</div>
-    </div>
-
+  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
     <!-- 分类标签 -->
-    <Tabs v-model="activeCategory" class="w-full">
-      <TabsList class="w-full grid grid-cols-5 h-10">
+    <Tabs v-model="activeCategory" class="flex min-h-0 w-full flex-1 flex-col">
+      <TabsList class="w-full grid shrink-0 grid-cols-5 h-10">
         <TabsTrigger v-for="category in categories" :key="category.value" :value="category.value" class="text-xs sm:text-sm">
           {{ t(`achievements.categories.${category.value}`) }}
           <Badge v-if="getCategoryUnlockedCount(category.value) > 0" class="ml-1 h-5 px-1.5 text-[10px] bg-primary text-primary-foreground">
@@ -16,7 +12,12 @@
       </TabsList>
 
       <!-- 成就卡片网格 -->
-      <TabsContent v-for="category in categories" :key="category.value" :value="category.value" class="mt-4">
+      <TabsContent
+        v-for="category in categories"
+        :key="category.value"
+        :value="category.value"
+        class="mt-4 min-h-0 overflow-y-auto pb-20"
+      >
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card v-for="achievement in getAchievementsByCategory(category.value)" :key="achievement.id" class="relative overflow-hidden">
             <!-- 等级指示条 -->
@@ -91,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
   import { useGameStore } from '@/stores/gameStore'
   import { useI18n } from '@/composables/useI18n'
   import { formatNumber } from '@/utils/format'
@@ -247,14 +248,6 @@
   const getAchievementsByCategory = (category: AchievementCategory) => {
     return ACHIEVEMENTS.filter(a => a.category === category)
   }
-
-  // 统计
-  const unlockedCount = computed(() => {
-    if (!gameStore.player.achievements) return 0
-    return Object.values(gameStore.player.achievements).filter(p => p.currentTier !== null).length
-  })
-
-  const totalCount = computed(() => ACHIEVEMENTS.length)
 
   const getCategoryUnlockedCount = (category: AchievementCategory) => {
     if (!gameStore.player.achievements) return 0

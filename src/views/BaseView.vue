@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto p-4 sm:p-6">
+  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
     <!-- 四段式滑槽切换：建筑 / 研究 / 船坞 / 防御 -->
     <div
-      class="relative mb-4 grid h-9 w-full grid-cols-4 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
+      class="relative mb-4 grid h-9 w-full shrink-0 grid-cols-4 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
       role="tablist"
       :aria-label="t('nav.base')"
     >
@@ -29,9 +29,11 @@
       </button>
     </div>
 
-    <KeepAlive>
-      <component :is="activeComponent" :embedded="true" />
-    </KeepAlive>
+    <div class="min-h-0 flex-1 overflow-y-auto pr-1">
+      <KeepAlive>
+        <component :is="activeComponent" :embedded="true" />
+      </KeepAlive>
+    </div>
   </div>
 </template>
 

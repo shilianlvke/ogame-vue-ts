@@ -1419,6 +1419,10 @@ export default {
   diplomacy: {
     title: '外交',
     description: '管理与NPC的外交关系',
+    viewMode: {
+      list: '列表视图',
+      card: '卡片视图'
+    },
     tabs: {
       all: '全部',
       friendly: '友好',

@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto p-4 sm:p-6 space-y-6">
+  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
     <!-- 标签切换 -->
-    <Tabs v-model="activeTab" class="w-full">
-      <TabsList class="grid w-full grid-cols-2">
+    <Tabs v-model="activeTab" class="flex min-h-0 w-full flex-1 flex-col">
+      <TabsList class="grid w-full shrink-0 grid-cols-2">
         <TabsTrigger value="attacker">
           <Sword class="h-4 w-4 mr-2" />
           {{ t('simulatorView.attacker') }}
@@ -14,7 +14,7 @@
       </TabsList>
 
       <!-- 攻击方配置 -->
-      <TabsContent value="attacker" class="mt-4">
+      <TabsContent value="attacker" class="mt-4 min-h-0 overflow-y-auto pb-20">
         <Card>
           <CardHeader>
             <CardTitle>{{ t('simulatorView.attackerConfig') }}</CardTitle>
@@ -53,7 +53,7 @@
       </TabsContent>
 
       <!-- 防守方配置 -->
-      <TabsContent value="defender" class="mt-4">
+      <TabsContent value="defender" class="mt-4 min-h-0 overflow-y-auto pb-20">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <div class="space-y-1">

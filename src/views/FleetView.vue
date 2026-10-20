@@ -1,11 +1,11 @@
 <template>
-  <div v-if="planet" class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+  <div v-if="planet" class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col gap-4 overflow-hidden p-4 sm:p-6">
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" />
 
     <!-- 标签切换 -->
-    <Tabs v-model="activeTab" class="w-full">
-      <TabsList :class="['grid', 'w-full', showJumpGateTab ? 'grid-cols-3' : 'grid-cols-2']">
+    <Tabs v-model="activeTab" class="flex min-h-0 w-full flex-1 flex-col">
+      <TabsList :class="['grid', 'w-full', 'shrink-0', showJumpGateTab ? 'grid-cols-3' : 'grid-cols-2']">
         <TabsTrigger v-for="tab in visibleTabs" :key="tab.value" :value="tab.value">
           {{ t(`fleetView.${tab.labelKey}`) }}
           <Badge v-if="tab.value === 'missions' && totalMissionsCount > 0" variant="destructive" class="ml-1">
@@ -16,16 +16,34 @@
       </TabsList>
 
       <!-- 派遣舰队 -->
-      <TabsContent value="send" class="mt-4 space-y-4">
-        <!-- 舰队任务槽位信息 -->
-        <Card>
-          <CardContent class="py-4">
-            <div class="flex justify-between items-center">
-              <span class="text-sm font-medium">{{ t('fleetView.fleetMissionSlots') }}:</span>
-              <span class="text-sm font-bold">{{ gameStore.player.fleetMissions.length }} / {{ maxFleetMissions }}</span>
+      <TabsContent value="send" class="mt-4 min-h-0 space-y-4 overflow-y-auto pb-20">
+        <!-- 舰队任务槽位信息：与建筑页占用空间保持一致 -->
+        <div class="p-3 sm:p-4 bg-muted/50 rounded-lg border">
+          <div class="flex items-center justify-between">
+            <div class="text-sm sm:text-base font-medium flex items-center gap-2">
+              <Grid3x3 :size="16" />
+              {{ t('fleetView.fleetMissionSlots') }}:
             </div>
-          </CardContent>
-        </Card>
+            <div class="text-sm sm:text-base font-bold">
+              <span :class="gameStore.player.fleetMissions.length >= maxFleetMissions ? 'text-destructive' : 'text-primary'">
+                {{ gameStore.player.fleetMissions.length }}
+              </span>
+              <span class="text-muted-foreground mx-1">/</span>
+              <span>{{ maxFleetMissions }}</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="w-full bg-background rounded-full h-2.5 sm:h-3 overflow-hidden">
+              <div
+                class="h-full transition-all duration-300"
+                :class="gameStore.player.fleetMissions.length >= maxFleetMissions ? 'bg-destructive' : 'bg-primary'"
+                :style="{
+                  width: `${maxFleetMissions > 0 ? Math.min((gameStore.player.fleetMissions.length / maxFleetMissions) * 100, 100) : 0}%`
+                }"
+              />
+            </div>
+          </div>
+        </div>
 
         <!-- 舰队预设 -->
         <Card>
@@ -291,7 +309,7 @@
       </TabsContent>
 
       <!-- 飞行任务 -->
-      <TabsContent value="missions" class="mt-4 space-y-4">
+      <TabsContent value="missions" class="mt-4 min-h-0 space-y-4 overflow-y-auto pb-20">
         <Empty v-if="totalMissionsCount === 0" class="border rounded-lg">
           <EmptyContent>
             <RocketIcon class="h-10 w-10 text-muted-foreground" />
@@ -424,7 +442,7 @@
       </TabsContent>
 
       <!-- 跳跃门 -->
-      <TabsContent v-if="showJumpGateTab" value="jumpGate" class="mt-4 space-y-4">
+      <TabsContent v-if="showJumpGateTab" value="jumpGate" class="mt-4 min-h-0 space-y-4 overflow-y-auto pb-20">
         <!-- 跳跃门状态 -->
         <Card>
           <CardHeader>
@@ -635,7 +653,8 @@
     Check,
     Globe,
     Moon,
-    Crosshair
+    Crosshair,
+    Grid3x3
   } from 'lucide-vue-next'
   import { formatNumber, formatTime } from '@/utils/format'
   import * as fleetLogic from '@/logic/fleetLogic'
