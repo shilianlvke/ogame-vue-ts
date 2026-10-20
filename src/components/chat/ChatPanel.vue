@@ -26,9 +26,9 @@
               <Gamepad2 class="h-3 w-3" />
             </span>
             <span class="truncate text-xs font-semibold text-foreground">{{ t('chat.stationTitle') }}</span>
-            <span class="hidden shrink-0 items-center gap-1 text-[10px] text-muted-foreground sm:flex">
-              <span class="h-1.5 w-1.5 rounded-full" :class="netStore.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/50'" />
-              {{ gameStore.player.name }}
+            <span class="hidden min-w-0 items-center gap-1 text-[10px] text-muted-foreground sm:flex">
+              <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="netStore.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/50'" />
+              <span class="truncate">{{ gameStore.player.name }}</span>
             </span>
           </div>
           <div class="flex shrink-0 items-center gap-0.5">
@@ -355,6 +355,12 @@
                               {{ member.online ? t('players.online') : t('players.offline') }}
                             </span>
                           </span>
+                        </div>
+                        <div
+                          v-if="players.length > 12"
+                          class="col-span-2 text-center text-[10px] text-muted-foreground"
+                        >
+                          +{{ players.length - 12 }}
                         </div>
                       </div>
                     </div>
