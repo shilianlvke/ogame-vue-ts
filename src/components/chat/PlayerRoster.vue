@@ -8,7 +8,7 @@
           type="button"
           class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-100"
           :class="selectedId === player.id ? 'bg-accent' : ''"
-          :title="player.id === myId ? player.name : t('chat.mentionHint')"
+          :title="player.name"
           :disabled="player.id === myId"
           @click="emit('select', player)"
         >

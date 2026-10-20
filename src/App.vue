@@ -392,7 +392,7 @@
       <!-- 敌方警报 -->
       <EnemyAlertNotifications ref="enemyAlertNotificationsRef" />
 
-      <!-- 银河频道（仅联机模式） -->
+      <!-- 星际通讯站（仅联机模式） -->
       <ChatPanel v-if="netStore.enabled" />
     </div>
 
