@@ -1,8 +1,6 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl sm:text-3xl font-bold">{{ t('messagesView.title') }}</h1>
-
+    <div class="flex items-center justify-end">
       <!-- 清空消息按钮 -->
       <Popover v-model:open="showClearPopover">
         <PopoverTrigger as-child>

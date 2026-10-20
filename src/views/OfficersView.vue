@@ -1,7 +1,5 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <h1 class="text-2xl sm:text-3xl font-bold">{{ t('officersView.title') }}</h1>
-
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
       <Card v-for="officerType in Object.values(OfficerType)" :key="officerType">
         <CardHeader>

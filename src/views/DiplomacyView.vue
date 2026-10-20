@@ -2,8 +2,7 @@
   <div class="container mx-auto p-4 sm:p-6 space-y-6">
     <div class="flex items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold">{{ t('diplomacy.title') }}</h1>
-        <p class="text-sm text-muted-foreground mt-1">{{ t('diplomacy.description') }}</p>
+        <p class="text-sm text-muted-foreground">{{ t('diplomacy.description') }}</p>
       </div>
       <!-- 视图切换和诊断按钮 -->
       <div class="flex items-center gap-2 shrink-0">

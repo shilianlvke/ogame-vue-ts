@@ -3,8 +3,6 @@
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.ResearchLab" :required-level="1" :embedded="props.embedded" />
 
-    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('researchView.title') }}</h1>
-
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       <Card v-for="techType in Object.values(TechnologyType)" :key="techType" :data-tech="techType" class="relative">
         <CardUnlockOverlay :requirements="TECHNOLOGIES[techType].requirements" :currentLevel="getTechLevel(techType)" />

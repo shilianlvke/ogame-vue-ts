@@ -3,8 +3,6 @@
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" :embedded="props.embedded" />
 
-    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('defenseView.title') }}</h1>
-
     <!-- 导弹容量显示 -->
     <div v-if="missileSiloCapacity > 0" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg border">
       <div class="flex items-center justify-between">

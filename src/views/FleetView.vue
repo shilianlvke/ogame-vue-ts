@@ -3,8 +3,6 @@
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" />
 
-    <h1 class="text-2xl sm:text-3xl font-bold">{{ t('fleetView.title') }}</h1>
-
     <!-- 标签切换 -->
     <Tabs v-model="activeTab" class="w-full">
       <TabsList :class="['grid', 'w-full', showJumpGateTab ? 'grid-cols-3' : 'grid-cols-2']">

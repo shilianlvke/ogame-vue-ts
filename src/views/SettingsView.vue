@@ -1,7 +1,6 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">{{ t('nav.settings') }}</h1>
+    <div class="flex items-center justify-end">
       <Button variant="outline" size="sm" @click="router.push('/')">
         <LayoutGrid class="mr-2 h-4 w-4" />
         {{ t('online.mainMenu') }}

@@ -1,7 +1,6 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <div class="flex flex-row items-center justify-between gap-4">
-      <h1 class="text-2xl sm:text-3xl font-bold">{{ t('ranking.title') }}</h1>
+    <div class="flex flex-row items-center justify-end gap-4">
       <div class="flex items-center gap-2 text-sm text-muted-foreground">
         <Users class="h-4 w-4" />
         {{ t('ranking.totalPlayers', { count: rankingData.length }) }}

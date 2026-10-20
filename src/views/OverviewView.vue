@@ -2,10 +2,10 @@
   <div v-if="planet" class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- 星球信息 -->
     <div class="text-center">
-      <h1 class="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center justify-center gap-2">
+      <div class="mb-1 flex items-center justify-center gap-2 text-sm font-semibold sm:mb-2 sm:text-base">
         {{ planet.name }}
         <Badge v-if="planet.isMoon" variant="secondary">{{ t('planet.moon') }}</Badge>
-      </h1>
+      </div>
       <p class="text-xs sm:text-sm text-muted-foreground">
         {{ t('planet.position') }}: [{{ planet.position.galaxy }}:{{ planet.position.system }}:{{ planet.position.position }}]
       </p>

@@ -20,8 +20,7 @@
 
   <!-- 有权限时显示GM页面 -->
   <div v-else class="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl sm:text-3xl font-bold">{{ t('gmView.title') }}</h1>
+    <div class="flex items-center justify-end">
       <Badge variant="destructive">{{ t('gmView.adminOnly') }}</Badge>
     </div>
 

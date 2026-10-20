@@ -1,7 +1,5 @@
 <template>
   <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
-    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('buildingsView.title') }}</h1>
-
     <!-- 占地显示 -->
     <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg border">
       <div class="flex items-center justify-between">
