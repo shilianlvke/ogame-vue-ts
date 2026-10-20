@@ -78,15 +78,30 @@
                     </div>
                   </div>
                   <!-- 预估成本显示 -->
-                  <div class="flex gap-2 text-[10px] text-muted-foreground ml-4">
-                    <span v-if="getWaitingItemCost(item as WaitingQueueItem).metal > 0">
-                      {{ t('resources.metal') }}: {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).metal) }}
+                  <div class="flex flex-wrap gap-2 text-[10px] text-muted-foreground ml-4">
+                    <span
+                      v-if="getWaitingItemCost(item as WaitingQueueItem).metal > 0"
+                      class="inline-flex items-center gap-1"
+                      :title="t('resources.metal')"
+                    >
+                      <ResourceIcon type="metal" size="sm" />
+                      {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).metal) }}
                     </span>
-                    <span v-if="getWaitingItemCost(item as WaitingQueueItem).crystal > 0">
-                      {{ t('resources.crystal') }}: {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).crystal) }}
+                    <span
+                      v-if="getWaitingItemCost(item as WaitingQueueItem).crystal > 0"
+                      class="inline-flex items-center gap-1"
+                      :title="t('resources.crystal')"
+                    >
+                      <ResourceIcon type="crystal" size="sm" />
+                      {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).crystal) }}
                     </span>
-                    <span v-if="getWaitingItemCost(item as WaitingQueueItem).deuterium > 0">
-                      {{ t('resources.deuterium') }}: {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).deuterium) }}
+                    <span
+                      v-if="getWaitingItemCost(item as WaitingQueueItem).deuterium > 0"
+                      class="inline-flex items-center gap-1"
+                      :title="t('resources.deuterium')"
+                    >
+                      <ResourceIcon type="deuterium" size="sm" />
+                      {{ formatNumber(getWaitingItemCost(item as WaitingQueueItem).deuterium) }}
                     </span>
                   </div>
                 </div>
@@ -138,6 +153,7 @@
   import { ListOrdered, Inbox } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
+  import ResourceIcon from '@/components/common/ResourceIcon.vue'
   import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { Progress } from '@/components/ui/progress'

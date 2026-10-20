@@ -70,7 +70,9 @@
               </Button>
 
             <div v-for="resource in resourceTypes" :key="resource" class="space-y-2">
-              <Label>{{ t(`resources.${resource}`) }}</Label>
+              <Label class="flex items-center gap-1.5">
+                <ResourceIcon :type="resource" size="sm" />{{ t(`resources.${resource}`) }}
+              </Label>
               <div class="flex gap-2">
                 <Input v-model.number="selectedPlanet.resources[resource]" type="number" min="0" class="flex-1" />
                 <Button @click="setResourceAmount(resource, 1000000)" variant="outline" size="sm">+1M</Button>
@@ -306,6 +308,7 @@ import { applyMaxAccount } from '@/logic/devAccount'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
+  import ResourceIcon from '@/components/common/ResourceIcon.vue'
   import { Badge } from '@/components/ui/badge'
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'

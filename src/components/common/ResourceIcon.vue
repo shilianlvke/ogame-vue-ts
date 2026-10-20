@@ -1,5 +1,11 @@
 <template>
-  <span :class="[colors[type], sizes[size], 'inline-block rounded shrink-0']" />
+  <img
+    :src="icons[type]"
+    :class="[sizes[size], 'inline-block shrink-0 object-contain select-none']"
+    alt=""
+    aria-hidden="true"
+    draggable="false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -12,18 +18,22 @@
     size: 'md'
   })
 
-  // 使用纯色背景，在 Android WebView 中更可靠
-  const colors = {
-    metal: 'bg-slate-500',
-    crystal: 'bg-cyan-500',
-    deuterium: 'bg-green-500',
-    darkMatter: 'bg-purple-700',
-    energy: 'bg-yellow-500'
+  // 图标使用 public/svg 下的线性图标，颜色与原来的资源色块保持一致：
+  // slate-500 / cyan-500 / green-500 / purple-700 / yellow-500（Tailwind v4）
+  const base = import.meta.env.BASE_URL
+
+  const icons = {
+    metal: `${base}svg/metal.svg`,
+    crystal: `${base}svg/crystal.svg`,
+    deuterium: `${base}svg/fuel.svg`,
+    darkMatter: `${base}svg/darkmatter.svg`,
+    energy: `${base}svg/power.svg`
   }
 
+  // 线性图标比原来的色块需要略大一点，12px 下细节会糊在一起
   const sizes = {
-    sm: 'w-3 h-3 min-w-3 min-h-3',
-    md: 'w-4 h-4 min-w-4 min-h-4',
-    lg: 'w-5 h-5 min-w-5 min-h-5'
+    sm: 'w-3.5 h-3.5 min-w-3.5 min-h-3.5',
+    md: 'w-[18px] h-[18px] min-w-[18px] min-h-[18px]',
+    lg: 'w-[22px] h-[22px] min-w-[22px] min-h-[22px]'
   }
 </script>

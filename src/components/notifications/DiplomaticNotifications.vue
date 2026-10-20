@@ -358,16 +358,22 @@
             <!-- 资源情报 -->
             <div v-else-if="selectedIntelReport.intelType === 'enemyResources' && selectedIntelReport.data.resources" class="space-y-2">
               <div v-if="selectedIntelReport.data.resources.metal" class="flex justify-between items-center text-sm">
-                <span class="text-muted-foreground">{{ t('resources.metal') }}</span>
-                <span class="font-medium text-gray-500">{{ selectedIntelReport.data.resources.metal.toLocaleString() }}</span>
+                <span class="flex items-center gap-1.5 text-muted-foreground">
+                  <ResourceIcon type="metal" size="sm" />{{ t('resources.metal') }}
+                </span>
+                <span class="font-medium">{{ selectedIntelReport.data.resources.metal.toLocaleString() }}</span>
               </div>
               <div v-if="selectedIntelReport.data.resources.crystal" class="flex justify-between items-center text-sm">
-                <span class="text-muted-foreground">{{ t('resources.crystal') }}</span>
-                <span class="font-medium text-cyan-500">{{ selectedIntelReport.data.resources.crystal.toLocaleString() }}</span>
+                <span class="flex items-center gap-1.5 text-muted-foreground">
+                  <ResourceIcon type="crystal" size="sm" />{{ t('resources.crystal') }}
+                </span>
+                <span class="font-medium">{{ selectedIntelReport.data.resources.crystal.toLocaleString() }}</span>
               </div>
               <div v-if="selectedIntelReport.data.resources.deuterium" class="flex justify-between items-center text-sm">
-                <span class="text-muted-foreground">{{ t('resources.deuterium') }}</span>
-                <span class="font-medium text-green-500">{{ selectedIntelReport.data.resources.deuterium.toLocaleString() }}</span>
+                <span class="flex items-center gap-1.5 text-muted-foreground">
+                  <ResourceIcon type="deuterium" size="sm" />{{ t('resources.deuterium') }}
+                </span>
+                <span class="font-medium">{{ selectedIntelReport.data.resources.deuterium.toLocaleString() }}</span>
               </div>
             </div>
             <!-- 移动情报 -->

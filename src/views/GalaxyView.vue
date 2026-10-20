@@ -121,17 +121,25 @@
               <div v-if="slotDebris" class="col-span-2 rounded-lg bg-muted/50 p-2">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-muted-foreground">{{ t('galaxyView.debrisField') }}</span>
-                  <span class="font-medium">
-                    {{ formatNumber(slotDebris.resources.metal) }} / {{ formatNumber(slotDebris.resources.crystal) }}
+                  <span class="flex items-center gap-1 font-medium">
+                    <ResourceIcon type="metal" size="sm" />{{ formatNumber(slotDebris.resources.metal) }}
+                    <span class="text-muted-foreground">/</span>
+                    <ResourceIcon type="crystal" size="sm" />{{ formatNumber(slotDebris.resources.crystal) }}
                   </span>
                 </div>
               </div>
               <div v-if="slotOreDeposits" class="col-span-2 rounded-lg bg-muted/50 p-2">
                 <div class="mb-1 text-muted-foreground">{{ t('galaxyView.oreDeposits') }}</div>
                 <div class="flex flex-wrap gap-x-3 gap-y-0.5 font-medium">
-                  <span>M {{ formatDepositShort(slotOreDeposits.metal) }}</span>
-                  <span>C {{ formatDepositShort(slotOreDeposits.crystal) }}</span>
-                  <span>D {{ formatDepositShort(slotOreDeposits.deuterium) }}</span>
+                  <span class="inline-flex items-center gap-1">
+                    <ResourceIcon type="metal" size="sm" />{{ formatDepositShort(slotOreDeposits.metal) }}
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <ResourceIcon type="crystal" size="sm" />{{ formatDepositShort(slotOreDeposits.crystal) }}
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <ResourceIcon type="deuterium" size="sm" />{{ formatDepositShort(slotOreDeposits.deuterium) }}
+                  </span>
                 </div>
               </div>
             </div>

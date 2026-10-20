@@ -6,10 +6,18 @@
         <TableHeader>
           <TableRow>
             <TableHead class="w-20 text-center">{{ t(`${typeKey}.levelRange`) }}</TableHead>
-            <TableHead class="text-center">{{ t('resources.metal') }}</TableHead>
-            <TableHead class="text-center">{{ t('resources.crystal') }}</TableHead>
-            <TableHead class="text-center">{{ t('resources.deuterium') }}</TableHead>
-            <TableHead v-if="showDarkMatterColumn" class="text-center">{{ t('resources.darkMatter') }}</TableHead>
+            <TableHead class="text-center">
+              <span class="inline-flex items-center justify-center gap-1"><ResourceIcon type="metal" size="sm" />{{ t('resources.metal') }}</span>
+            </TableHead>
+            <TableHead class="text-center">
+              <span class="inline-flex items-center justify-center gap-1"><ResourceIcon type="crystal" size="sm" />{{ t('resources.crystal') }}</span>
+            </TableHead>
+            <TableHead class="text-center">
+              <span class="inline-flex items-center justify-center gap-1"><ResourceIcon type="deuterium" size="sm" />{{ t('resources.deuterium') }}</span>
+            </TableHead>
+            <TableHead v-if="showDarkMatterColumn" class="text-center">
+              <span class="inline-flex items-center justify-center gap-1"><ResourceIcon type="darkMatter" size="sm" />{{ t('resources.darkMatter') }}</span>
+            </TableHead>
             <TableHead class="text-center">{{ type === 'building' ? t('buildings.buildTime') : t('research.researchTime') }}</TableHead>
             <!-- 建筑相关列 -->
             <TableHead v-if="type === 'building' && showProductionColumn" class="text-center">{{ t('buildings.production') }}</TableHead>
@@ -224,19 +232,19 @@
         </CardHeader>
         <CardContent class="space-y-2">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">{{ t('resources.metal') }}:</span>
+            <span class="flex items-center gap-1.5 text-muted-foreground"><ResourceIcon type="metal" size="sm" />{{ t('resources.metal') }}:</span>
             <span class="font-medium">
               <NumberWithTooltip :value="totalStats.metal" />
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">{{ t('resources.crystal') }}:</span>
+            <span class="flex items-center gap-1.5 text-muted-foreground"><ResourceIcon type="crystal" size="sm" />{{ t('resources.crystal') }}:</span>
             <span class="font-medium">
               <NumberWithTooltip :value="totalStats.crystal" />
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">{{ t('resources.deuterium') }}:</span>
+            <span class="flex items-center gap-1.5 text-muted-foreground"><ResourceIcon type="deuterium" size="sm" />{{ t('resources.deuterium') }}:</span>
             <span class="font-medium">
               <NumberWithTooltip :value="totalStats.deuterium" />
             </span>
@@ -360,7 +368,9 @@
             v-show="unitCost[resourceType.key] > 0"
             class="flex items-center justify-between text-sm"
           >
-            <span class="text-muted-foreground">{{ t(`resources.${resourceType.key}`) }}:</span>
+            <span class="flex items-center gap-1.5 text-muted-foreground">
+              <ResourceIcon :type="resourceType.key" size="sm" />{{ t(`resources.${resourceType.key}`) }}:
+            </span>
             <span class="font-medium">
               <NumberWithTooltip :value="unitCost[resourceType.key]" />
             </span>
@@ -400,19 +410,19 @@
             <p class="text-sm text-muted-foreground">{{ t(`${typeKey}.totalCost`) }}:</p>
             <div class="space-y-1 text-sm">
               <div class="flex justify-between">
-                <span>{{ t('resources.metal') }}:</span>
+                <span class="flex items-center gap-1.5"><ResourceIcon type="metal" size="sm" />{{ t('resources.metal') }}:</span>
                 <span class="font-medium">
                   <NumberWithTooltip :value="batchCost.metal" />
                 </span>
               </div>
               <div class="flex justify-between">
-                <span>{{ t('resources.crystal') }}:</span>
+                <span class="flex items-center gap-1.5"><ResourceIcon type="crystal" size="sm" />{{ t('resources.crystal') }}:</span>
                 <span class="font-medium">
                   <NumberWithTooltip :value="batchCost.crystal" />
                 </span>
               </div>
               <div class="flex justify-between">
-                <span>{{ t('resources.deuterium') }}:</span>
+                <span class="flex items-center gap-1.5"><ResourceIcon type="deuterium" size="sm" />{{ t('resources.deuterium') }}:</span>
                 <span class="font-medium">
                   <NumberWithTooltip :value="batchCost.deuterium" />
                 </span>
