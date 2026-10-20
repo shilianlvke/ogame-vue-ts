@@ -6,37 +6,37 @@
           v-for="player in players"
           :key="player.id"
           type="button"
-          class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#2a2c31] disabled:cursor-default disabled:opacity-100"
-          :class="selectedId === player.id ? 'bg-[#2a2c31]' : ''"
+          class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-100"
+          :class="selectedId === player.id ? 'bg-accent' : ''"
           :title="player.id === myId ? player.name : t('chat.mentionHint')"
           :disabled="player.id === myId"
           @click="emit('select', player)"
         >
           <span
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-primary-foreground"
             :style="avatarStyle(player.id)"
           >
             {{ initials(player.name) }}
           </span>
           <span class="min-w-0 flex-1">
             <span class="flex items-center gap-1">
-              <span class="truncate text-[13px] font-medium text-zinc-200">{{ player.name }}</span>
-              <span v-if="player.id === myId" class="shrink-0 rounded border border-[#3a3d42] px-1 text-[9px] text-zinc-400">
+              <span class="truncate text-[13px] font-medium text-foreground">{{ player.name }}</span>
+              <span v-if="player.id === myId" class="shrink-0 rounded border border-border px-1 text-[9px] text-muted-foreground">
                 {{ t('players.me') }}
               </span>
             </span>
             <span class="mt-0.5 flex items-center gap-1 text-[10px]">
-              <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="player.online ? 'bg-emerald-400' : 'bg-zinc-600'" />
-              <span class="shrink-0" :class="player.online ? 'text-emerald-400' : 'text-zinc-500'">
+              <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="player.online ? 'bg-emerald-500' : 'bg-muted-foreground/50'" />
+              <span class="shrink-0" :class="player.online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">
                 {{ player.online ? t('players.online') : t('players.offline') }}
               </span>
-              <span class="truncate text-zinc-500">
+              <span class="truncate text-muted-foreground">
                 · {{ formatNumber(player.points) }} {{ t('players.points') }} · {{ player.planetCount }} {{ t('players.planets') }}
               </span>
             </span>
           </span>
         </button>
-        <p v-if="players.length === 0" class="px-2 py-8 text-center text-[11px] text-zinc-500">
+        <p v-if="players.length === 0" class="px-2 py-8 text-center text-[11px] text-muted-foreground">
           {{ t(emptyKey) }}
         </p>
       </div>

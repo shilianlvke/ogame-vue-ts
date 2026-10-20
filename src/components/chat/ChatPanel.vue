@@ -16,25 +16,25 @@
     <Transition name="chat-dock">
       <div
         v-if="open"
-        class="fixed bottom-4 right-4 z-50 flex flex-col overflow-hidden rounded-xl border border-[#2f3136] bg-[#1e1f22] text-zinc-100 shadow-2xl"
+        class="fixed bottom-4 right-4 z-50 flex flex-col overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-2xl"
         :style="panelStyle"
       >
         <!-- 顶部标题栏 -->
-        <div class="flex h-9 shrink-0 items-center justify-between bg-[#18191c] px-3">
+        <div class="flex h-9 shrink-0 items-center justify-between bg-muted/60 px-3">
           <div class="flex min-w-0 items-center gap-2">
-            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#12b7f5] text-white">
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
               <Gamepad2 class="h-3 w-3" />
             </span>
-            <span class="truncate text-xs font-medium text-zinc-200">{{ gameStore.player.name }}</span>
-            <span class="flex shrink-0 items-center gap-1 text-[10px]" :class="netStore.isOnline ? 'text-emerald-400' : 'text-zinc-500'">
-              <span class="h-1.5 w-1.5 rounded-full" :class="netStore.isOnline ? 'bg-emerald-400' : 'bg-zinc-600'" />
+            <span class="truncate text-xs font-medium text-foreground">{{ gameStore.player.name }}</span>
+            <span class="flex shrink-0 items-center gap-1 text-[10px]" :class="netStore.isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'">
+              <span class="h-1.5 w-1.5 rounded-full" :class="netStore.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/50'" />
               {{ netStore.isOnline ? t('players.online') : t('players.offline') }}
             </span>
           </div>
           <div class="flex shrink-0 items-center gap-0.5">
             <button type="button" class="qq-titlebar-btn qq-mobile-only relative" :title="t('chat.title')" @click="showChat">
               <MessageCircle class="h-3.5 w-3.5" />
-              <span v-if="groupUnread > 0" class="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[#f74c31]" />
+              <span v-if="groupUnread > 0" class="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-destructive" />
             </button>
             <button type="button" class="qq-titlebar-btn" :title="t('common.close')" @click="open = false">
               <X class="h-3.5 w-3.5" />
@@ -44,7 +44,7 @@
 
         <div class="flex min-h-0 flex-1">
           <!-- 左侧功能栏（桌面） -->
-          <nav class="hidden w-12 shrink-0 flex-col items-center gap-1 border-r border-[#2f3136] bg-[#18191c] py-2 sm:flex">
+          <nav class="hidden w-12 shrink-0 flex-col items-center gap-1 border-r border-border bg-muted/60 py-2 sm:flex">
             <button
               type="button"
               class="rail-btn"
@@ -73,20 +73,20 @@
 
           <!-- 好友 / 群聊列表 -->
           <aside
-            class="w-full shrink-0 flex-col border-r border-[#2f3136] bg-[#232428] sm:flex sm:w-64"
+            class="w-full shrink-0 flex-col border-r border-border bg-muted/30 sm:flex sm:w-64"
             :class="mobilePane === 'list' ? 'flex' : 'hidden'"
           >
             <div class="shrink-0 p-2">
               <div class="relative">
-                <Search class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+                <Search class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   v-model="search"
-                  class="h-8 border-[#2f3136] bg-[#1e1f22] pl-8 text-xs text-zinc-200 placeholder:text-zinc-500 focus-visible:ring-[#12b7f5]/60"
+                  class="h-8 border-border bg-background pl-8 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/60"
                   :placeholder="t('players.searchPlaceholder')"
                 />
                 <button
                   type="button"
-                  class="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-not-allowed items-center justify-center rounded text-zinc-600"
+                  class="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-not-allowed items-center justify-center rounded text-muted-foreground/70"
                   disabled
                   :title="t('common.soon')"
                 >
@@ -96,24 +96,24 @@
             </div>
 
             <!-- 好友 / 群聊切换 -->
-            <div class="mx-2 mb-1 grid shrink-0 grid-cols-2 gap-1 rounded-md bg-[#1e1f22] p-0.5 text-[11px]">
+            <div class="mx-2 mb-1 grid shrink-0 grid-cols-2 gap-1 rounded-md bg-card p-0.5 text-[11px]">
               <button
                 type="button"
                 class="rounded px-2 py-1 transition-colors"
-                :class="section === 'friends' ? 'bg-[#2f3136] text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'"
+                :class="section === 'friends' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'"
                 @click="switchSection('friends')"
               >
                 {{ t('nav.players') }}
-                <span class="ml-0.5 text-[9px] text-zinc-500">{{ players.length }}</span>
+                <span class="ml-0.5 text-[9px] text-muted-foreground">{{ players.length }}</span>
               </button>
               <button
                 type="button"
                 class="rounded px-2 py-1 transition-colors"
-                :class="section === 'groups' ? 'bg-[#2f3136] text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'"
+                :class="section === 'groups' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'"
                 @click="switchSection('groups')"
               >
                 {{ t('chat.groups') }}
-                <span class="ml-0.5 text-[9px] text-zinc-500">1</span>
+                <span class="ml-0.5 text-[9px] text-muted-foreground">1</span>
               </button>
             </div>
 
@@ -133,40 +133,40 @@
               <div class="space-y-0.5 p-1">
                 <button
                   type="button"
-                  class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#2a2c31]"
-                  :class="mainView === 'chat' ? 'bg-[#2a2c31]' : ''"
+                  class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent"
+                  :class="mainView === 'chat' ? 'bg-accent' : ''"
                   @click="showChat"
                 >
-                  <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12b7f5]/15">
-                    <UsersRound class="h-5 w-5 text-[#12b7f5]" />
+                  <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <UsersRound class="h-5 w-5 text-primary" />
                     <span v-if="groupUnread > 0" class="rail-badge">{{ groupUnread > 9 ? '9+' : groupUnread }}</span>
                   </span>
                   <span class="min-w-0 flex-1">
                     <span class="flex items-center justify-between gap-2">
-                      <span class="truncate text-[13px] font-medium text-zinc-200">{{ t('chat.title') }}</span>
-                      <span class="shrink-0 text-[10px] text-zinc-500">{{ lastMessageTime }}</span>
+                      <span class="truncate text-[13px] font-medium text-foreground">{{ t('chat.title') }}</span>
+                      <span class="shrink-0 text-[10px] text-muted-foreground">{{ lastMessageTime }}</span>
                     </span>
-                    <span class="mt-0.5 flex items-center gap-1 text-[10px] text-zinc-500">
+                    <span class="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
                       <span class="truncate">{{ lastMessagePreview }}</span>
                     </span>
                   </span>
                 </button>
-                <p class="px-2 py-6 text-center text-[10px] text-zinc-600">{{ t('chat.groupHint') }}</p>
+                <p class="px-2 py-6 text-center text-[10px] text-muted-foreground/70">{{ t('chat.groupHint') }}</p>
               </div>
             </ScrollArea>
           </aside>
 
           <!-- 主区域 -->
           <section
-            class="min-w-0 flex-1 flex-col bg-[#1e1f22] sm:flex"
+            class="min-w-0 flex-1 flex-col bg-card sm:flex"
             :class="mobilePane === 'main' ? 'flex' : 'hidden'"
           >
             <!-- 玩家资料卡（QQ 资料页） -->
             <template v-if="mainView === 'profile' && selectedPlayer">
-              <div class="flex h-11 shrink-0 items-center border-b border-[#2f3136] px-2">
+              <div class="flex h-11 shrink-0 items-center border-b border-border px-2">
                 <button
                   type="button"
-                  class="flex items-center gap-1 rounded px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-[#2a2c31] hover:text-zinc-200"
+                  class="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   :title="t('common.back')"
                   @click="backFromProfile"
                 >
@@ -177,48 +177,48 @@
 
               <div class="min-h-0 flex-1 overflow-y-auto px-6 py-7 sm:px-10">
                 <div class="flex flex-col items-center">
-                  <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#12b7f5]/50 via-[#12b7f5]/15 to-transparent p-1">
+                  <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/50 via-primary/15 to-transparent p-1">
                     <div
-                      class="flex h-full w-full items-center justify-center rounded-full text-2xl font-semibold text-white"
+                      class="flex h-full w-full items-center justify-center rounded-full text-2xl font-semibold text-primary-foreground"
                       :style="avatarStyle(selectedPlayer.id)"
                     >
                       {{ initials(selectedPlayer.name) }}
                     </div>
                   </div>
                   <div class="mt-3 flex items-center gap-2">
-                    <h2 class="max-w-[220px] truncate text-lg font-semibold text-zinc-100">{{ selectedPlayer.name }}</h2>
+                    <h2 class="max-w-[220px] truncate text-lg font-semibold text-foreground">{{ selectedPlayer.name }}</h2>
                     <span
                       class="rounded px-1.5 py-0.5 text-[10px]"
-                      :class="selectedPlayer.online ? 'bg-[#12b7f5]/15 text-[#12b7f5]' : 'bg-[#2a2c31] text-zinc-500'"
+                      :class="selectedPlayer.online ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'"
                     >
                       {{ selectedPlayer.online ? t('players.online') : t('players.offline') }}
                     </span>
                   </div>
-                  <p class="mt-1 max-w-full truncate text-[11px] text-zinc-500">ID: {{ selectedPlayer.id }}</p>
+                  <p class="mt-1 max-w-full truncate text-[11px] text-muted-foreground">ID: {{ selectedPlayer.id }}</p>
 
                   <div class="mt-8 w-full max-w-sm space-y-1 text-sm">
-                    <div class="flex items-center gap-3 border-b border-[#2f3136] py-3">
-                      <Info class="h-4 w-4 shrink-0 text-zinc-500" />
-                      <span class="w-14 shrink-0 text-zinc-500">{{ t('players.profileIntro') }}</span>
-                      <span class="min-w-0 flex-1 truncate text-zinc-300">
+                    <div class="flex items-center gap-3 border-b border-border py-3">
+                      <Info class="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span class="w-14 shrink-0 text-muted-foreground">{{ t('players.profileIntro') }}</span>
+                      <span class="min-w-0 flex-1 truncate text-foreground">
                         {{ t('players.commander') }} · {{ selectedPlayer.online ? t('players.online') : t('players.offline') }}
                       </span>
                     </div>
-                    <div class="flex items-center gap-3 border-b border-[#2f3136] py-3">
-                      <Coins class="h-4 w-4 shrink-0 text-zinc-500" />
-                      <span class="w-14 shrink-0 text-zinc-500">{{ t('players.points') }}</span>
-                      <span class="min-w-0 flex-1 truncate text-zinc-300">{{ formatNumber(selectedPlayer.points) }}</span>
+                    <div class="flex items-center gap-3 border-b border-border py-3">
+                      <Coins class="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span class="w-14 shrink-0 text-muted-foreground">{{ t('players.points') }}</span>
+                      <span class="min-w-0 flex-1 truncate text-foreground">{{ formatNumber(selectedPlayer.points) }}</span>
                     </div>
-                    <div class="flex items-center gap-3 border-b border-[#2f3136] py-3">
-                      <Globe class="h-4 w-4 shrink-0 text-zinc-500" />
-                      <span class="w-14 shrink-0 text-zinc-500">{{ t('players.planets') }}</span>
-                      <span class="min-w-0 flex-1 truncate text-zinc-300">{{ selectedPlayer.planetCount }}</span>
+                    <div class="flex items-center gap-3 border-b border-border py-3">
+                      <Globe class="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span class="w-14 shrink-0 text-muted-foreground">{{ t('players.planets') }}</span>
+                      <span class="min-w-0 flex-1 truncate text-foreground">{{ selectedPlayer.planetCount }}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="flex shrink-0 flex-wrap items-center justify-center gap-3 border-t border-[#2f3136] p-3">
+              <div class="flex shrink-0 flex-wrap items-center justify-center gap-3 border-t border-border p-3">
                 <button type="button" class="profile-btn" disabled :title="t('common.soon')">
                   {{ t('players.share') }}
                 </button>
@@ -233,20 +233,20 @@
 
             <!-- 银河频道群聊 -->
             <template v-else>
-              <div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-[#2f3136] px-3">
+              <div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
                 <div class="flex min-w-0 items-center gap-2">
                   <button type="button" class="rail-btn qq-mobile-only" :title="t('common.back')" @click="openRoster">
                     <ChevronLeft class="h-5 w-5" />
                   </button>
-                  <span class="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#12b7f5]/15 sm:flex">
-                    <UsersRound class="h-4 w-4 text-[#12b7f5]" />
+                  <span class="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:flex">
+                    <UsersRound class="h-4 w-4 text-primary" />
                   </span>
                   <div class="min-w-0">
                     <div class="flex items-baseline gap-1">
-                      <h3 class="truncate text-sm font-semibold text-zinc-100">{{ t('chat.title') }}</h3>
-                      <span class="text-xs text-zinc-500">({{ players.length }})</span>
+                      <h3 class="truncate text-sm font-semibold text-foreground">{{ t('chat.title') }}</h3>
+                      <span class="text-xs text-muted-foreground">({{ players.length }})</span>
                     </div>
-                    <p class="truncate text-[10px] text-zinc-500">
+                    <p class="truncate text-[10px] text-muted-foreground">
                       {{ onlineCount }} {{ t('players.online') }} · {{ t('chat.groupHint') }}
                     </p>
                   </div>
@@ -272,50 +272,50 @@
                   <template v-for="message in messages" :key="message.id">
                     <div class="flex gap-2" :class="message.fromId === myId ? 'flex-row-reverse' : ''">
                       <span
-                        class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                        class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-primary-foreground"
                         :style="avatarStyle(message.fromId)"
                       >
                         {{ initials(message.fromName) }}
                       </span>
                       <div class="min-w-0 max-w-[75%]">
                         <div
-                          class="mb-1 flex items-center gap-2 text-[10px] text-zinc-500"
+                          class="mb-1 flex items-center gap-2 text-[10px] text-muted-foreground"
                           :class="message.fromId === myId ? 'justify-end' : ''"
                         >
-                          <span class="text-zinc-400">{{ message.fromName }}</span>
+                          <span class="text-muted-foreground">{{ message.fromName }}</span>
                           <span>{{ formatTime(message.timestamp) }}</span>
                         </div>
                         <div
                           class="whitespace-pre-wrap break-words rounded-md px-3 py-2 text-sm leading-relaxed"
-                          :class="message.fromId === myId ? 'bg-[#12b7f5] text-white' : 'bg-[#2b2d31] text-zinc-100'"
+                          :class="message.fromId === myId ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'"
                         >
                           {{ message.text }}
                         </div>
                       </div>
                     </div>
                   </template>
-                  <p v-if="messages.length === 0" class="py-16 text-center text-xs text-zinc-500">
+                  <p v-if="messages.length === 0" class="py-16 text-center text-xs text-muted-foreground">
                     {{ t('chat.empty') }}
                   </p>
                   <div ref="bottomRef" />
                 </div>
               </ScrollArea>
 
-              <div class="shrink-0 border-t border-[#2f3136]">
+              <div class="shrink-0 border-t border-border">
                 <div class="flex flex-wrap items-center gap-1 px-2 pt-1.5">
                   <button type="button" class="trade-btn" disabled :title="t('chat.tradeDisabled')">
                     <ArrowLeftRight class="h-3.5 w-3.5" />
                     {{ t('players.tradeTitle') }}
                   </button>
-                  <span class="mr-1 text-[10px] text-zinc-600">{{ t('chat.tradeDisabled') }}</span>
-                  <span class="mx-1 h-4 w-px bg-[#2f3136]" />
+                  <span class="mr-1 text-[10px] text-muted-foreground/70">{{ t('chat.tradeDisabled') }}</span>
+                  <span class="mx-1 h-4 w-px bg-border" />
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Smile class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Scissors class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Folder class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><ImageIcon class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Mic class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><MessageSquare class="h-4 w-4" /></button>
-                  <span v-if="!netStore.isOnline" class="ml-auto text-[10px] text-amber-400">{{ t('chat.offline') }}</span>
+                  <span v-if="!netStore.isOnline" class="ml-auto text-[10px] text-amber-600 dark:text-amber-400">{{ t('chat.offline') }}</span>
                 </div>
                 <div class="flex items-center gap-2 p-2">
                   <Input
@@ -323,7 +323,7 @@
                     v-model="draft"
                     :maxlength="MAX_CHAT_LENGTH"
                     :placeholder="t('chat.placeholder')"
-                    class="h-9 border-0 bg-[#2a2c31] text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-[#12b7f5]"
+                    class="h-9 border-0 bg-muted text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
                     @keydown.enter.prevent="send"
                   />
                   <button type="button" class="chat-send-btn" :disabled="!canSend" @click="send">
@@ -636,13 +636,13 @@
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    color: #8b8f97;
+    color: var(--muted-foreground);
     transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .qq-titlebar-btn:hover {
-    background: #2a2c31;
-    color: #e4e4e7;
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
   .rail-btn {
@@ -652,13 +652,13 @@
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    color: #8b8f97;
+    color: var(--muted-foreground);
     transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .rail-btn:hover:not(:disabled) {
-    background: #26282c;
-    color: #d4d4d8;
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
   .rail-btn:disabled {
@@ -667,8 +667,8 @@
   }
 
   .rail-btn-active {
-    background: rgba(18, 183, 245, 0.12);
-    color: #12b7f5;
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
+    color: var(--primary);
   }
 
   .rail-badge {
@@ -681,21 +681,27 @@
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    background: #f74c31;
+    background: var(--destructive);
     padding: 0 3px;
     font-size: 9px;
     line-height: 1;
-    color: #fff;
+    color: var(--destructive-foreground);
   }
 
   .profile-btn {
     height: 32px;
     border-radius: 5px;
-    border: 1px solid #3a3d42;
+    border: 1px solid var(--border);
     background: transparent;
     padding: 0 18px;
     font-size: 12px;
-    color: #a1a1aa;
+    color: var(--muted-foreground);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .profile-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
   .profile-btn:disabled {
@@ -706,16 +712,16 @@
   .profile-btn-primary {
     height: 32px;
     border-radius: 5px;
-    background: #12b7f5;
+    background: var(--primary);
     padding: 0 22px;
     font-size: 12px;
     font-weight: 500;
-    color: #fff;
-    transition: background-color 0.15s ease;
+    color: var(--primary-foreground);
+    transition: filter 0.15s ease;
   }
 
   .profile-btn-primary:hover {
-    background: #0ea5e9;
+    filter: brightness(1.05);
   }
 
   .trade-btn {
@@ -727,7 +733,7 @@
     border-radius: 4px;
     padding: 0 6px;
     font-size: 11px;
-    color: #6b7280;
+    color: var(--muted-foreground);
     opacity: 0.6;
   }
 
@@ -738,7 +744,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    color: #8b8f97;
+    color: var(--muted-foreground);
   }
 
   .tool-btn:disabled {
@@ -753,16 +759,16 @@
     align-items: center;
     gap: 4px;
     border-radius: 6px;
-    background: #12b7f5;
+    background: var(--primary);
     padding: 0 14px;
     font-size: 13px;
-    color: #fff;
+    color: var(--primary-foreground);
     white-space: nowrap;
-    transition: background-color 0.15s ease;
+    transition: filter 0.15s ease;
   }
 
   .chat-send-btn:hover:not(:disabled) {
-    background: #0ea5e9;
+    filter: brightness(1.05);
   }
 
   .chat-send-btn:disabled {
