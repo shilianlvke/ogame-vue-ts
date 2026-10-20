@@ -23,6 +23,7 @@ export default {
     close: 'Schließen',
     back: 'Zurück',
     soon: 'Noch nicht verfügbar',
+    maxLevel: 'Max. Stufe',
     gotIt: 'Verstanden',
     resourceType: 'Ressourcentyp',
     playerName: 'Kommandant',
@@ -192,6 +193,7 @@ export default {
     deepDrillingFacility: 'Tiefbohranlage',
     university: 'Universität',
     spaceport: 'Planetarer Raumhafen',
+    deepSpaceArray: 'Deep-Space-Kommunikationsarray',
     buildTime: 'Bauzeit',
     build: 'Bauen',
     production: 'Produktion',
@@ -246,7 +248,8 @@ export default {
       'Erforscht geologische Strukturen und erhöht die natürliche Erzvorkommen-Regenerationsrate. +10% Regeneration pro Stufe',
     deepDrillingFacility: '',
     university: 'Bildet Forscher aus, um die Forschungsgeschwindigkeit zu beschleunigen. -8% Forschungszeit pro Stufe',
-    spaceport: 'Logistikzentrum für interstellare Handelsrouten. Schaltet den Spielerhandel mit der Hyperraum-Transfertechnologie frei und senkt den Handelsverlust pro Stufe um 2%'
+    spaceport: 'Logistikzentrum für interstellare Handelsrouten. Schaltet den Spielerhandel mit der Hyperraum-Transfertechnologie frei und senkt den Handelsverlust pro Stufe um 2%',
+    deepSpaceArray: 'Ein systemübergreifendes Quantenkommunikationsarray und das Kerngebäude der Interstellaren Station. Stufe 1 genügt für die Stationsanforderung.',
   },
   ships: {
     lightFighter: 'Leichter Jäger',
@@ -358,7 +361,8 @@ export default {
     mineralResearch: 'Mineralforschung',
     crystalResearch: 'Kristallforschung',
     fuelResearch: 'Treibstoffforschung',
-    hyperspaceTransfer: 'Hyperraum-Transfertechnologie'
+    hyperspaceTransfer: 'Hyperraum-Transfertechnologie',
+    quantumCommunication: 'Quantenkommunikation',
   },
   technologyDescriptions: {
     energyTechnology: 'Verbessert Energieeffizienz',
@@ -385,7 +389,8 @@ export default {
     mineralResearch: 'Erforscht effizientere Metallextraktionstechniken. +2% Metallproduktion pro Stufe',
     crystalResearch: 'Erforscht effizientere Kristallveredelungstechniken. +2% Kristallproduktion pro Stufe',
     fuelResearch: 'Erforscht effizientere Deuterium-Synthesetechniken. +2% Deuteriumproduktion pro Stufe',
-    hyperspaceTransfer: 'Faltet lokale Routen zu stabilen interstellaren Frachtwegen. Schaltet den Spielerhandel mit dem Planetaren Raumhafen frei und senkt den Handelsverlust pro Stufe um 2%'
+    hyperspaceTransfer: 'Faltet lokale Routen zu stabilen interstellaren Frachtwegen. Schaltet den Spielerhandel mit dem Planetaren Raumhafen frei und senkt den Handelsverlust pro Stufe um 2%',
+    quantumCommunication: 'Quantenverschränkung ermöglicht sofortige systemübergreifende Kommunikation und ist die Schlüsseltechnologie der Interstellaren Station. Stufe 1 genügt für die Stationsanforderung.',
   },
   officers: {
     commander: 'Kommandant',
@@ -1092,6 +1097,7 @@ export default {
   chat: {
     title: 'Galaxie-Chat',
     stationTitle: 'Interstellare Station',
+    stationLockedHint: 'Benötigt {building} Stufe {buildingRequired} (aktuell Stufe {buildingLevel}) und {tech} Stufe {techRequired} (aktuell Stufe {techLevel}), um die Interstellare Station zu nutzen',
     chats: 'Chats',
     contacts: 'Kontakte',
     search: 'Suchen',
@@ -2274,6 +2280,11 @@ export default {
       '2_3': { title: 'Mysteriöses Signal', description: 'Untersuche mysteriöse Signale aus dem tiefen Weltraum' },
       '2_4': { title: 'Ruinenuntersuchung', description: 'Erkunde entdeckte antike Ruinen' },
       '2_5': { title: 'Archive entschlüsseln', description: 'Erforsche Daten aus den Ruinen' },
+      '2_6': {
+        title: 'Interstellare Kommunikation',
+        description: 'Baue ein Deep-Space-Kommunikationsarray und erforsche Quantenkommunikation, um die Interstellare Station freizuschalten',
+        guide: 'Baue das Deep-Space-Kommunikationsarray auf der Baustellen-Seite der Basis und erforsche Quantenkommunikation auf der Forschungsseite. Sobald beide Stufe 1 erreichen, wird die Interstellare Station unten rechts automatisch freigeschaltet.'
+      },
       '3_1': { title: 'Friedensstifter', description: 'Verbessere Beziehungen zu NPCs durch Diplomatie' },
       '3_2': { title: 'Handelsbeziehungen', description: 'Baue stabile Beziehungen zu freundlichen Fraktionen auf' },
       '3_3': { title: 'Gemeinsame Bedrohung', description: 'Entdecke potenzielle feindliche Kräfte' },
@@ -2371,6 +2382,8 @@ export default {
       sendMultipleGifts: 'Sende 3 Geschenke an NPCs',
       spyHostileNPC: 'Spioniere 2 feindliche NPCs aus',
       formAlliance: 'Erreiche 80 Ansehen bei einem beliebigen NPC (Bündnis)',
+      buildDeepSpaceArray: 'Baue das Deep-Space-Kommunikationsarray auf Stufe 1',
+      researchQuantumCommunication: 'Erforsche Quantenkommunikation auf Stufe 1',
       buildDefenses: 'Baue Verteidigungsanlagen',
       buildMissileSilo: 'Baue Raketensilo auf Stufe 2',
       buildCruisers: 'Baue 10 Kreuzer',
@@ -2452,6 +2465,9 @@ export default {
         prologue_1: 'Datenarchive wurden in den Ruinen gefunden. Studiere diese Daten, vielleicht kannst du neue Technologie freischalten.',
         epilogue_1: 'Die antiken Daten wurden entschlüsselt! Neue technologische Erkenntnisse wurden gewonnen.'
       },
+      '2_6': {
+        prologue_1: 'Das Tiefraum-Signal wird immer klarer. Mit einem Kommunikationsarray und Quantenkommunikation kannst du in Echtzeit mit der ganzen Galaxie sprechen.'
+      },
       '3_1': { prologue_1: 'Beim Erkunden vergiss nicht die Diplomatie. Gute Beziehungen zu umliegenden Fraktionen zu pflegen nützt dir.' },
       '3_2': {
         prologue_1:
@@ -2521,6 +2537,7 @@ export default {
     points: 'Punkte',
     planets: 'Planeten',
     tradeTitle: 'Spielerhandel',
+    tradeTooltip: 'Ressourcen mit {name} handeln; geschätzter Verlust {loss}%. Klicken, um einen Handel zu starten',
     tradeDetails: 'Spielerhandelsdetails',
     tradeWith: 'Mit {name} handeln',
     tradeLocked: 'Baue zuerst einen planetaren Raumhafen und erforsche die Hyperraum-Transfertechnologie',

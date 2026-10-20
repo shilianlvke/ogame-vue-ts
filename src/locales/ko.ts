@@ -23,6 +23,7 @@ export default {
     close: '닫기',
     back: '뒤로',
     soon: '준비 중',
+    maxLevel: '최대 레벨',
     gotIt: '알겠습니다',
     success: '성공',
     resourceType: '자원 유형',
@@ -192,6 +193,7 @@ export default {
     deepDrillingFacility: '심층 시추 시설',
     university: '대학',
     spaceport: '행성 우주항',
+    deepSpaceArray: '심우주 통신 배열',
     buildTime: '건설 시간',
     build: '건설',
     production: '생산량',
@@ -241,7 +243,8 @@ export default {
     geoResearchStation: '지질 구조를 연구하여 광맥 자연 회복 속도를 높입니다. 레벨당 회복 속도 10% 증가',
     deepDrillingFacility: '',
     university: '연구원을 양성하여 연구 속도를 가속합니다. 레벨당 연구 시간 -8%',
-    spaceport: '성간 무역로의 물류 거점. 초시공간 전송 기술과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다'
+    spaceport: '성간 무역로의 물류 거점. 초시공간 전송 기술과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다',
+    deepSpaceArray: '항성계를 연결하는 양자 통신 배열이자 성간 통신소의 핵심 건물입니다. 1레벨이면 통신소 조건을 만족합니다.',
   },
   ships: {
     lightFighter: '경전투기',
@@ -347,7 +350,8 @@ export default {
     mineralResearch: '광물 연구',
     crystalResearch: '크리스탈 연구',
     fuelResearch: '연료 연구',
-    hyperspaceTransfer: '초시공간 전송 기술'
+    hyperspaceTransfer: '초시공간 전송 기술',
+    quantumCommunication: '양자 통신 기술',
   },
   technologyDescriptions: {
     energyTechnology: '에너지 이용 효율 향상',
@@ -374,7 +378,8 @@ export default {
     mineralResearch: '더 효율적인 금속 추출 기술 연구. 레벨당 금속 생산 +2%',
     crystalResearch: '더 효율적인 크리스탈 정제 기술 연구. 레벨당 크리스탈 생산 +2%',
     fuelResearch: '더 효율적인 중수소 합성 기술 연구. 레벨당 중수소 생산 +2%',
-    hyperspaceTransfer: '국소 항로를 접어 안정적인 성간 화물로를 구축합니다. 행성 우주항과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다'
+    hyperspaceTransfer: '국소 항로를 접어 안정적인 성간 화물로를 구축합니다. 행성 우주항과 함께 플레이어 거래를 해금하고 레벨당 거래 손실을 2% 줄입니다',
+    quantumCommunication: '양자 얽힘으로 항성계 간 즉시 통신을 가능하게 하는 성간 통신소의 핵심 기술입니다. 1레벨이면 통신소 조건을 만족합니다.',
   },
   officers: {
     commander: '사령관',
@@ -1070,6 +1075,7 @@ export default {
   chat: {
     title: '은하 채널',
     stationTitle: '성간 통신소',
+    stationLockedHint: '성간 통신소를 사용하려면 {building} Lv {buildingRequired}(현재 Lv {buildingLevel})와 {tech} Lv {techRequired}(현재 Lv {techLevel})가 필요합니다',
     chats: '채팅',
     contacts: '연락처',
     search: '검색',
@@ -2219,6 +2225,11 @@ export default {
       '2_3': { title: '신비한 신호', description: '심우주에서 오는 신비한 신호를 조사하세요' },
       '2_4': { title: '유적 조사', description: '발견한 고대 유적을 탐험하세요' },
       '2_5': { title: '아카이브 해독', description: '유적에서 얻은 데이터를 연구하세요' },
+      '2_6': {
+        title: '성간 통신',
+        description: '심우주 통신 배열을 건설하고 양자 통신 기술을 연구하여 성간 통신소를 개방하세요',
+        guide: '기지의 건설 페이지에서 심우주 통신 배열을 건설하고 연구 페이지에서 양자 통신 기술을 연구하세요. 둘 다 1레벨에 도달하면 오른쪽 아래의 성간 통신소가 자동으로 개방됩니다.'
+      },
       '3_1': { title: '평화의 사절', description: '외교로 NPC와의 관계를 개선하세요' },
       '3_2': { title: '무역 관계', description: '우호 세력과 안정적인 관계를 구축하세요' },
       '3_3': { title: '공통의 위협', description: '잠재적인 적대 세력을 발견하세요' },
@@ -2316,6 +2327,8 @@ export default {
       sendMultipleGifts: 'NPC에게 3회 선물 보내기',
       spyHostileNPC: '적대 NPC 2곳 정찰',
       formAlliance: '임의의 NPC와 평판 80 달성 (동맹)',
+      buildDeepSpaceArray: '심우주 통신 배열을 1레벨로 건설',
+      researchQuantumCommunication: '양자 통신 기술을 1레벨로 연구',
       buildDefenses: '방어 시설 건설',
       buildMissileSilo: '미사일 사일로를 레벨 2로 건설',
       buildCruisers: '순양함 10대 건조',
@@ -2387,6 +2400,9 @@ export default {
         prologue_1: '유적에서 데이터 아카이브가 발견되었습니다. 이 데이터를 연구하면 새 기술을 해금할 수 있을지도 모릅니다.',
         epilogue_1: '고대 데이터가 해독되었습니다! 새로운 기술적 통찰을 얻었습니다.'
       },
+      '2_6': {
+        prologue_1: '심우주 신호가 점점 선명해집니다. 통신 배열과 양자 통신을 갖추면 은하계 전체와 실시간으로 대화할 수 있습니다.'
+      },
       '3_1': { prologue_1: '탐험 중에도 외교를 잊지 마세요. 주변 세력과 좋은 관계를 유지하는 것이 유익합니다.' },
       '3_2': { prologue_1: '일부 세력이 우호를 보이고 있습니다. 관계를 계속 깊게 하면 더 많은 지원을 받을 수 있을지도 모릅니다.' },
       '3_3': {
@@ -2446,6 +2462,7 @@ export default {
     points: '점수',
     planets: '행성',
     tradeTitle: '플레이어 거래',
+    tradeTooltip: '{name}와 자원을 거래합니다. 예상 손실 {loss}%. 클릭하여 거래를 시작하세요',
     tradeDetails: '플레이어 거래 상세',
     tradeWith: '{name}와 거래',
     tradeLocked: '먼저 행성 우주항을 건설하고 초시공간 전송 기술을 연구하세요',

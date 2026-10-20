@@ -23,6 +23,7 @@ export default {
     close: 'Close',
     back: 'Back',
     soon: 'Coming soon',
+    maxLevel: 'Max level',
     resourceType: 'Resource Type',
     playerName: 'Commander',
     featureLocked: 'Feature Locked',
@@ -203,6 +204,7 @@ export default {
     deepDrillingFacility: 'Deep Drilling Facility',
     university: 'University',
     spaceport: 'Planetary Spaceport',
+    deepSpaceArray: 'Deep Space Communications Array',
     buildTime: 'Build Time',
     production: 'Production',
     consumption: 'Consumption',
@@ -253,7 +255,8 @@ export default {
     geoResearchStation: 'Researches geological structures and increases ore deposit regeneration rate. +10% regeneration per level',
     deepDrillingFacility: 'Drills deep into the crust to access deeper ore veins. +20% ore deposit capacity per level',
     university: 'Trains researchers to accelerate research speed. -8% research time per level (stacks with Intergalactic Research Network)',
-    spaceport: 'A logistics hub for interstellar trade routes. Unlocks player trade with Hyperspace Transfer Technology and reduces trade loss by 2% per level'
+    spaceport: 'A logistics hub for interstellar trade routes. Unlocks player trade with Hyperspace Transfer Technology and reduces trade loss by 2% per level',
+    deepSpaceArray: 'A cross-system quantum communications array and the core building of the Interstellar Station. Level 1 is enough to meet the station requirement.',
   },
   ships: {
     lightFighter: 'Light Fighter',
@@ -358,7 +361,8 @@ export default {
     mineralResearch: 'Mineral Research',
     crystalResearch: 'Crystal Research',
     fuelResearch: 'Fuel Research',
-    hyperspaceTransfer: 'Hyperspace Transfer Technology'
+    hyperspaceTransfer: 'Hyperspace Transfer Technology',
+    quantumCommunication: 'Quantum Communication',
   },
   technologyDescriptions: {
     energyTechnology: 'Improves energy efficiency',
@@ -385,7 +389,8 @@ export default {
     mineralResearch: 'Research more efficient metal extraction techniques. +2% metal production per level',
     crystalResearch: 'Research more efficient crystal refinement techniques. +2% crystal production per level',
     fuelResearch: 'Research more efficient deuterium synthesis techniques. +2% deuterium production per level',
-    hyperspaceTransfer: 'Folds local routes into stable interstellar cargo lanes. Unlocks player trade with Planetary Spaceport and reduces trade loss by 2% per level'
+    hyperspaceTransfer: 'Folds local routes into stable interstellar cargo lanes. Unlocks player trade with Planetary Spaceport and reduces trade loss by 2% per level',
+    quantumCommunication: 'Quantum entanglement enables instant cross-system communication and is the key technology of the Interstellar Station. Level 1 is enough to meet the station requirement.',
   },
   officers: {
     commander: 'Commander',
@@ -1110,6 +1115,7 @@ export default {
   chat: {
     title: 'Galactic Chat',
     stationTitle: 'Interstellar Station',
+    stationLockedHint: 'Requires {building} Lv {buildingRequired} (current Lv {buildingLevel}) and {tech} Lv {techRequired} (current Lv {techLevel}) to use the Interstellar Station',
     chats: 'Chats',
     contacts: 'Contacts',
     search: 'Search',
@@ -2204,6 +2210,11 @@ export default {
         title: 'Decrypt Archives',
         description: 'Research data obtained from ruins'
       },
+      '2_6': {
+        title: 'Interstellar Communications',
+        description: 'Build a Deep Space Communications Array and research Quantum Communication to unlock the Interstellar Station',
+        guide: 'Build the Deep Space Communications Array on the Base buildings page and research Quantum Communication on the Research page. Once both reach level 1, the Interstellar Station at the bottom right unlocks automatically.'
+      },
       '3_1': {
         title: 'Peacemaker',
         description: 'Improve relations with NPCs through diplomacy'
@@ -2343,6 +2354,8 @@ export default {
       sendMultipleGifts: 'Send 3 gifts to NPCs',
       spyHostileNPC: 'Spy on 2 hostile NPCs',
       formAlliance: 'Reach 80 reputation with any NPC (alliance)',
+      buildDeepSpaceArray: 'Build the Deep Space Communications Array to level 1',
+      researchQuantumCommunication: 'Research Quantum Communication to level 1',
       buildDefenses: 'Build defense facilities',
       buildMissileSilo: 'Build Missile Silo to level 2',
       buildCruisers: 'Build 10 Cruisers',
@@ -2420,6 +2433,9 @@ export default {
       '2_5': {
         prologue_1: 'Data archives were found in the ruins. Study this data, perhaps you can unlock new technology.',
         epilogue_1: 'The ancient data has been decrypted! New technological insights have been gained.'
+      },
+      '2_6': {
+        prologue_1: 'The deep-space signal is getting clearer. With a communications array and quantum communication, you can talk to the whole galaxy in real time.'
       },
       '3_1': {
         prologue_1: 'While exploring, do not forget about diplomacy. Maintaining good relations with surrounding factions benefits you.'
@@ -2629,6 +2645,7 @@ export default {
     points: 'Points',
     planets: 'Planets',
     tradeTitle: 'Player trade',
+    tradeTooltip: 'Trade resources with {name}; estimated loss {loss}%. Click to start a trade',
     tradeDetails: 'Player trade details',
     tradeWith: 'Trade with {name}',
     tradeLocked: 'Build a Planetary Spaceport and research Hyperspace Transfer Technology first',

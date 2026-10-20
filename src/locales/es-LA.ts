@@ -23,6 +23,7 @@ export default {
     close: 'Cerrar',
     back: 'Volver',
     soon: 'Próximamente',
+    maxLevel: 'Nivel máx.',
     success: 'Éxito',
     resourceType: 'Tipo de Recurso',
     featureLocked: 'Característica Bloqueada',
@@ -191,6 +192,7 @@ export default {
     deepDrillingFacility: 'Instalación de Perforación Profunda',
     university: 'Universidad',
     spaceport: 'Puerto Espacial Planetario',
+    deepSpaceArray: 'Matriz de comunicaciones de espacio profundo',
     buildTime: 'Tiempo de Construcción',
     production: 'Producción',
     consumption: 'Consumo',
@@ -243,7 +245,8 @@ export default {
     deepDrillingFacility:
       'Perfora profundamente en la corteza para acceder a vetas de mineral más profundas. +20% de capacidad de depósito de mineral por nivel',
     university: 'Entrena investigadores para acelerar la velocidad de investigación. -8% de tiempo de investigación por nivel',
-    spaceport: 'Centro logístico de rutas comerciales interestelares. Desbloquea el comercio entre jugadores con la Tecnología de Transferencia Hiperespacial y reduce la pérdida comercial un 2% por nivel'
+    spaceport: 'Centro logístico de rutas comerciales interestelares. Desbloquea el comercio entre jugadores con la Tecnología de Transferencia Hiperespacial y reduce la pérdida comercial un 2% por nivel',
+    deepSpaceArray: 'Una matriz de comunicaciones cuánticas entre sistemas y el edificio central de la Estación interestelar. El nivel 1 basta para cumplir el requisito.',
   },
   ships: {
     lightFighter: 'Caza Ligero',
@@ -349,7 +352,8 @@ export default {
     mineralResearch: 'Investigación Mineral',
     crystalResearch: 'Investigación de Cristal',
     fuelResearch: 'Investigación de Combustible',
-    hyperspaceTransfer: 'Tecnología de Transferencia Hiperespacial'
+    hyperspaceTransfer: 'Tecnología de Transferencia Hiperespacial',
+    quantumCommunication: 'Comunicación cuántica',
   },
   technologyDescriptions: {
     energyTechnology: 'Mejora la eficiencia energética',
@@ -378,7 +382,8 @@ export default {
     mineralResearch: 'Investiga técnicas más eficientes de extracción de metal. +2% de producción de metal por nivel',
     crystalResearch: 'Investiga técnicas más eficientes de refinamiento de cristal. +2% de producción de cristal por nivel',
     fuelResearch: 'Investiga técnicas más eficientes de síntesis de deuterio. +2% de producción de deuterio por nivel',
-    hyperspaceTransfer: 'Pliega rutas locales en corredores de carga interestelares estables. Desbloquea el comercio entre jugadores con el Puerto Espacial Planetario y reduce la pérdida comercial un 2% por nivel'
+    hyperspaceTransfer: 'Pliega rutas locales en corredores de carga interestelares estables. Desbloquea el comercio entre jugadores con el Puerto Espacial Planetario y reduce la pérdida comercial un 2% por nivel',
+    quantumCommunication: 'El entrelazamiento cuántico permite comunicación instantánea entre sistemas y es la tecnología clave de la Estación interestelar. El nivel 1 basta para cumplir el requisito.',
   },
   officers: {
     commander: 'Comandante',
@@ -1101,6 +1106,7 @@ export default {
   chat: {
     title: 'Canal galáctico',
     stationTitle: 'Estación interestelar',
+    stationLockedHint: 'Requiere {building} Nv. {buildingRequired} (actual Nv. {buildingLevel}) y {tech} Nv. {techRequired} (actual Nv. {techLevel}) para usar la Estación interestelar',
     chats: 'Chats',
     contacts: 'Contactos',
     search: 'Buscar',
@@ -2192,6 +2198,11 @@ export default {
         title: 'Descifrar Archivos',
         description: 'Investiga datos obtenidos de las ruinas'
       },
+      '2_6': {
+        title: 'Comunicaciones interestelares',
+        description: 'Construye una Matriz de comunicaciones de espacio profundo e investiga Comunicación cuántica para desbloquear la Estación interestelar',
+        guide: 'Construye la Matriz de comunicaciones de espacio profundo en la página de edificios de la Base e investiga Comunicación cuántica en la página de investigación. Cuando ambas alcancen el nivel 1, la Estación interestelar de la esquina inferior derecha se desbloqueará automáticamente.'
+      },
       '3_1': {
         title: 'Pacificador',
         description: 'Mejora relaciones con NPCs a través de la diplomacia'
@@ -2331,6 +2342,8 @@ export default {
       sendMultipleGifts: 'Enviar 3 regalos a NPCs',
       spyHostileNPC: 'Espiar 2 NPCs hostiles',
       formAlliance: 'Alcanza 80 de reputación con cualquier NPC (alianza)',
+      buildDeepSpaceArray: 'Construye la Matriz de comunicaciones de espacio profundo al nivel 1',
+      researchQuantumCommunication: 'Investiga Comunicación cuántica al nivel 1',
       buildDefenses: 'Construir instalaciones de defensa',
       buildMissileSilo: 'Construir Silo de Misiles al nivel 2',
       buildCruisers: 'Construir 10 Cruceros',
@@ -2410,6 +2423,9 @@ export default {
       '2_5': {
         prologue_1: 'Se encontraron archivos de datos en las ruinas. Estudia estos datos, quizás puedas desbloquear nueva tecnología.',
         epilogue_1: '¡Los datos antiguos han sido descifrados! Se han obtenido nuevos conocimientos tecnológicos.'
+      },
+      '2_6': {
+        prologue_1: 'La señal del espacio profundo es cada vez más clara. Con una matriz de comunicaciones y comunicación cuántica, podrás hablar con toda la galaxia en tiempo real.'
       },
       '3_1': {
         prologue_1: 'Mientras exploras, no olvides la diplomacia. Mantener buenas relaciones con las facciones circundantes te beneficia.'
@@ -2616,6 +2632,7 @@ export default {
     points: 'Puntos',
     planets: 'Planetas',
     tradeTitle: 'Comercio entre jugadores',
+    tradeTooltip: 'Intercambia recursos con {name}; pérdida estimada {loss}%. Haz clic para iniciar un intercambio',
     tradeDetails: 'Detalles del comercio entre jugadores',
     tradeWith: 'Comerciar con {name}',
     tradeLocked: 'Primero construye un Puerto Espacial Planetario e investiga la Tecnología de Transferencia Hiperespacial',

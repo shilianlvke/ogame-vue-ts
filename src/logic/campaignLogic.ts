@@ -23,7 +23,7 @@ import { generateId } from '@/utils/id'
 import * as resourceLogic from './resourceLogic'
 
 /** 战役内容版本：新增章节/任务后递增，用于迁移旧存档 */
-export const CAMPAIGN_PROGRESS_VERSION = 2
+export const CAMPAIGN_PROGRESS_VERSION = 3
 
 const createQuestProgress = (
   quest: { id: string; objectives: Array<{ id: string }> },
@@ -51,13 +51,17 @@ const migrateCampaignProgress = (progress: PlayerCampaignProgress): PlayerCampai
   const allQuests = getAllQuests()
   const validQuestIds = new Set(allQuests.map(quest => quest.id))
 
-  if (oldVersion < CAMPAIGN_PROGRESS_VERSION) {
-    // 清除旧存档中不存在于旧版本的新增章节进度，防止“完成任务”状态被继承
+  if (oldVersion < 2) {
+    // v1 存档：清空旧版不存在的第七章进度，防止“完成任务”状态被继承。
+    // v2 及以上已经有第七章的真实进度，不能被后续新增任务迁移误清。
     const newChapterIds = new Set(getQuestsByChapter(7).map(quest => quest.id))
     progress.completedQuests = (progress.completedQuests ?? []).filter(id => !newChapterIds.has(id))
     progress.unlockedQuests = (progress.unlockedQuests ?? []).filter(id => !newChapterIds.has(id))
     for (const id of newChapterIds) delete progress.questProgress?.[id]
   }
+
+  // 新增的 2_6（深空通讯阵列 / 量子通讯技术）由下方遍历按前置任务自动解锁，
+  // 无需清空任何旧进度。
 
   progress.campaignId = progress.campaignId || MAIN_CAMPAIGN.id
   progress.version = CAMPAIGN_PROGRESS_VERSION

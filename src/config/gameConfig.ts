@@ -468,6 +468,23 @@ export const BUILDINGS: Record<BuildingType, BuildingConfig> = {
       4: { [TechnologyType.HyperspaceTransfer]: 3, [BuildingType.NaniteFactory]: 1 },
       5: { [TechnologyType.HyperspaceTransfer]: 4, [BuildingType.NaniteFactory]: 2 }
     }
+  },
+  // 星际通讯站建筑
+  [BuildingType.DeepSpaceArray]: {
+    id: BuildingType.DeepSpaceArray,
+    name: '深空通讯阵列',
+    description: '架设跨星系的量子通讯阵列，是启用星际通讯站的核心建筑。建造 1 级即可满足通讯站条件。',
+    baseCost: { metal: 25000, crystal: 20000, deuterium: 8000, darkMatter: 0, energy: 0 },
+    baseTime: 150,
+    costMultiplier: 1.8,
+    spaceUsage: 4,
+    planetOnly: true,
+    maxLevel: 1,
+    requirements: {
+      [BuildingType.ResearchLab]: 3,
+      [BuildingType.RoboticsFactory]: 3,
+      [TechnologyType.ComputerTechnology]: 2
+    }
   }
 }
 
@@ -917,6 +934,21 @@ export const TECHNOLOGIES: Record<TechnologyType, TechnologyConfig> = {
         [BuildingType.NaniteFactory]: 3,
         [BuildingType.Spaceport]: 4
       }
+    }
+  },
+  // 星际通讯站科技
+  [TechnologyType.QuantumCommunication]: {
+    id: TechnologyType.QuantumCommunication,
+    name: '量子通讯技术',
+    description: '利用量子纠缠实现跨星系的即时通讯，是启用星际通讯站的关键科技。研究 1 级即可满足通讯站条件。',
+    baseCost: { metal: 0, crystal: 30000, deuterium: 15000, darkMatter: 0, energy: 0 },
+    baseTime: 180,
+    costMultiplier: 2,
+    maxLevel: 1,
+    requirements: {
+      [BuildingType.ResearchLab]: 4,
+      [TechnologyType.ComputerTechnology]: 3,
+      [TechnologyType.EspionageTechnology]: 2
     }
   }
 }

@@ -42,6 +42,9 @@
               </CardTitle>
               <Badge variant="secondary" class="text-xs whitespace-nowrap self-start order-1 sm:order-2">
                 Lv {{ getBuildingLevel(buildingType) }}
+                <span v-if="isBuildingMaxLevel(buildingType)" class="ml-1 text-[10px] text-primary">
+                  ({{ t('common.maxLevel') }})
+                </span>
               </Badge>
             </div>
           </div>
@@ -340,6 +343,12 @@
   // 获取建筑等级
   const getBuildingLevel = (buildingType: BuildingType): number => {
     return planet.value?.buildings[buildingType] || 0
+  }
+
+  // 是否已达到建筑等级上限
+  const isBuildingMaxLevel = (buildingType: BuildingType): boolean => {
+    const maxLevel = BUILDINGS.value[buildingType]?.maxLevel
+    return maxLevel !== undefined && getBuildingLevel(buildingType) >= maxLevel
   }
 
   // 检查升级前置条件是否满足

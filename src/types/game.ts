@@ -59,7 +59,9 @@ export const BuildingType = {
   // 2moons新增建筑
   University: 'university', // 大学（加速研究）
   // 玩家贸易物流建筑
-  Spaceport: 'spaceport' // 星球航空港（解锁玩家交易并降低交易损耗）
+  Spaceport: 'spaceport', // 星球航空港（解锁玩家交易并降低交易损耗）
+  // 星际通讯站建筑
+  DeepSpaceArray: 'deepSpaceArray' // 深空通讯阵列（启用星际通讯站）
 } as const
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType]
@@ -114,7 +116,9 @@ export const TechnologyType = {
   CrystalResearch: 'crystalResearch', // 晶体研究（提升晶体产量）
   FuelResearch: 'fuelResearch', // 燃料研究（提升重氢产量）
   // 玩家贸易物流科技
-  HyperspaceTransfer: 'hyperspaceTransfer' // 超时空转移技术（降低交易损耗）
+  HyperspaceTransfer: 'hyperspaceTransfer', // 超时空转移技术（降低交易损耗）
+  // 星际通讯站科技
+  QuantumCommunication: 'quantumCommunication' // 量子通讯技术（启用星际通讯站）
 } as const
 
 export type TechnologyType = (typeof TechnologyType)[keyof typeof TechnologyType]

@@ -1,9 +1,17 @@
 <template>
   <!-- 右下角入口 -->
-  <Button variant="outline" size="icon" class="relative" :title="t('chat.stationTitle')" @click="open = !open">
-    <MessageCircle class="h-4 w-4" />
+  <Button
+    variant="outline"
+    size="icon"
+    class="relative"
+    :class="!stationUnlocked ? 'opacity-70' : ''"
+    :title="stationUnlocked ? t('chat.stationTitle') : stationRequirementText"
+    @click="toggleStation"
+  >
+    <MessageCircle v-if="stationUnlocked" class="h-4 w-4" />
+    <Lock v-else class="h-4 w-4" />
     <Badge
-      v-if="triggerUnread > 0"
+      v-if="stationUnlocked && triggerUnread > 0"
       variant="destructive"
       class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-xs animate-pulse"
     >
@@ -60,11 +68,6 @@
             >
               <Users class="h-5 w-5" />
             </button>
-            <div class="mt-auto">
-              <button type="button" class="rail-btn" disabled :title="t('chat.tradeDisabled')">
-                <ArrowLeftRight class="h-5 w-5" />
-              </button>
-            </div>
           </nav>
 
           <!-- 会话列表 / 通讯录 -->
@@ -445,35 +448,45 @@
 
               <ScrollArea class="min-h-0 flex-1">
                 <div class="space-y-4 px-4 py-4">
-                  <template v-for="message in activeMessages" :key="message.id">
-                    <div v-if="message.fromId === 'system'" class="flex justify-center">
-                      <span class="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{{ message.text }}</span>
+                  <template v-for="item in activeTimeline" :key="item.key">
+                    <TradeOfferCard
+                      v-if="item.kind === 'trade'"
+                      :trade="item.trade"
+                      :my-id="myId"
+                      :can-respond="myTradeStatus.unlocked"
+                      @respond="handleTradeRespond"
+                      @cancel="handleTradeCancel"
+                    />
+                    <div v-else-if="item.message.fromId === 'system'" class="flex justify-center">
+                      <span class="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {{ item.message.text }}
+                      </span>
                     </div>
-                    <div v-else class="flex gap-2" :class="message.fromId === myId ? 'flex-row-reverse' : ''">
+                    <div v-else class="flex gap-2" :class="item.message.fromId === myId ? 'flex-row-reverse' : ''">
                       <span
                         class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-primary-foreground"
-                        :style="avatarStyle(message.fromId)"
+                        :style="avatarStyle(item.message.fromId)"
                       >
-                        {{ initials(message.fromName) }}
+                        {{ initials(item.message.fromName) }}
                       </span>
                       <div class="min-w-0 max-w-[75%]">
                         <div
                           class="mb-1 flex items-center gap-2 text-[10px] text-muted-foreground"
-                          :class="message.fromId === myId ? 'justify-end' : ''"
+                          :class="item.message.fromId === myId ? 'justify-end' : ''"
                         >
-                          <span class="text-muted-foreground">{{ message.fromName }}</span>
-                          <span>{{ formatTime(message.timestamp) }}</span>
+                          <span class="text-muted-foreground">{{ item.message.fromName }}</span>
+                          <span>{{ formatTime(item.message.timestamp) }}</span>
                         </div>
                         <div
                           class="whitespace-pre-wrap break-words rounded-md px-3 py-2 text-sm leading-relaxed"
-                          :class="message.fromId === myId ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'"
+                          :class="item.message.fromId === myId ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'"
                         >
-                          {{ message.text }}
+                          {{ item.message.text }}
                         </div>
                       </div>
                     </div>
                   </template>
-                  <p v-if="activeMessages.length === 0" class="py-16 text-center text-xs text-muted-foreground">
+                  <p v-if="activeTimeline.length === 0" class="py-16 text-center text-xs text-muted-foreground">
                     {{ t('chat.empty') }}
                   </p>
                   <div ref="bottomRef" />
@@ -482,12 +495,17 @@
 
               <div class="shrink-0 border-t border-border">
                 <div class="flex flex-wrap items-center gap-1 px-2 pt-1.5">
-                  <button type="button" class="trade-btn" disabled :title="t('chat.tradeDisabled')">
-                    <ArrowLeftRight class="h-3.5 w-3.5" />
-                    {{ t('players.tradeTitle') }}
+                  <button
+                    v-if="activeConversation.kind === 'private' && activePeer"
+                    type="button"
+                    class="tool-btn"
+                    :class="!tradeAvailable ? 'opacity-50' : ''"
+                    :title="tradeTooltip"
+                    @click="openTradeDialog"
+                  >
+                    <ArrowLeftRight class="h-4 w-4" />
                   </button>
-                  <span class="mr-1 text-[10px] text-muted-foreground/70">{{ t('chat.tradeDisabled') }}</span>
-                  <span class="mx-1 h-4 w-px bg-border" />
+                  <span v-if="activeConversation.kind === 'private' && activePeer" class="mx-1 h-4 w-px bg-border" />
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Smile class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Scissors class="h-4 w-4" /></button>
                   <button type="button" class="tool-btn" disabled :title="t('common.soon')"><Folder class="h-4 w-4" /></button>
@@ -528,6 +546,8 @@
       </div>
     </Transition>
   </Teleport>
+
+  <PlayerTradeDialog v-model:open="tradeDialogOpen" :peer="tradePeer" @sent="scrollToBottom" />
 </template>
 
 <script setup lang="ts">
@@ -545,6 +565,7 @@
     Globe,
     Image as ImageIcon,
     Info,
+    Lock,
     MessageCircle,
     MessageSquare,
     Mic,
@@ -564,13 +585,21 @@
   import { Input } from '@/components/ui/input'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import PlayerRoster from '@/components/chat/PlayerRoster.vue'
+  import PlayerTradeDialog from '@/components/chat/PlayerTradeDialog.vue'
+  import TradeOfferCard from '@/components/chat/TradeOfferCard.vue'
   import { useGameStore } from '@/stores/gameStore'
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { MAX_CHAT_LENGTH } from '@/core/commands'
   import { dispatchCommand } from '@/core/runtime'
+  import { getPlayerTradeStatus } from '@/logic/playerTradeLogic'
+  import {
+    COMMUNICATION_STATION_BUILDING_LEVEL,
+    COMMUNICATION_STATION_TECHNOLOGY_LEVEL,
+    getCommunicationStationStatus
+  } from '@/logic/communicationStationLogic'
   import { formatNumber } from '@/utils/format'
-  import type { ChatMessage } from '@/types/game'
+  import type { ChatMessage, PlayerTradeOffer } from '@/types/game'
   import type { PlayerPublicProfile } from '@/core/protocol'
 
   type StationView = 'chats' | 'contacts'
@@ -579,6 +608,10 @@
   type MobilePane = 'list' | 'main'
   type ConversationKind = 'group' | 'private'
   type Detail = { type: 'player'; id: string } | { type: 'group' }
+
+  type TimelineItem =
+    | { kind: 'message'; key: string; timestamp: number; message: ChatMessage }
+    | { kind: 'trade'; key: string; timestamp: number; trade: PlayerTradeOffer }
 
   interface Conversation {
     id: string
@@ -598,8 +631,21 @@
   const { t } = useI18n()
   const isMobile = useMediaQuery('(max-width: 639px)')
 
+  const stationStatus = computed(() => getCommunicationStationStatus(gameStore.player))
+  const stationUnlocked = computed(() => stationStatus.value.unlocked)
+  const stationRequirementText = computed(() =>
+    t('chat.stationLockedHint', {
+      building: t('buildings.deepSpaceArray'),
+      buildingRequired: COMMUNICATION_STATION_BUILDING_LEVEL,
+      buildingLevel: stationStatus.value.buildingLevel,
+      tech: t('technologies.quantumCommunication'),
+      techRequired: COMMUNICATION_STATION_TECHNOLOGY_LEVEL,
+      techLevel: stationStatus.value.technologyLevel
+    })
+  )
+
   // 旧 /players 入口会带 chat=1 跳转过来，直接展开浮框
-  const open = ref(route.query.chat === '1')
+  const open = ref(stationUnlocked.value && route.query.chat === '1')
   const stationView = ref<StationView>('chats')
   const contactSection = ref<ContactSection>('friends')
   const mainView = ref<MainView>('chat')
@@ -613,6 +659,7 @@
   const drafts = ref<Record<string, string>>({})
   const cooling = ref(false)
   const readAt = ref<Record<string, number>>({})
+  const tradeDialogOpen = ref(false)
   const sessionStart = Date.now()
   const bottomRef = ref<HTMLElement | null>(null)
 
@@ -622,6 +669,8 @@
   }
 
   const myId = computed(() => netStore.playerId || gameStore.player.id)
+  const myTradeStatus = computed(() => getPlayerTradeStatus(gameStore.player))
+  const playerTrades = computed(() => gameStore.player.playerTrades ?? [])
 
   // 玩家列表：在线优先，其次按积分和昵称排序
   const players = computed(() =>
@@ -685,6 +734,16 @@
       .sort((a, b) => a.timestamp - b.timestamp)
   }
 
+  const tradesForPeer = (peerId: string): PlayerTradeOffer[] => {
+    const me = myId.value
+    return playerTrades.value
+      .filter(
+        trade =>
+          (trade.fromId === me && trade.toId === peerId) || (trade.fromId === peerId && trade.toId === me)
+      )
+      .sort((a, b) => a.createdAt - b.createdAt)
+  }
+
   const publicMessages = computed(() =>
     (gameStore.player.chatMessages ?? []).filter(message => !message.toId).sort((a, b) => a.timestamp - b.timestamp)
   )
@@ -716,27 +775,46 @@
       if (message.fromId === myId.value) peerIds.add(message.toId)
       else if (message.toId === myId.value) peerIds.add(message.fromId)
     }
+    for (const trade of playerTrades.value) {
+      if (trade.fromId === myId.value) peerIds.add(trade.toId)
+      else if (trade.toId === myId.value) peerIds.add(trade.fromId)
+    }
 
     for (const peerId of peerIds) {
       if (peerId === myId.value) continue
       const peer = playersById.value.get(peerId)
       const messages = privateMessagesFor(peerId)
+      const trades = tradesForPeer(peerId)
       const last = messages[messages.length - 1]
-      const lastAt = last?.timestamp ?? openedAt.value[peerId] ?? 0
+      const lastTrade = trades[trades.length - 1]
+      const lastTradeAt = lastTrade?.createdAt ?? 0
+      const lastAt = Math.max(last?.timestamp ?? 0, lastTradeAt, openedAt.value[peerId] ?? 0)
+      const readSince = readAt.value[`private:${peerId}`] ?? sessionStart
+      const tradeUnread = trades.filter(
+        trade =>
+          trade.toId === myId.value &&
+          trade.fromId === peerId &&
+          trade.status === 'pending' &&
+          trade.expiresAt > Date.now() &&
+          trade.createdAt > readSince
+      ).length
       list.push({
         id: `private:${peerId}`,
         kind: 'private',
         peerId,
         name: peer?.name ?? messages.find(message => message.fromId === peerId)?.fromName ?? peerId,
         online: peer?.online ?? false,
-        preview: last
-          ? last.fromId === myId.value
-            ? `${t('players.me')}: ${last.text}`
-            : last.text
-          : t('chat.empty'),
+        preview:
+          lastTrade && lastTradeAt > (last?.timestamp ?? 0)
+            ? t('players.tradeTitle')
+            : last
+              ? last.fromId === myId.value
+                ? `${t('players.me')}: ${last.text}`
+                : last.text
+              : t('chat.empty'),
         timeLabel: lastAt ? formatConversationTime(lastAt) : '',
         lastAt,
-        unread: unreadFor(`private:${peerId}`, messages, message => message.fromId === peerId)
+        unread: unreadFor(`private:${peerId}`, messages, message => message.fromId === peerId) + tradeUnread
       })
     }
 
@@ -764,6 +842,8 @@
     return playersById.value.get(conversation.peerId) ?? null
   })
 
+  const tradePeer = computed(() => (activeConversation.value?.kind === 'private' ? activePeer.value : null))
+
   const activeMessages = computed(() => {
     const conversation = activeConversation.value
     if (!conversation) return []
@@ -771,9 +851,47 @@
     return conversation.peerId ? privateMessagesFor(conversation.peerId) : []
   })
 
+  const activeTrades = computed(() => {
+    const conversation = activeConversation.value
+    if (!conversation || conversation.kind !== 'private' || !conversation.peerId) return []
+    return tradesForPeer(conversation.peerId)
+  })
+
+  const activeTimeline = computed<TimelineItem[]>(() => {
+    const items: TimelineItem[] = activeMessages.value.map(message => ({
+      kind: 'message',
+      key: `m-${message.id}`,
+      timestamp: message.timestamp,
+      message
+    }))
+    for (const trade of activeTrades.value) {
+      items.push({ kind: 'trade', key: `t-${trade.id}`, timestamp: trade.createdAt, trade })
+    }
+    return items.sort((a, b) => a.timestamp - b.timestamp)
+  })
+
   const activeOnline = computed(
     () => activePeer.value?.online ?? activeConversation.value?.online ?? false
   )
+
+  const tradeLossPercent = computed(() =>
+    Math.max(myTradeStatus.value.lossPercent, activePeer.value?.tradeLossPercent ?? 0)
+  )
+  const tradeAvailable = computed(
+    () => !!activePeer.value && myTradeStatus.value.unlocked && activePeer.value.tradeUnlocked === true
+  )
+  const tradeTooltip = computed(() => {
+    const peer = activePeer.value
+    if (!peer) return t('players.tradeTitle')
+    if (!myTradeStatus.value.unlocked) {
+      return t('players.tradeLockedHint', {
+        building: t('buildings.spaceport'),
+        tech: t('technologies.hyperspaceTransfer')
+      })
+    }
+    if (peer.tradeUnlocked !== true) return t('players.tradeTargetLockedHint', { name: peer.name })
+    return t('players.tradeTooltip', { name: peer.name, loss: tradeLossPercent.value })
+  })
 
   const detailPlayer = computed(() => {
     const current = detail.value
@@ -799,6 +917,14 @@
   })
 
   const canSend = computed(() => netStore.isOnline && draft.value.trim().length > 0 && !cooling.value)
+
+  const toggleStation = (): void => {
+    if (!stationUnlocked.value) {
+      toast.error(stationRequirementText.value)
+      return
+    }
+    open.value = !open.value
+  }
 
   const scrollToBottom = async (): Promise<void> => {
     await nextTick()
@@ -909,6 +1035,30 @@
     openPrivateChat(current.id)
   }
 
+  const openTradeDialog = (): void => {
+    const peer = activePeer.value
+    if (!peer) return
+    if (!myTradeStatus.value.unlocked) {
+      toast.error(t('players.tradeLocked'))
+      return
+    }
+    if (peer.tradeUnlocked !== true) {
+      toast.error(t('players.tradeTargetLocked'))
+      return
+    }
+    tradeDialogOpen.value = true
+  }
+
+  const handleTradeRespond = (trade: PlayerTradeOffer, action: 'accept' | 'decline'): void => {
+    const result = dispatchCommand({ type: 'player.trade.respond', offerId: trade.id, action })
+    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+  }
+
+  const handleTradeCancel = (trade: PlayerTradeOffer): void => {
+    const result = dispatchCommand({ type: 'player.trade.cancel', offerId: trade.id })
+    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+  }
+
   const send = (): void => {
     const conversation = activeConversation.value
     const text = draft.value.trim()
@@ -937,11 +1087,20 @@
     void scrollToBottom()
   }
 
+  // 解锁条件不再满足时立即关闭通讯站
+  watch(
+    stationUnlocked,
+    unlocked => {
+      if (!unlocked) open.value = false
+    },
+    { immediate: true }
+  )
+
   // 旧 /players 入口跳转时自动展开
   watch(
     () => route.query.chat,
     value => {
-      if (value === '1') open.value = true
+      if (value === '1' && stationUnlocked.value) open.value = true
     }
   )
 
@@ -973,7 +1132,7 @@
   )
 
   watch(
-    () => activeMessages.value[activeMessages.value.length - 1]?.id,
+    () => activeTimeline.value[activeTimeline.value.length - 1]?.key,
     () => {
       if (!viewingChat.value) return
       markRead(activeConversationId.value)
@@ -1104,19 +1263,6 @@
 
   .profile-btn-primary:hover {
     filter: brightness(1.05);
-  }
-
-  .trade-btn {
-    display: inline-flex;
-    height: 26px;
-    cursor: not-allowed;
-    align-items: center;
-    gap: 4px;
-    border-radius: 4px;
-    padding: 0 6px;
-    font-size: 11px;
-    color: var(--muted-foreground);
-    opacity: 0.6;
   }
 
   .tool-btn {

@@ -17,6 +17,9 @@
               </CardTitle>
               <Badge variant="secondary" class="text-xs whitespace-nowrap self-start order-1 sm:order-2">
                 Lv {{ getTechLevel(techType) }}
+                <span v-if="isTechMaxLevel(techType)" class="ml-1 text-[10px] text-primary">
+                  ({{ t('common.maxLevel') }})
+                </span>
               </Badge>
             </div>
           </div>
@@ -298,6 +301,12 @@
   // 获取科技等级
   const getTechLevel = (techType: TechnologyType): number => {
     return player.value.technologies[techType] || 0
+  }
+
+  // 是否已达到科技等级上限
+  const isTechMaxLevel = (techType: TechnologyType): boolean => {
+    const maxLevel = TECHNOLOGIES.value[techType]?.maxLevel
+    return maxLevel !== undefined && getTechLevel(techType) >= maxLevel
   }
 
   // 检查是否可以研究

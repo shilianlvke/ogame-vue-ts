@@ -23,6 +23,7 @@ export default {
     close: '閉じる',
     back: '戻る',
     soon: '準備中',
+    maxLevel: '最大レベル',
     gotIt: '了解',
     resourceType: '資源タイプ',
     playerName: '司令官',
@@ -204,6 +205,7 @@ export default {
     deepDrillingFacility: '深部掘削施設',
     university: '大学',
     spaceport: '惑星宇宙港',
+    deepSpaceArray: '深宇宙通信アレイ',
     buildTime: '建設時間',
     build: '建設',
     production: '生産量',
@@ -257,7 +259,8 @@ export default {
     geoResearchStation: '地質構造を研究し、鉱脈の自然回復速度を向上。レベル毎に回復速度10%増加',
     deepDrillingFacility: '',
     university: '研究者を育成し、研究速度を加速。レベル毎に研究時間-8%',
-    spaceport: '星間交易路の物流拠点。超時空転送技術と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減'
+    spaceport: '星間交易路の物流拠点。超時空転送技術と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減',
+    deepSpaceArray: '星系間を結ぶ量子通信アレイで、星間通信ステーションの中核建造物です。レベル1でステーションの条件を満たします。',
   },
   ships: {
     lightFighter: '軽戦闘機',
@@ -370,7 +373,8 @@ export default {
     mineralResearch: '鉱物研究',
     crystalResearch: 'クリスタル研究',
     fuelResearch: '燃料研究',
-    hyperspaceTransfer: '超時空転送技術'
+    hyperspaceTransfer: '超時空転送技術',
+    quantumCommunication: '量子通信技術',
   },
   technologyDescriptions: {
     energyTechnology: 'エネルギー利用効率を向上',
@@ -397,7 +401,8 @@ export default {
     mineralResearch: 'より効率的な金属抽出技術を研究。レベル毎に金属生産+2%',
     crystalResearch: 'より効率的なクリスタル精製技術を研究。レベル毎にクリスタル生産+2%',
     fuelResearch: 'より効率的な重水素合成技術を研究。レベル毎に重水素生産+2%',
-    hyperspaceTransfer: '局所航路を折り畳み、安定した星間貨物路を構築。惑星宇宙港と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減'
+    hyperspaceTransfer: '局所航路を折り畳み、安定した星間貨物路を構築。惑星宇宙港と共にプレイヤー取引を解放し、レベル毎に取引損失を2%軽減',
+    quantumCommunication: '量子もつれにより星系間の即時通信を実現する、星間通信ステーションの鍵となる技術です。レベル1でステーションの条件を満たします。',
   },
   officers: {
     commander: '司令官',
@@ -1114,6 +1119,7 @@ export default {
   chat: {
     title: '銀河チャンネル',
     stationTitle: '星間通信ステーション',
+    stationLockedHint: '星間通信ステーションを使うには {building} Lv {buildingRequired}（現在 Lv {buildingLevel}）と {tech} Lv {techRequired}（現在 Lv {techLevel}）が必要です',
     chats: 'チャット',
     contacts: '連絡先',
     search: '検索',
@@ -2278,6 +2284,11 @@ export default {
       '2_3': { title: '謎の信号', description: '深宇宙からの謎の信号を調査する' },
       '2_4': { title: '遺跡調査', description: '発見した古代遺跡を探索する' },
       '2_5': { title: 'アーカイブ解読', description: '遺跡から得たデータを研究する' },
+      '2_6': {
+        title: '星間通信',
+        description: '深宇宙通信アレイを建設し、量子通信技術を研究して星間通信ステーションを解放する',
+        guide: '基地の建設ページで深宇宙通信アレイを建設し、研究ページで量子通信技術を研究します。両方がレベル1に達すると、右下の星間通信ステーションが自動的に解放されます。'
+      },
       '3_1': { title: '平和の使者', description: '外交でNPCとの関係を改善する' },
       '3_2': { title: '通商関係', description: '友好勢力と安定した関係を築く' },
       '3_3': { title: '共通の脅威', description: '潜在的な敵対勢力を発見する' },
@@ -2375,6 +2386,8 @@ export default {
       sendMultipleGifts: 'NPCに3回贈り物を送る',
       spyHostileNPC: '2つの敵対NPCをスパイ',
       formAlliance: '任意のNPCと評判80に到達（同盟）',
+      buildDeepSpaceArray: '深宇宙通信アレイをレベル1に建設',
+      researchQuantumCommunication: '量子通信技術をレベル1に研究',
       buildDefenses: '防衛施設を建設',
       buildMissileSilo: 'ミサイルサイロをレベル2に建設',
       buildCruisers: 'クルーザー10隻を建造',
@@ -2445,6 +2458,9 @@ export default {
         prologue_1: '遺跡でデータアーカイブが見つかりました。このデータを研究すれば、新しい技術が解放できるかもしれません。',
         epilogue_1: '古代のデータが解読されました！新しい技術的洞察を得ました。'
       },
+      '2_6': {
+        prologue_1: '深宇宙の信号がますます鮮明になっている。通信アレイと量子通信を手に入れれば、銀河全体とリアルタイムで会話できる。'
+      },
       '3_1': { prologue_1: '探索中も外交を忘れないでください。周囲の勢力と良好な関係を維持することは有益です。' },
       '3_2': { prologue_1: 'いくつかの勢力が友好を示しています。関係を深め続ければ、より多くのサポートを得られるかもしれません。' },
       '3_3': {
@@ -2504,6 +2520,7 @@ export default {
     points: 'ポイント',
     planets: '惑星',
     tradeTitle: 'プレイヤー取引',
+    tradeTooltip: '{name}と資源を交換します。推定損失 {loss}%。クリックで取引を開始',
     tradeDetails: 'プレイヤー取引の詳細',
     tradeWith: '{name} と取引',
     tradeLocked: '先に惑星宇宙港を建設し、超時空転送技術を研究してください',

@@ -1,6 +1,6 @@
 /**
  * 战役配置 - 神秘探索主题
- * 包含7个章节，共35个任务
+ * 包含7个章节，共36个任务
  */
 
 import { BuildingType, TechnologyType, ShipType, ObjectiveType } from '@/types/game'
@@ -462,6 +462,47 @@ const chapter2Quests: CampaignQuestConfig[] = [
       points: 2000
     },
     mapPosition: { x: 30, y: 80 }
+  },
+  {
+    id: 'quest_2_6',
+    chapter: 2,
+    order: 6,
+    titleKey: 'campaign.quests.2_6.title',
+    descriptionKey: 'campaign.quests.2_6.description',
+    guideKey: 'campaign.quests.2_6.guide',
+    requiredQuestIds: ['quest_2_5'],
+    prologueDialogues: [
+      {
+        id: 'quest_2_6_prologue_1',
+        speaker: 'mysterious',
+        speakerNameKey: 'campaign.speakers.ancientVoice',
+        textKey: 'campaign.dialogues.2_6.prologue_1'
+      }
+    ],
+    objectives: [
+      {
+        id: 'obj_2_6_1',
+        type: ObjectiveType.BuildBuilding,
+        descriptionKey: 'campaign.objectiveDescriptions.buildDeepSpaceArray',
+        target: BuildingType.DeepSpaceArray,
+        targetSecondary: 1,
+        required: 1
+      },
+      {
+        id: 'obj_2_6_2',
+        type: ObjectiveType.ResearchTech,
+        descriptionKey: 'campaign.objectiveDescriptions.researchQuantumCommunication',
+        target: TechnologyType.QuantumCommunication,
+        targetSecondary: 1,
+        required: 1
+      }
+    ],
+    rewards: {
+      resources: { metal: 35000, crystal: 30000, deuterium: 15000 },
+      darkMatter: 1000,
+      points: 1500
+    },
+    mapPosition: { x: 30, y: 95 }
   }
 ]
 
@@ -473,7 +514,7 @@ const chapter3Quests: CampaignQuestConfig[] = [
     order: 1,
     titleKey: 'campaign.quests.3_1.title',
     descriptionKey: 'campaign.quests.3_1.description',
-    requiredQuestIds: ['quest_2_5'],
+    requiredQuestIds: ['quest_2_6'],
     prologueDialogues: [
       {
         id: 'quest_3_1_prologue_1',

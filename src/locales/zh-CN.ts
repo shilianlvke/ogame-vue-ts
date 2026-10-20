@@ -23,6 +23,7 @@ export default {
     close: '关闭',
     back: '返回',
     soon: '暂未开放',
+    maxLevel: '已满级',
     success: '成功',
     resourceType: '资源类型',
     featureLocked: '功能已锁定',
@@ -204,6 +205,7 @@ export default {
     deepDrillingFacility: '深层钻探设施',
     university: '大学',
     spaceport: '星球航空港',
+    deepSpaceArray: '深空通讯阵列',
     buildTime: '建造时间',
     production: '产量',
     consumption: '消耗',
@@ -254,7 +256,8 @@ export default {
     geoResearchStation: '研究地质结构，提高矿脉自然恢复速度。每级增加10%恢复速率',
     deepDrillingFacility: '深入地壳钻探，解锁更深层的矿脉储量。每级增加20%矿脉上限',
     university: '培养科研人员，加快研究速度。每级减少研究时间8%（与星际研究网络叠加）',
-    spaceport: '星际商路的物流枢纽。与超时空转移技术共同解锁玩家交易，每级降低 2% 交易损耗'
+    spaceport: '星际商路的物流枢纽。与超时空转移技术共同解锁玩家交易，每级降低 2% 交易损耗',
+    deepSpaceArray: '架设跨星系的量子通讯阵列，是启用星际通讯站的核心建筑。建造 1 级即可满足通讯站条件。'
   },
   ships: {
     lightFighter: '轻型战斗机',
@@ -359,7 +362,8 @@ export default {
     mineralResearch: '矿物研究',
     crystalResearch: '晶体研究',
     fuelResearch: '燃料研究',
-    hyperspaceTransfer: '超时空转移技术'
+    hyperspaceTransfer: '超时空转移技术',
+    quantumCommunication: '量子通讯技术'
   },
   technologyDescriptions: {
     energyTechnology: '提高能源利用效率',
@@ -386,7 +390,8 @@ export default {
     mineralResearch: '研究更高效的金属提取技术，提升金属矿产量。每级增加金属产量2%',
     crystalResearch: '研究更高效的晶体提炼技术，提升晶体矿产量。每级增加晶体产量2%',
     fuelResearch: '研究更高效的重氢合成技术，提升重氢产量。每级增加重氢产量2%',
-    hyperspaceTransfer: '折叠局部航线，建立稳定的星际货运通道。与星球航空港共同解锁玩家交易，每级降低 2% 交易损耗'
+    hyperspaceTransfer: '折叠局部航线，建立稳定的星际货运通道。与星球航空港共同解锁玩家交易，每级降低 2% 交易损耗',
+    quantumCommunication: '利用量子纠缠实现跨星系的即时通讯，是启用星际通讯站的关键科技。研究 1 级即可满足通讯站条件。'
   },
   officers: {
     commander: '指挥官',
@@ -1080,6 +1085,8 @@ export default {
   chat: {
     title: '银河频道',
     stationTitle: '星际通讯站',
+    stationLockedHint:
+      '需要 {building} Lv {buildingRequired}（当前 Lv {buildingLevel}）和 {tech} Lv {techRequired}（当前 Lv {techLevel}）才能使用星际通讯站',
     chats: '聊天',
     contacts: '通讯录',
     search: '搜索',
@@ -2218,6 +2225,12 @@ export default {
         title: '解密档案',
         description: '研究从遗迹中获得的数据'
       },
+      '2_6': {
+        title: '星际通讯',
+        description: '建造深空通讯阵列并研究量子通讯技术，启用星际通讯站',
+        guide:
+          '深空通讯阵列在基地的建筑页建造，量子通讯技术在研究页研究。两项都达到 1 级后，右下角的星际通讯站会自动解锁。'
+      },
       '3_1': {
         title: '和平使者',
         description: '通过外交手段提升与NPC的关系'
@@ -2355,6 +2368,8 @@ export default {
       sendMultipleGifts: '向NPC发送3次礼物',
       spyHostileNPC: '侦查2个敌对NPC',
       formAlliance: '与任意 NPC 好感度达到 80（结盟）',
+      buildDeepSpaceArray: '建造深空通讯阵列到1级',
+      researchQuantumCommunication: '研究量子通讯技术到1级',
       buildDefenses: '建造防御设施',
       buildMissileSilo: '建造导弹发射井到2级',
       buildCruisers: '建造10艘巡洋舰',
@@ -2430,6 +2445,9 @@ export default {
       '2_5': {
         prologue_1: '遗迹中发现了大量数据档案。研究这些数据，也许能解锁新的科技。',
         epilogue_1: '古代数据已被解密！获得了新的科技洞见。'
+      },
+      '2_6': {
+        prologue_1: '深空的信号越来越清晰。只要建成通讯阵列并掌握量子通讯，你就能与整个银河系实时对话。'
       },
       '3_1': {
         prologue_1: '在探索的同时，也不要忘记外交。与周围的势力保持良好关系对你有益。'
@@ -2530,6 +2548,7 @@ export default {
     points: '积分',
     planets: '星球',
     tradeTitle: '玩家交易',
+    tradeTooltip: '与 {name} 交换资源，预计损耗 {loss}%。点击发起交易',
     tradeDetails: '玩家交易详情',
     tradeWith: '与 {name} 进行玩家交易',
     tradeLocked: '需要先建造星球航空港并研究超时空转移技术',
