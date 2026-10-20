@@ -77,6 +77,7 @@ export default {
   },
   nav: {
     overview: 'Обзор',
+    base: 'База',
     buildings: 'Здания',
     research: 'Исследования',
     shipyard: 'Верфь',

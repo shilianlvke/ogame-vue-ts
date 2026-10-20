@@ -76,6 +76,7 @@ export default {
   },
   nav: {
     overview: '개요',
+    base: '기지',
     buildings: '건물',
     research: '연구',
     shipyard: '조선소',

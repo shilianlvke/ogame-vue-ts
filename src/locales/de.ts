@@ -76,6 +76,7 @@ export default {
   },
   nav: {
     overview: 'Übersicht',
+    base: 'Basis',
     buildings: 'Gebäude',
     research: 'Forschung',
     shipyard: 'Raumschiffwerft',

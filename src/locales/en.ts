@@ -82,6 +82,7 @@ export default {
   },
   nav: {
     overview: 'Overview',
+    base: 'Base',
     buildings: 'Buildings',
     research: 'Research',
     shipyard: 'Shipyard',

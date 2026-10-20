@@ -83,6 +83,7 @@ export default {
   },
   nav: {
     overview: '总览',
+    base: '基地',
     buildings: '建筑',
     research: '研究',
     shipyard: '船坞',

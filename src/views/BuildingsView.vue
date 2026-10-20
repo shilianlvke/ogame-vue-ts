@@ -1,6 +1,6 @@
 <template>
-  <div v-if="planet" class="container mx-auto p-4 sm:p-6">
-    <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('buildingsView.title') }}</h1>
+  <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
+    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('buildingsView.title') }}</h1>
 
     <!-- 占地显示 -->
     <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg border">
@@ -90,31 +90,42 @@
               </div>
             </div>
 
-            <!-- 升级按钮 -->
-            <Button @click="handleUpgrade(buildingType, $event)" :disabled="!canUpgrade(buildingType)" class="w-full">
-              {{ getUpgradeButtonText(buildingType) }}
-            </Button>
+            <!-- 升级 / 等待队列 / 拆除：固定三列一行 -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <Button
+                size="sm"
+                :disabled="!canUpgrade(buildingType)"
+                class="px-0"
+                :title="getUpgradeButtonText(buildingType)"
+                :aria-label="getUpgradeButtonText(buildingType)"
+                @click="handleUpgrade(buildingType, $event)"
+              >
+                <ActionIcon type="upgrade" size="md" />
+              </Button>
 
-            <!-- 添加到等待队列按钮 -->
-            <Button
-              v-if="canAddToWaitingQueue(buildingType)"
-              @click="handleAddToWaiting(buildingType, $event)"
-              variant="outline"
-              class="w-full"
-            >
-              {{ t('queue.addToWaiting') }}
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                :disabled="!canAddToWaitingQueue(buildingType)"
+                class="min-w-0 whitespace-normal px-1 text-[10px] leading-tight"
+                :title="t('queue.addToWaiting')"
+                @click="handleAddToWaiting(buildingType, $event)"
+              >
+                {{ t('queue.addToWaiting') }}
+              </Button>
 
-            <!-- 拆除按钮 -->
-            <Button
-              v-if="getBuildingLevel(buildingType) > 0"
-              @click="handleDemolish(buildingType)"
-              :disabled="!canDemolish(buildingType)"
-              variant="destructive"
-              class="w-full"
-            >
-              {{ t('buildingsView.demolish') }}
-            </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                :disabled="!canDemolish(buildingType)"
+                class="px-0"
+                :title="t('buildingsView.demolish')"
+                :aria-label="t('buildingsView.demolish')"
+                @click="handleDemolish(buildingType)"
+              >
+                <ActionIcon type="demolish" size="md" />
+              </Button>
+            </div>
 
             <!-- 拆除信息提示 -->
             <div v-if="getBuildingLevel(buildingType) > 0" class="text-xs text-muted-foreground">
@@ -187,6 +198,9 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+  import ActionIcon from '@/components/common/ActionIcon.vue'
+
+  const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'

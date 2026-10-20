@@ -67,6 +67,6 @@
 
   // 跳转到建筑页面建造太阳能电站
   const goToBuildSolarPlant = () => {
-    router.push('/buildings')
+    router.push({ path: '/base', query: { tab: 'buildings' } })
   }
 </script>

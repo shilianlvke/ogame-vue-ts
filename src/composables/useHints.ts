@@ -10,6 +10,7 @@ import { useGameStore } from '@/stores/gameStore'
 export interface Hint {
   id: string
   route: string // 显示此提示的路由路径
+  tab?: string // 同一路由下按 tab 区分（基地页）
   titleKey: string // 标题的 i18n 键
   messageKey: string // 消息的 i18n 键
   icon?: string // 可选的图标名称
@@ -28,7 +29,8 @@ const hints: Hint[] = [
   },
   {
     id: 'buildings_intro',
-    route: '/buildings',
+    route: '/base',
+    tab: 'buildings',
     titleKey: 'hints.buildings.title',
     messageKey: 'hints.buildings.message',
     icon: 'building',
@@ -36,7 +38,8 @@ const hints: Hint[] = [
   },
   {
     id: 'research_intro',
-    route: '/research',
+    route: '/base',
+    tab: 'research',
     titleKey: 'hints.research.title',
     messageKey: 'hints.research.message',
     icon: 'flask',
@@ -44,7 +47,8 @@ const hints: Hint[] = [
   },
   {
     id: 'shipyard_intro',
-    route: '/shipyard',
+    route: '/base',
+    tab: 'shipyard',
     titleKey: 'hints.shipyard.title',
     messageKey: 'hints.shipyard.message',
     icon: 'rocket',
@@ -84,7 +88,8 @@ const hints: Hint[] = [
   },
   {
     id: 'defense_intro',
-    route: '/defense',
+    route: '/base',
+    tab: 'defense',
     titleKey: 'hints.defense.title',
     messageKey: 'hints.defense.message',
     icon: 'shield',
@@ -187,8 +192,10 @@ export const useHints = () => {
     isHintVisible.value = false
     currentHint.value = null
 
-    // 查找此路由对应的提示
-    const hint = hints.find(h => routePath.startsWith(h.route))
+    const currentTab = String(router.currentRoute.value.query.tab ?? 'buildings')
+
+    // 查找此路由对应的提示；基地页的四个子页共用 /base，需要按 tab 区分
+    const hint = hints.find(h => routePath.startsWith(h.route) && (!h.tab || h.tab === currentTab))
     if (!hint) return
 
     // 检查是否已经关闭过
@@ -236,11 +243,11 @@ export const useHints = () => {
     }
   }
 
-  // 监听路由变化
+  // 监听路由变化（基地页还要监听 tab query）
   watch(
-    () => router.currentRoute.value.path,
-    newPath => {
-      checkForHint(newPath)
+    () => [router.currentRoute.value.path, router.currentRoute.value.query.tab],
+    ([newPath]) => {
+      checkForHint(String(newPath))
     },
     { immediate: true }
   )

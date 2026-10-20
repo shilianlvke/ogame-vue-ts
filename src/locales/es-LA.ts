@@ -75,6 +75,7 @@ export default {
   },
   nav: {
     overview: 'Resumen',
+    base: 'Base',
     buildings: 'Edificios',
     research: 'Investigación',
     shipyard: 'Astillero',

@@ -543,10 +543,7 @@
     Sun,
     Home,
     Building2,
-    FlaskConical,
-    Ship,
     Rocket,
-    Shield,
     Mail,
     Globe,
     Users,
@@ -637,9 +634,6 @@
   const oldFormatNPCCount = ref(0)
   // 功能解锁要求配置
   const featureRequirements: Record<string, { building: BuildingType; level: number }> = {
-    '/research': { building: BuildingType.ResearchLab, level: 1 },
-    '/shipyard': { building: BuildingType.Shipyard, level: 1 },
-    '/defense': { building: BuildingType.Shipyard, level: 1 },
     '/fleet': { building: BuildingType.Shipyard, level: 1 },
     '/officers': { building: BuildingType.Shipyard, level: 1 }
   }
@@ -661,10 +655,7 @@
 
   const navItems = computed(() => [
     { name: computed(() => t('nav.overview')), path: '/overview', icon: Home },
-    { name: computed(() => t('nav.buildings')), path: '/buildings', icon: Building2 },
-    { name: computed(() => t('nav.research')), path: '/research', icon: FlaskConical },
-    { name: computed(() => t('nav.shipyard')), path: '/shipyard', icon: Ship },
-    { name: computed(() => t('nav.defense')), path: '/defense', icon: Shield },
+    { name: computed(() => t('nav.base')), path: '/base', icon: Building2 },
     { name: computed(() => t('nav.fleet')), path: '/fleet', icon: Rocket },
     { name: computed(() => t('nav.officers')), path: '/officers', icon: Users },
     { name: computed(() => t('nav.simulator')), path: '/battle-simulator', icon: Swords },

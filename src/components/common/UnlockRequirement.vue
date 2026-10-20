@@ -68,6 +68,6 @@
   })
 
   const goToBuildings = () => {
-    router.push('/buildings')
+    router.push({ path: '/base', query: { tab: 'buildings' } })
   }
 </script>

@@ -1,9 +1,9 @@
 <template>
-  <div v-if="planet" class="container mx-auto p-4 sm:p-6">
+  <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.ResearchLab" :required-level="1" />
 
-    <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('researchView.title') }}</h1>
+    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('researchView.title') }}</h1>
 
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       <Card v-for="techType in Object.values(TechnologyType)" :key="techType" :data-tech="techType" class="relative">
@@ -62,7 +62,12 @@
             </Button>
 
             <!-- 添加到等待队列按钮 -->
-            <Button v-if="canAddToWaitingQueue(techType)" @click="handleAddToWaiting(techType, $event)" variant="outline" class="w-full">
+            <Button
+              :disabled="!canAddToWaitingQueue(techType)"
+              @click="handleAddToWaiting(techType, $event)"
+              variant="outline"
+              class="w-full"
+            >
               {{ t('queue.addToWaiting') }}
             </Button>
           </div>
@@ -98,6 +103,8 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+
+  const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'

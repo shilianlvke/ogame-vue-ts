@@ -76,6 +76,7 @@ export default {
   },
   nav: {
     overview: '概要',
+    base: '基地',
     buildings: '建物',
     research: '研究',
     shipyard: '造船所',

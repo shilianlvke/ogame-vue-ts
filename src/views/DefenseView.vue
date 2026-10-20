@@ -1,9 +1,9 @@
 <template>
-  <div v-if="planet" class="container mx-auto p-4 sm:p-6">
+  <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
     <!-- 未解锁遮罩 -->
     <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" />
 
-    <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('defenseView.title') }}</h1>
+    <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('defenseView.title') }}</h1>
 
     <!-- 导弹容量显示 -->
     <div v-if="missileSiloCapacity > 0" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg border">
@@ -133,7 +133,7 @@
 
             <!-- 添加到等待队列按钮 -->
             <Button
-              v-if="canAddToWaitingQueue(defenseType)"
+              :disabled="!canAddToWaitingQueue(defenseType)"
               @click="handleAddToWaiting(defenseType, $event)"
               variant="outline"
               class="w-full"
@@ -164,6 +164,8 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+
+  const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
