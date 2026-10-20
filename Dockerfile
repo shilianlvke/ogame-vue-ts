@@ -12,7 +12,7 @@ WORKDIR /app
 
 # NPM_REGISTRY can be overridden: https://registry.npmmirror.com
 ARG NPM_REGISTRY=https://registry.npmjs.org
-RUN npm install -g pnpm@10 \
+RUN npm install -g pnpm@10.13.1 \
  && pnpm config set registry "$NPM_REGISTRY"
 
 COPY package.json pnpm-lock.yaml ./
@@ -36,7 +36,7 @@ ENV NODE_ENV=production \
     DATA_DIR=/app/data
 
 RUN apk add --no-cache tini \
- && npm install -g pnpm@10 \
+ && npm install -g pnpm@10.13.1 \
  && pnpm config set registry "$NPM_REGISTRY"
 
 # production dependencies only (ws is external in the server bundle)
