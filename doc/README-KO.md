@@ -5,9 +5,11 @@
 
   Vue 3와 TypeScript로 제작된 클래식 OGame을 기반으로 한 현대적인 우주 전략 게임입니다.
 
-  [![GitHub Release](https://img.shields.io/github/v/release/setube/ogame-vue-ts?style=flat&logo=github&label=Release)](https://github.com/setube/ogame-vue-ts/releases/latest)
-  [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0)
-  [![Tap Tap](https://img.shields.io/badge/TapTap-OGame%20Vue%20Ts-18d6e0)](https://www.taptap.cn/app/801190)
+[//]: # (  [![GitHub Release]&#40;https://img.shields.io/github/v/release/setube/ogame-vue-ts?style=flat&logo=github&label=Release&#41;]&#40;https://github.com/setube/ogame-vue-ts/releases/latest&#41;)
+
+[//]: # (  [![License: CC BY-NC 4.0]&#40;https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg&#41;]&#40;https://creativecommons.org/licenses/by-nc/4.0&#41;)
+
+[//]: # (  [![Tap Tap]&#40;https://img.shields.io/badge/TapTap-OGame%20Vue%20Ts-18d6e0&#41;]&#40;https://www.taptap.cn/app/801190&#41;)
 
   [简体中文](../README.md) | [繁體中文](README-zh-TW.md) | [English](README-EN.md) | [Deutsch](README-DE.md) | [Русский](README-RU.md) | [Español](README-ES.md) | 한국어 | [日本語](README-JA.md)
 
@@ -55,7 +57,7 @@ OGame Vue TS는 클래식 OGame에서 영감을 받은 싱글플레이어 브라
 
 ```bash
 # 저장소 클론
-git clone https://github.com/setube/ogame-vue-ts.git
+git clone https://gitee.com/shilianlvke/ogame-vue-ts.git
 
 # 프로젝트 디렉토리로 이동
 cd ogame-vue-ts
@@ -123,7 +125,8 @@ pnpm preview
 ---
 
 <div align="center">
-  ❤️를 담아 제작, 작성자: <a href="https://github.com/setube">setube</a>
+  ❤️를 담아 제작, 원작자: <a href="https://github.com/setube">setube</a>
+  온라인 버전 제작자: <a href="https://gitee.com/shilianlvke">shilianlvke</a>
   <br>
   © 2025 - 모든 권리 보유 (CC BY-NC 4.0 라이선스에 의해 부여된 권리 제외)
 </div>

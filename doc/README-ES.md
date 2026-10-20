@@ -5,9 +5,11 @@
 
   Un juego de estrategia espacial moderno basado en Vue 3 y TypeScript.
 
-  [![GitHub Release](https://img.shields.io/github/v/release/setube/ogame-vue-ts?style=flat&logo=github&label=Release)](https://github.com/setube/ogame-vue-ts/releases/latest)
-  [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0)
-  [![Tap Tap](https://img.shields.io/badge/TapTap-OGame%20Vue%20Ts-18d6e0)](https://www.taptap.cn/app/801190)
+[//]: # (  [![GitHub Release]&#40;https://img.shields.io/github/v/release/setube/ogame-vue-ts?style=flat&logo=github&label=Release&#41;]&#40;https://github.com/setube/ogame-vue-ts/releases/latest&#41;)
+
+[//]: # (  [![License: CC BY-NC 4.0]&#40;https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg&#41;]&#40;https://creativecommons.org/licenses/by-nc/4.0&#41;)
+
+[//]: # (  [![Tap Tap]&#40;https://img.shields.io/badge/TapTap-OGame%20Vue%20Ts-18d6e0&#41;]&#40;https://www.taptap.cn/app/801190&#41;)
 
   [简体中文](../README.md) | [繁體中文](README-zh-TW.md) | [English](README-EN.md) | [Deutsch](README-DE.md) | [Русский](README-RU.md) | Español | [한국어](README-KO.md) | [日本語](README-JA.md)
 
@@ -55,7 +57,7 @@ OGame Vue TS es un juego de estrategia espacial basado en navegador, versión of
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/setube/ogame-vue-ts.git
+git clone https://gitee.com/shilianlvke/ogame-vue-ts.git
 
 # Entrar al directorio del proyecto
 cd ogame-vue-ts
@@ -123,7 +125,8 @@ Este proyecto no está afiliado, respaldado ni conectado con Gameforge AG o el j
 ---
 
 <div align="center">
-  Hecho con ❤️ por <a href="https://github.com/setube">setube</a>
+  Hecho con ❤️ por el autor original <a href="https://github.com/setube">setube</a>
+  Edición en línea por <a href="https://gitee.com/shilianlvke">shilianlvke</a>
   <br>
   © 2025 - Todos los derechos reservados (excepto los otorgados por la licencia CC BY-NC 4.0)
 </div>
