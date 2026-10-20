@@ -1,38 +1,8 @@
 <template>
-  <div class="container mx-auto p-4 sm:p-6 space-y-6">
-    <div class="flex items-center justify-end">
-      <!-- 清空消息按钮 -->
-      <Popover v-model:open="showClearPopover">
-        <PopoverTrigger as-child>
-          <Button variant="outline" size="sm" class="gap-2">
-            <Trash2 class="h-4 w-4" />
-            {{ t('messagesView.clearMessages') }}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent class="w-80">
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <h4 class="font-medium leading-none">{{ t('messagesView.clearMessageTypes') }}</h4>
-            </div>
-            <div class="space-y-3">
-              <div v-for="option in clearOptionFields" :key="option.key" class="flex items-center space-x-2">
-                <Checkbox :id="`clear-${option.key}`" v-model="clearOptions[option.key]" />
-                <label :for="`clear-${option.key}`" class="text-sm cursor-pointer">
-                  {{ t(`messagesView.${option.labelKey}`) }} ({{ option.count }})
-                </label>
-              </div>
-            </div>
-            <Button @click="clearSelectedMessages" class="w-full" :disabled="!hasSelectedAny">
-              {{ t('messagesView.clearNow') }}
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-
+  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
     <!-- 标签切换 -->
-    <Tabs v-model="activeTab" class="w-full">
-      <TabsList class="grid w-full grid-cols-2 sm:grid-cols-4" :tab-count="4">
+    <Tabs v-model="activeTab" class="flex min-h-0 w-full flex-1 flex-col">
+      <TabsList class="grid w-full shrink-0 grid-cols-4">
         <TabsTrigger v-for="tab in tabs" :key="tab.value" :value="tab.value" class="flex items-center justify-center gap-1 px-2">
           <component :is="tab.icon" class="h-3 w-3 sm:h-4 sm:w-4" />
           <span class="text-xs sm:text-sm truncate">{{ tab.label }}</span>
@@ -42,8 +12,38 @@
         </TabsTrigger>
       </TabsList>
 
+      <!-- 清空消息按钮：固定在 tabs 下方 -->
+      <div class="mt-3 flex shrink-0 items-center justify-end">
+        <Popover v-model:open="showClearPopover">
+          <PopoverTrigger as-child>
+            <Button variant="outline" size="sm" class="gap-2">
+              <Trash2 class="h-4 w-4" />
+              {{ t('messagesView.clearMessages') }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-80">
+            <div class="space-y-4">
+              <div class="space-y-2">
+                <h4 class="font-medium leading-none">{{ t('messagesView.clearMessageTypes') }}</h4>
+              </div>
+              <div class="space-y-3">
+                <div v-for="option in clearOptionFields" :key="option.key" class="flex items-center space-x-2">
+                  <Checkbox :id="`clear-${option.key}`" v-model="clearOptions[option.key]" />
+                  <label :for="`clear-${option.key}`" class="text-sm cursor-pointer">
+                    {{ t(`messagesView.${option.labelKey}`) }} ({{ option.count }})
+                  </label>
+                </div>
+              </div>
+              <Button @click="clearSelectedMessages" class="w-full" :disabled="!hasSelectedAny">
+                {{ t('messagesView.clearNow') }}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <!-- 战斗报告列表 -->
-      <TabsContent value="battles" class="mt-4 space-y-2 pb-20">
+      <TabsContent value="battles" class="mt-4 min-h-0 space-y-2 overflow-y-auto pb-20">
         <Empty v-if="gameStore.player.battleReports.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Sword class="h-10 w-10 text-muted-foreground" />
@@ -79,7 +79,7 @@
       </TabsContent>
 
       <!-- 间谍报告列表（合并：侦查报告 + 被侦查通知） -->
-      <TabsContent value="spy" class="mt-4 space-y-2 pb-20">
+      <TabsContent value="spy" class="mt-4 min-h-0 space-y-2 overflow-y-auto pb-20">
         <Empty v-if="gameStore.player.spyReports.length === 0 && sortedSpiedNotifications.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Eye class="h-10 w-10 text-muted-foreground" />
@@ -142,7 +142,7 @@
       </TabsContent>
 
       <!-- NPC相关消息（活动、礼物、被拒绝、贸易提议、情报、联合攻击邀请） -->
-      <TabsContent value="npc" class="mt-4 space-y-2 pb-20">
+      <TabsContent value="npc" class="mt-4 min-h-0 space-y-2 overflow-y-auto pb-20">
         <Empty
           v-if="
             sortedNPCActivityNotifications.length === 0 &&
@@ -425,7 +425,7 @@
       </TabsContent>
 
       <!-- 任务报告列表 -->
-      <TabsContent value="missions" class="mt-4 space-y-2 pb-20">
+      <TabsContent value="missions" class="mt-4 min-h-0 space-y-2 overflow-y-auto pb-20">
         <Empty v-if="sortedMissionReports.length === 0" class="border rounded-lg">
           <EmptyContent>
             <Package class="h-10 w-10 text-muted-foreground" />
