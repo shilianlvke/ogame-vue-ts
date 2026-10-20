@@ -29,10 +29,11 @@ const router = createRouter({
     { path: '/galaxy', name: 'galaxy', component: () => import('@/views/GalaxyView.vue') },
     { path: '/starmap', redirect: '/galaxy' },
     { path: '/diplomacy', name: 'diplomacy', component: () => import('@/views/DiplomacyView.vue') },
-    { path: '/players', name: 'players', component: () => import('@/views/PlayersView.vue') },
-    { path: '/achievements', name: 'achievements', component: () => import('@/views/AchievementsView.vue') },
+    // 玩家、排行、成就已并入总览页：保留旧地址跳转，避免书签失效
+    { path: '/players', redirect: { path: '/overview', query: { chat: '1' } } },
+    { path: '/achievements', redirect: '/overview' },
     { path: '/campaign', name: 'campaign', component: () => import('@/views/CampaignView.vue') },
-    { path: '/ranking', name: 'ranking', component: () => import('@/views/RankingView.vue') },
+    { path: '/ranking', redirect: '/overview' },
     { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
     { path: '/gm', name: 'gm', component: () => import('@/views/GMView.vue') },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') }

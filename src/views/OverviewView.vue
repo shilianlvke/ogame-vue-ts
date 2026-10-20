@@ -227,6 +227,32 @@
         </div>
       </CardContent>
     </Card>
+
+    <!-- 排行榜 -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          <Crown class="h-5 w-5 text-yellow-500" />
+          {{ t('ranking.title') }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RankingPanel />
+      </CardContent>
+    </Card>
+
+    <!-- 成就 -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          <Trophy class="h-5 w-5 text-primary" />
+          {{ t('achievements.title') }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AchievementsPanel />
+      </CardContent>
+    </Card>
   </div>
 </template>
 
@@ -251,6 +277,9 @@
     AlertDialogTitle
   } from '@/components/ui/alert-dialog'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'
+  import RankingPanel from '@/components/ranking/RankingPanel.vue'
+  import AchievementsPanel from '@/components/achievements/AchievementsPanel.vue'
+  import { Crown, Trophy } from 'lucide-vue-next'
   import { formatNumber, getResourceColor } from '@/utils/format'
   import { scaleNumber } from '@/utils/speed'
   import type { Planet } from '@/types/game'

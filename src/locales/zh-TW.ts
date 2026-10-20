@@ -1083,6 +1083,11 @@ export default {
     channel: '公開',
     placeholder: '說點什麼…',
     empty: '還沒有人說話，打個招呼吧',
+    groupHint: '群聊 · 所有玩家可見',
+    tradeDisabled: '交易暫未開放',
+    mentionHint: '點擊可 @ 該玩家',
+    offline: '未連線伺服器',
+    noPlayers: '暫無線上玩家',
   },
   galaxy: {
     economy: {

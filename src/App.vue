@@ -136,12 +136,6 @@
                 <SidebarMenuBadge v-if="item.path === '/fleet' && activeFleetMissionsCount > 0" class="bg-primary text-primary-foreground">
                   {{ activeFleetMissionsCount }}
                 </SidebarMenuBadge>
-                <SidebarMenuBadge
-                  v-if="item.path === '/players' && pendingPlayerTradesCount > 0"
-                  class="bg-destructive text-destructive-foreground"
-                >
-                  {{ pendingPlayerTradesCount }}
-                </SidebarMenuBadge>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -539,10 +533,7 @@
     ChevronDown,
     ChevronUp,
     Handshake,
-    MessageCircle,
     Pencil,
-    Trophy,
-    Crown,
     Scroll
   } from 'lucide-vue-next'
   import * as gameLogic from '@/logic/gameLogic'
@@ -640,10 +631,7 @@
     { name: computed(() => t('nav.simulator')), path: '/battle-simulator', icon: Swords },
     { name: computed(() => t('nav.galaxy')), path: '/galaxy', icon: Globe },
     { name: computed(() => t('nav.diplomacy')), path: '/diplomacy', icon: Handshake },
-    { name: computed(() => t('nav.players')), path: '/players', icon: MessageCircle },
-    { name: computed(() => t('nav.achievements')), path: '/achievements', icon: Trophy },
     { name: computed(() => t('nav.campaign')), path: '/campaign', icon: Scroll },
-    { name: computed(() => t('nav.ranking')), path: '/ranking', icon: Crown },
     { name: computed(() => t('nav.messages')), path: '/messages', icon: Mail },
     { name: computed(() => t('nav.settings')), path: '/settings', icon: Settings },
     // GM菜单在启用GM模式时显示
@@ -707,14 +695,6 @@
       unreadJointAttacks
     )
   })
-
-  // 待处理的玩家交易数量
-  const pendingPlayerTradesCount = computed(
-    () =>
-      gameStore.player.playerTrades?.filter(
-        trade => trade.toId === gameStore.player.id && trade.status === 'pending'
-      ).length ?? 0
-  )
 
   // 正在执行的舰队任务数量（包括飞行中的导弹）
   const activeFleetMissionsCount = computed(() => {

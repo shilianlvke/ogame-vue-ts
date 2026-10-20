@@ -1070,6 +1070,11 @@ export default {
     channel: '공개',
     placeholder: '무언가 말해보세요…',
     empty: '아직 아무도 말하지 않았습니다. 인사해 보세요!',
+    groupHint: '그룹 채팅 · 모든 플레이어에게 표시',
+    tradeDisabled: '거래는 아직 사용할 수 없습니다',
+    mentionHint: '클릭하여 이 플레이어를 언급하세요',
+    offline: '서버에 연결되지 않았습니다',
+    noPlayers: '온라인 플레이어가 없습니다',
   },
   // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
   galaxy: {

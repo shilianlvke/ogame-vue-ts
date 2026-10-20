@@ -1,43 +1,43 @@
 <template>
-  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
+  <div class="w-full">
     <!-- 分类标签 -->
-    <Tabs v-model="activeCategory" class="flex min-h-0 w-full flex-1 flex-col">
-      <TabsList class="w-full grid shrink-0 grid-cols-5 h-10">
+    <Tabs v-model="activeCategory" class="w-full">
+      <TabsList class="grid h-10 w-full grid-cols-5">
         <TabsTrigger v-for="category in categories" :key="category.value" :value="category.value" class="text-xs sm:text-sm">
           {{ t(`achievements.categories.${category.value}`) }}
-          <Badge v-if="getCategoryUnlockedCount(category.value) > 0" class="ml-1 h-5 px-1.5 text-[10px] bg-primary text-primary-foreground">
+          <Badge v-if="getCategoryUnlockedCount(category.value) > 0" class="ml-1 h-5 bg-primary px-1.5 text-[10px] text-primary-foreground">
             {{ getCategoryUnlockedCount(category.value) }}
           </Badge>
         </TabsTrigger>
       </TabsList>
 
-      <!-- 成就卡片网格 -->
+      <!-- 成就卡片网格：卡片内独立滚动 -->
       <TabsContent
         v-for="category in categories"
         :key="category.value"
         :value="category.value"
-        class="mt-4 min-h-0 overflow-y-auto pb-20"
+        class="mt-4 max-h-[560px] overflow-y-auto pr-1"
       >
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card v-for="achievement in getAchievementsByCategory(category.value)" :key="achievement.id" class="relative overflow-hidden">
             <!-- 等级指示条 -->
-            <div class="absolute top-0 left-0 right-0 h-1 flex">
+            <div class="absolute top-0 left-0 right-0 flex h-1">
               <div v-for="tier in tierOrder" :key="tier" class="flex-1" :class="getTierBarClass(achievement.id, tier)" />
             </div>
 
             <CardHeader class="pt-4">
               <div class="flex items-start gap-3">
-                <div class="p-2 rounded-lg" :class="getIconBgClass(achievement.id)">
+                <div class="rounded-lg p-2" :class="getIconBgClass(achievement.id)">
                   <component :is="getIcon(achievement.icon)" class="h-6 w-6" :class="getIconClass(achievement.id)" />
                 </div>
-                <div class="flex-1 min-w-0">
-                  <CardTitle class="text-sm sm:text-base flex items-center gap-2">
+                <div class="min-w-0 flex-1">
+                  <CardTitle class="flex items-center gap-2 text-sm sm:text-base">
                     {{ t(`achievements.names.${achievement.id}`) }}
                     <Badge v-if="getCurrentTier(achievement.id)" :class="getTierBadgeClass(getCurrentTier(achievement.id)!)">
                       {{ t(`achievements.tiers.${getCurrentTier(achievement.id)}`) }}
                     </Badge>
                   </CardTitle>
-                  <CardDescription class="text-xs mt-1">
+                  <CardDescription class="mt-1 text-xs">
                     {{ t(`achievements.descriptions.${achievement.id}`) }}
                   </CardDescription>
                 </div>
@@ -58,8 +58,8 @@
               </div>
 
               <!-- 下一等级奖励 -->
-              <div v-if="getNextTierConfig(achievement.id)" class="p-2 bg-muted/50 rounded-lg">
-                <p class="text-xs text-muted-foreground mb-1">
+              <div v-if="getNextTierConfig(achievement.id)" class="rounded-lg bg-muted/50 p-2">
+                <p class="mb-1 text-xs text-muted-foreground">
                   {{ t('achievements.nextTier') }}: {{ t(`achievements.tiers.${getNextTierConfig(achievement.id)!.tier}`) }}
                 </p>
                 <div class="flex items-center gap-3 text-xs">
@@ -77,9 +77,9 @@
               <!-- 已达最高等级 -->
               <div
                 v-else-if="getCurrentTier(achievement.id) === 'diamond'"
-                class="p-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg"
+                class="rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-2"
               >
-                <p class="text-xs text-center font-medium text-purple-600 dark:text-purple-400">
+                <p class="text-center text-xs font-medium text-purple-600 dark:text-purple-400">
                   {{ t('achievements.maxTierReached') }}
                 </p>
               </div>

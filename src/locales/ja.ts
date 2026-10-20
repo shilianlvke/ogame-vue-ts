@@ -1114,6 +1114,11 @@ export default {
     channel: '公開',
     placeholder: '何か話しましょう…',
     empty: 'まだ誰も話していません。挨拶してみましょう！',
+    groupHint: 'グループチャット · 全プレイヤーに表示',
+    tradeDisabled: '取引はまだ利用できません',
+    mentionHint: 'クリックでこのプレイヤーをメンション',
+    offline: 'サーバーに接続されていません',
+    noPlayers: 'オンラインのプレイヤーはいません',
   },
   // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
   galaxy: {

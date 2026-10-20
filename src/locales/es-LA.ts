@@ -1101,6 +1101,11 @@ export default {
     channel: 'Público',
     placeholder: 'Di algo…',
     empty: 'Nadie ha hablado todavía, ¡saluda!',
+    groupHint: 'Chat grupal · visible para todos los jugadores',
+    tradeDisabled: 'El comercio aún no está disponible',
+    mentionHint: 'Haz clic para mencionar a este jugador',
+    offline: 'Sin conexión al servidor',
+    noPlayers: 'No hay jugadores en línea',
   },
   // TODO(i18n): 以下星系/周目文案为英文占位，待翻译
   galaxy: {

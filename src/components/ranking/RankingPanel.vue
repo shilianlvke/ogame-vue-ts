@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col gap-4 overflow-hidden p-4 sm:p-6">
+  <div ref="rootRef" class="space-y-3">
     <!-- 玩家排名概览 -->
-    <div class="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10">
-      <Crown class="h-5 w-5 text-yellow-500 shrink-0" />
+    <div class="flex items-center gap-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 p-3">
+      <Crown class="h-5 w-5 shrink-0 text-yellow-500" />
       <span class="text-sm text-muted-foreground">{{ t('ranking.yourRanking') }}</span>
       <span class="text-xl font-bold">#{{ playerRank }}</span>
       <span class="text-sm text-muted-foreground">/ {{ rankingData.length }}</span>
@@ -10,21 +10,21 @@
     </div>
 
     <!-- 分类标签 -->
-    <Tabs v-model="activeCategory" class="flex min-h-0 w-full flex-1 flex-col">
-      <TabsList class="w-full grid shrink-0 grid-cols-5 h-10">
+    <Tabs v-model="activeCategory" class="w-full">
+      <TabsList class="grid h-10 w-full grid-cols-5">
         <TabsTrigger v-for="category in categories" :key="category.value" :value="category.value" class="text-xs sm:text-sm">
-          <component :is="getCategoryIcon(category.value)" class="h-4 w-4 mr-1 hidden sm:inline" />
+          <component :is="getCategoryIcon(category.value)" class="mr-1 hidden h-4 w-4 sm:inline" />
           {{ t(`ranking.categories.${category.value}`) }}
         </TabsTrigger>
       </TabsList>
 
-      <!-- 排行榜列表：仅此区域滚动 -->
+      <!-- 排行榜列表：卡片内独立滚动 -->
       <TabsContent
         v-for="category in categories"
         :key="category.value"
         :value="category.value"
         data-ranking-scroll
-        class="mt-4 min-h-0 overflow-y-auto pb-20"
+        class="mt-4 max-h-[420px] overflow-y-auto rounded-md border"
         @scroll.passive="handleRankingScroll"
       >
         <Table container-class="overflow-visible">
@@ -45,7 +45,7 @@
             >
               <TableCell class="text-center">
                 <div
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold mx-auto"
+                  class="mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm"
                   :class="getRankBadgeClass(getActualRank(index))"
                 >
                   {{ getActualRank(index) }}
@@ -53,10 +53,10 @@
               </TableCell>
               <TableCell>
                 <div class="flex items-center gap-1">
-                  <span class="font-medium truncate" :class="{ 'text-primary': entry.isPlayer }">
+                  <span class="truncate font-medium" :class="{ 'text-primary': entry.isPlayer }">
                     {{ entry.name }}
                   </span>
-                  <Badge v-if="entry.isPlayer" variant="outline" class="text-[10px] px-1 shrink-0">
+                  <Badge v-if="entry.isPlayer" variant="outline" class="shrink-0 px-1 text-[10px]">
                     {{ t('ranking.you') }}
                   </Badge>
                 </div>
@@ -64,7 +64,7 @@
               <TableCell class="font-mono">
                 {{ formatNumber(entry.scores[activeCategory]) }}
               </TableCell>
-              <TableCell class="table-cell">
+              <TableCell>
                 <div class="flex items-center gap-1 text-muted-foreground">
                   <Globe class="h-4 w-4" />
                   {{ entry.planetCount }}
@@ -72,23 +72,22 @@
               </TableCell>
             </TableRow>
             <TableRow v-if="rankingData.length === 0">
-              <TableCell class="text-center text-muted-foreground py-8">
+              <TableCell class="py-8 text-center text-muted-foreground">
                 {{ t('ranking.noData') }}
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
-        <!-- 末页留白：让最后一名的玩家也能滚动到列表中央 -->
-        <div v-if="playerRank !== '-' && visibleEnd >= sortedRanking.length" class="h-[45vh]" aria-hidden="true" />
       </TabsContent>
     </Tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { useGameStore } from '@/stores/gameStore'
   import { useNPCStore } from '@/stores/npcStore'
+  import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { formatNumber } from '@/utils/format'
   import { Badge } from '@/components/ui/badge'
@@ -96,7 +95,6 @@
   import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
   import { RankingCategory, type RankingEntry } from '@/types/game'
   import { createRankingEntry, getRanking } from '@/logic/rankingLogic'
-  import { useNetStore } from '@/stores/netStore'
   import { Crown, Globe, Trophy, Building2, FlaskConical, Rocket, Shield } from 'lucide-vue-next'
 
   const { t } = useI18n()
@@ -104,6 +102,7 @@
   const npcStore = useNPCStore()
   const netStore = useNetStore()
 
+  const rootRef = ref<HTMLElement | null>(null)
   const activeCategory = ref<RankingCategory>(RankingCategory.Total)
 
   // 连续滚动加载窗口（不是分页）
@@ -144,36 +143,9 @@
   const getActualRank = (index: number): number => visibleStart.value + index + 1
 
   const getActiveScroller = (): HTMLElement | null =>
-    document.querySelector<HTMLElement>('[data-ranking-scroll][data-state="active"]') ??
-    document.querySelector<HTMLElement>('[data-ranking-scroll]:not([hidden])')
-
-  const scrollPlayerToCenter = (): void => {
-    const scroller = getActiveScroller()
-    if (!scroller) return
-    const playerRow = scroller.querySelector<HTMLElement>('[data-player-row="true"]')
-    if (!playerRow) {
-      scroller.scrollTop = 0
-      return
-    }
-    const containerRect = scroller.getBoundingClientRect()
-    const rowRect = playerRow.getBoundingClientRect()
-    scroller.scrollTop += rowRect.top - containerRect.top - containerRect.height / 2 + rowRect.height / 2
-  }
-
-  const centerWindowOnPlayer = async (): Promise<void> => {
-    const total = sortedRanking.value.length
-    const playerIndex = sortedRanking.value.findIndex(entry => entry.isPlayer)
-    let start = playerIndex >= 0 ? Math.max(0, playerIndex - Math.floor(LOAD_CHUNK / 2)) : 0
-    let end = Math.min(total, start + LOAD_CHUNK)
-    if (end >= total) start = Math.max(0, end - LOAD_CHUNK)
-    visibleStart.value = start
-    visibleEnd.value = end
-    await nextTick()
-    await nextTick()
-    scrollPlayerToCenter()
-    // 末页留白和行高在下一帧才稳定，再校正一次，确保玩家真正位于列表中央
-    window.setTimeout(scrollPlayerToCenter, 80)
-  }
+    rootRef.value?.querySelector<HTMLElement>('[data-ranking-scroll][data-state="active"]') ??
+    rootRef.value?.querySelector<HTMLElement>('[data-ranking-scroll]:not([hidden])') ??
+    null
 
   const handleRankingScroll = (event: Event): void => {
     const scroller = event.currentTarget as HTMLElement
@@ -195,13 +167,18 @@
     }
   }
 
-  // 切换分类时重新定位玩家，并重置滚动窗口
-  watch(activeCategory, () => {
-    void centerWindowOnPlayer()
-  })
+  // 切换分类时回到榜首
+  const resetWindow = async (): Promise<void> => {
+    visibleStart.value = 0
+    visibleEnd.value = LOAD_CHUNK
+    await nextTick()
+    await nextTick()
+    const scroller = getActiveScroller()
+    if (scroller) scroller.scrollTop = 0
+  }
 
-  onMounted(() => {
-    void centerWindowOnPlayer()
+  watch(activeCategory, () => {
+    void resetWindow()
   })
 
   // 玩家当前排名

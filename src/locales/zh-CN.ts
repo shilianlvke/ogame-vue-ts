@@ -1080,6 +1080,11 @@ export default {
     channel: '公共',
     placeholder: '说点什么…',
     empty: '还没有人说话，打个招呼吧',
+    groupHint: '群聊 · 所有玩家可见',
+    tradeDisabled: '交易暂未开放',
+    mentionHint: '点击可 @ 该玩家',
+    offline: '未连接服务器',
+    noPlayers: '暂无在线玩家',
   },
   galaxy: {
     economy: {

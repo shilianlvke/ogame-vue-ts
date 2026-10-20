@@ -1110,6 +1110,11 @@ export default {
     channel: 'Public',
     placeholder: 'Say something…',
     empty: 'Nobody has spoken yet — say hi!',
+    groupHint: 'Group chat · visible to all players',
+    tradeDisabled: 'Trading is not available yet',
+    mentionHint: 'Click to mention this player',
+    offline: 'Not connected to the server',
+    noPlayers: 'No players online',
   },
   galaxy: {
     economy: {
