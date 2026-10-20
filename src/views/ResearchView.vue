@@ -1,7 +1,7 @@
 <template>
   <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
     <!-- 未解锁遮罩 -->
-    <UnlockRequirement :required-building="BuildingType.ResearchLab" :required-level="1" />
+    <UnlockRequirement :required-building="BuildingType.ResearchLab" :required-level="1" :embedded="props.embedded" />
 
     <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('researchView.title') }}</h1>
 
@@ -57,19 +57,40 @@
               </div>
             </div>
 
-            <Button @click="handleResearch(techType, $event)" :disabled="!canResearch(techType)" class="w-full">
-              {{ getResearchButtonText(techType) }}
-            </Button>
+            <div class="grid grid-cols-2 gap-1.5">
+              <Button
+                size="sm"
+                :aria-disabled="!canResearch(techType)"
+                :class="!canResearch(techType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="getResearchButtonText(techType)"
+                :aria-label="getResearchButtonText(techType)"
+                @click="
+                  canResearch(techType)
+                    ? handleResearch(techType, $event)
+                    : notifyDisabled(t('researchView.research'), getResearchDisabledReason(techType))
+                "
+              >
+                <ActionIcon type="research" size="md" />
+              </Button>
 
-            <!-- 添加到等待队列按钮 -->
-            <Button
-              :disabled="!canAddToWaitingQueue(techType)"
-              @click="handleAddToWaiting(techType, $event)"
-              variant="outline"
-              class="w-full"
-            >
-              {{ t('queue.addToWaiting') }}
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                :aria-disabled="!canAddToWaitingQueue(techType)"
+                :class="!canAddToWaitingQueue(techType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('queue.addToWaiting')"
+                :aria-label="t('queue.addToWaiting')"
+                @click="
+                  canAddToWaitingQueue(techType)
+                    ? handleAddToWaiting(techType, $event)
+                    : notifyDisabled(t('queue.addToWaiting'), getWaitingDisabledReason(techType))
+                "
+              >
+                <ActionIcon type="queue" size="md" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -103,8 +124,11 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+  import ActionIcon from '@/components/common/ActionIcon.vue'
+  import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+  const { notifyDisabled } = useDisabledActionHint()
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
@@ -393,6 +417,60 @@
     }
 
     return true
+  }
+
+  const getRequirementReason = (techType: TechnologyType): string => {
+    const missing = getRequirementsList(techType)
+      .filter(requirement => !requirement.met)
+      .map(requirement => `${requirement.name} Lv${requirement.requiredLevel}`)
+    return missing.length > 0 ? `${t('errors.requirementsNotMet')}: ${missing.join(', ')}` : t('errors.requirementsNotMet')
+  }
+
+  const getResearchDisabledReason = (techType: TechnologyType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const config = TECHNOLOGIES.value[techType]
+    if (config.maxLevel !== undefined && getTechLevel(techType) >= config.maxLevel) {
+      return t('researchView.maxLevelReached')
+    }
+    if (player.value.researchQueue.some(item => item.type === 'technology' && item.itemType === techType)) {
+      return t('researchView.researching')
+    }
+    const maxQueue = publicLogic.getMaxResearchQueue(gameStore.player.technologies)
+    if (player.value.researchQueue.length >= maxQueue) return t('errors.researchQueueFull')
+    if (!checkUpgradeRequirements(techType)) return getRequirementReason(techType)
+
+    const cost = getTechnologyCost(techType, getTechLevel(techType) + 1)
+    if (
+      planet.value.resources.metal < cost.metal ||
+      planet.value.resources.crystal < cost.crystal ||
+      planet.value.resources.deuterium < cost.deuterium ||
+      planet.value.resources.darkMatter < cost.darkMatter
+    ) {
+      return t('errors.insufficientResources')
+    }
+    return t('baseHints.unknown')
+  }
+
+  const getWaitingDisabledReason = (techType: TechnologyType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const config = TECHNOLOGIES.value[techType]
+    const currentLevel = getTechLevel(techType)
+    const upgradesInResearchQueue = player.value.researchQueue.filter(
+      item => item.type === 'technology' && item.itemType === techType
+    ).length
+    const waitingQueue = player.value.waitingResearchQueue || []
+    const upgradesInWaitingQueue = waitingQueue.filter(
+      item => item.type === 'technology' && item.itemType === techType
+    ).length
+    const targetLevel = currentLevel + upgradesInResearchQueue + upgradesInWaitingQueue + 1
+
+    if (config.maxLevel !== undefined && targetLevel > config.maxLevel) {
+      return t('researchView.maxLevelReached')
+    }
+    if (!checkUpgradeRequirements(techType)) return getRequirementReason(techType)
+    const maxWaitingQueue = waitingQueueLogic.getMaxResearchWaitingQueue(player.value.technologies)
+    if (waitingQueue.length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    return t('baseHints.unknown')
   }
 
   // 添加到等待队列

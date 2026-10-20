@@ -1,5 +1,12 @@
 <template>
-  <div v-if="!isUnlocked" class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div
+    v-if="!isUnlocked"
+    :class="
+      embedded
+        ? 'relative z-10 flex min-h-[420px] w-full items-center justify-center rounded-xl border border-border bg-background/60 p-4 backdrop-blur-sm'
+        : 'fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm'
+    "
+  >
     <Card class="max-w-md w-full">
       <CardHeader class="text-center">
         <div class="flex justify-center mb-4">
@@ -48,9 +55,10 @@
   interface Props {
     requiredBuilding: BuildingType
     requiredLevel: number
+    embedded?: boolean
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), { embedded: false })
   const router = useRouter()
   const gameStore = useGameStore()
   const { t } = useI18n()

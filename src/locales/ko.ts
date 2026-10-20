@@ -74,6 +74,12 @@ export default {
     insufficientDebris: '잔해장 부족',
     launchFailed: '발사 실패'
   },
+  baseHints: {
+    resourcesEnough: '자원이 충분합니다. 대기열 없이 바로 건설할 수 있습니다.',
+    invalidQuantity: '유효한 수량을 입력하세요.',
+    insufficientUnits: '해체할 함선/방어 시설이 부족합니다.',
+    unknown: '현재 이 작업을 수행할 수 없습니다. 선행 조건, 자원, 대기열을 확인하세요.'
+  },
   nav: {
     overview: '개요',
     base: '기지',

@@ -1,7 +1,7 @@
 <template>
   <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
     <!-- 未解锁遮罩 -->
-    <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" />
+    <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" :embedded="props.embedded" />
 
     <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('shipyardView.title') }}</h1>
 
@@ -136,17 +136,58 @@
               </div>
             </div>
 
-            <Button @click="handleBuild(shipType, $event)" :disabled="!canBuild(shipType)" class="w-full">{{ t('shipyardView.build') }}</Button>
+            <!-- 建造 / 等待队列 / 拆除：固定三列一行 -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <Button
+                size="sm"
+                :aria-disabled="!canBuild(shipType)"
+                :class="!canBuild(shipType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('shipyardView.build')"
+                :aria-label="t('shipyardView.build')"
+                @click="
+                  canBuild(shipType)
+                    ? handleBuild(shipType, $event)
+                    : notifyDisabled(t('shipyardView.build'), getBuildDisabledReason(shipType))
+                "
+              >
+                <ActionIcon type="build" size="md" />
+              </Button>
 
-            <!-- 添加到等待队列按钮 -->
-            <Button
-              :disabled="!canAddToWaitingQueue(shipType)"
-              @click="handleAddToWaiting(shipType, $event)"
-              variant="outline"
-              class="w-full"
-            >
-              {{ t('queue.addToWaiting') }}
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                :aria-disabled="!canAddToWaitingQueue(shipType)"
+                :class="!canAddToWaitingQueue(shipType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('queue.addToWaiting')"
+                :aria-label="t('queue.addToWaiting')"
+                @click="
+                  canAddToWaitingQueue(shipType)
+                    ? handleAddToWaiting(shipType, $event)
+                    : notifyDisabled(t('queue.addToWaiting'), getWaitingDisabledReason(shipType))
+                "
+              >
+                <ActionIcon type="queue" size="md" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="destructive"
+                :aria-disabled="!canScrap(shipType)"
+                :class="!canScrap(shipType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('shipyardView.scrap')"
+                :aria-label="t('shipyardView.scrap')"
+                @click="
+                  canScrap(shipType)
+                    ? handleScrap(shipType, $event)
+                    : notifyDisabled(t('shipyardView.scrap'), getScrapDisabledReason(shipType))
+                "
+              >
+                <ActionIcon type="demolish" size="md" />
+              </Button>
+            </div>
 
             <!-- 拆除返还资源显示 -->
             <div v-if="scrapQuantities[shipType] > 0" class="text-xs sm:text-sm space-y-1.5 sm:space-y-2 p-2.5 sm:p-3 bg-destructive/10 rounded-lg border border-destructive/30">
@@ -166,17 +207,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- 拆除按钮 -->
-            <Button
-              v-if="(planet.fleet[shipType] || 0) > 0"
-              @click="handleScrap(shipType, $event)"
-              :disabled="!canScrap(shipType)"
-              variant="destructive"
-              class="w-full"
-            >
-              {{ t('shipyardView.scrap') }}
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -201,8 +231,11 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+  import ActionIcon from '@/components/common/ActionIcon.vue'
+  import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+  const { notifyDisabled } = useDisabledActionHint()
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
@@ -472,6 +505,46 @@
 
     const available = planet.value.fleet[shipType] || 0
     return available >= quantity
+  }
+
+  const getBuildDisabledReason = (shipType: ShipType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const quantity = quantities.value[shipType]
+    if (quantity <= 0) return t('baseHints.invalidQuantity')
+    const config = SHIPS.value[shipType]
+    if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
+      return t('errors.requirementsNotMet')
+    }
+    if (!fleetStorageLogic.hasEnoughFleetStorage(planet.value, shipType, quantity, gameStore.player.technologies)) {
+      return t('errors.insufficientFleetStorage')
+    }
+    return t('errors.insufficientResources')
+  }
+
+  const getWaitingDisabledReason = (shipType: ShipType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const quantity = quantities.value[shipType]
+    if (quantity <= 0) return t('baseHints.invalidQuantity')
+    const config = SHIPS.value[shipType]
+    if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
+      return t('errors.requirementsNotMet')
+    }
+    if (!fleetStorageLogic.hasEnoughFleetStorage(planet.value, shipType, quantity, gameStore.player.technologies)) {
+      return t('errors.insufficientFleetStorage')
+    }
+    const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
+    const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
+    if ((planet.value.waitingBuildQueue || []).length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    if (canBuild(shipType)) return t('baseHints.resourcesEnough')
+    return t('errors.insufficientResources')
+  }
+
+  const getScrapDisabledReason = (shipType: ShipType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const quantity = scrapQuantities.value[shipType]
+    if (quantity <= 0) return t('baseHints.invalidQuantity')
+    if ((planet.value.fleet[shipType] || 0) < quantity) return t('baseHints.insufficientUnits')
+    return t('baseHints.unknown')
   }
 
   // 拆除舰船

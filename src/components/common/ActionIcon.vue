@@ -6,7 +6,7 @@
   import { computed } from 'vue'
 
   interface Props {
-    type: 'upgrade' | 'demolish'
+    type: 'upgrade' | 'demolish' | 'research' | 'build' | 'queue'
     size?: 'sm' | 'md' | 'lg'
   }
 
@@ -17,7 +17,10 @@
   const base = import.meta.env.BASE_URL
   const icons = {
     upgrade: `${base}svg/upgrade.svg`,
-    demolish: `${base}svg/demolish.svg`
+    demolish: `${base}svg/demolish.svg`,
+    research: `${base}svg/research.svg`,
+    build: `${base}svg/build.svg`,
+    queue: `${base}svg/add-to-queue.svg`
   }
 
   const sizes = {

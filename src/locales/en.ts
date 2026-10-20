@@ -80,6 +80,12 @@ export default {
     hasFleetOnPlanet: 'Please transfer or scrap all fleet first',
     hasDefenseOnPlanet: 'Please demolish all defense first'
   },
+  baseHints: {
+    resourcesEnough: 'You already have enough resources; build directly without using the waiting queue.',
+    invalidQuantity: 'Please enter a valid quantity.',
+    insufficientUnits: 'Not enough ships/defenses to scrap.',
+    unknown: 'This action is currently unavailable. Check requirements, resources, and queues.'
+  },
   nav: {
     overview: 'Overview',
     base: 'Base',

@@ -81,6 +81,12 @@ export default {
     hasFleetOnPlanet: '请先转移或拆除所有舰船',
     hasDefenseOnPlanet: '请先拆除所有防御设施'
   },
+  baseHints: {
+    resourcesEnough: '资源已足够，可以直接建造，无需加入等待队列。',
+    invalidQuantity: '请先填写有效的数量。',
+    insufficientUnits: '可拆除的舰船/防御数量不足。',
+    unknown: '当前无法执行此操作，请检查前置条件、资源和队列状态。'
+  },
   nav: {
     overview: '总览',
     base: '基地',

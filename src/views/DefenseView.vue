@@ -1,7 +1,7 @@
 <template>
   <div v-if="planet" :class="props.embedded ? '' : 'container mx-auto p-4 sm:p-6'">
     <!-- 未解锁遮罩 -->
-    <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" />
+    <UnlockRequirement :required-building="BuildingType.Shipyard" :required-level="1" :embedded="props.embedded" />
 
     <h1 v-if="!props.embedded" class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{{ t('defenseView.title') }}</h1>
 
@@ -127,19 +127,41 @@
               </div>
             </div>
 
-            <Button @click="handleBuild(defenseType, $event)" :disabled="!canBuild(defenseType)" class="w-full">
-              {{ t('defenseView.build') }}
-            </Button>
+            <!-- 建造 / 等待队列：同一行 -->
+            <div class="grid grid-cols-2 gap-1.5">
+              <Button
+                size="sm"
+                :aria-disabled="!canBuild(defenseType)"
+                :class="!canBuild(defenseType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('defenseView.build')"
+                :aria-label="t('defenseView.build')"
+                @click="
+                  canBuild(defenseType)
+                    ? handleBuild(defenseType, $event)
+                    : notifyDisabled(t('defenseView.build'), getBuildDisabledReason(defenseType))
+                "
+              >
+                <ActionIcon type="build" size="md" />
+              </Button>
 
-            <!-- 添加到等待队列按钮 -->
-            <Button
-              :disabled="!canAddToWaitingQueue(defenseType)"
-              @click="handleAddToWaiting(defenseType, $event)"
-              variant="outline"
-              class="w-full"
-            >
-              {{ t('queue.addToWaiting') }}
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                :aria-disabled="!canAddToWaitingQueue(defenseType)"
+                :class="!canAddToWaitingQueue(defenseType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
+                :title="t('queue.addToWaiting')"
+                :aria-label="t('queue.addToWaiting')"
+                @click="
+                  canAddToWaitingQueue(defenseType)
+                    ? handleAddToWaiting(defenseType, $event)
+                    : notifyDisabled(t('queue.addToWaiting'), getWaitingDisabledReason(defenseType))
+                "
+              >
+                <ActionIcon type="queue" size="md" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -164,8 +186,11 @@
 
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
+  import ActionIcon from '@/components/common/ActionIcon.vue'
+  import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+  const { notifyDisabled } = useDisabledActionHint()
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
@@ -363,6 +388,40 @@
 
     // 只有当建造按钮被禁用时（资源不足）才显示等待队列按钮
     return !canBuild(defenseType)
+  }
+
+  const getBuildDisabledReason = (defenseType: DefenseType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const quantity = quantities.value[defenseType]
+    if (quantity <= 0) return t('baseHints.invalidQuantity')
+    if (isShieldDome(defenseType)) {
+      if (planet.value.defense[defenseType] > 0) return t('defenseView.shieldDomeBuilt')
+      if (quantity > 1) return t('errors.shieldDomeLimit')
+    }
+    const config = DEFENSES.value[defenseType]
+    if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
+      return t('errors.requirementsNotMet')
+    }
+    return t('errors.insufficientResources')
+  }
+
+  const getWaitingDisabledReason = (defenseType: DefenseType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const quantity = quantities.value[defenseType]
+    if (quantity <= 0) return t('baseHints.invalidQuantity')
+    if (isShieldDome(defenseType)) {
+      if (planet.value.defense[defenseType] > 0) return t('defenseView.shieldDomeBuilt')
+      if (quantity > 1) return t('errors.shieldDomeLimit')
+    }
+    const config = DEFENSES.value[defenseType]
+    if (!publicLogic.checkRequirements(planet.value, gameStore.player.technologies, config.requirements)) {
+      return t('errors.requirementsNotMet')
+    }
+    const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
+    const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
+    if ((planet.value.waitingBuildQueue || []).length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+    if (canBuild(defenseType)) return t('baseHints.resourcesEnough')
+    return t('errors.insufficientResources')
   }
 
   // 添加到等待队列

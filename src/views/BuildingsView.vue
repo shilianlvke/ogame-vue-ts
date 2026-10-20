@@ -94,11 +94,16 @@
             <div class="grid grid-cols-3 gap-1.5">
               <Button
                 size="sm"
-                :disabled="!canUpgrade(buildingType)"
+                :aria-disabled="!canUpgrade(buildingType)"
+                :class="!canUpgrade(buildingType) ? 'cursor-not-allowed opacity-50' : ''"
                 class="px-0"
                 :title="getUpgradeButtonText(buildingType)"
                 :aria-label="getUpgradeButtonText(buildingType)"
-                @click="handleUpgrade(buildingType, $event)"
+                @click="
+                  canUpgrade(buildingType)
+                    ? handleUpgrade(buildingType, $event)
+                    : notifyDisabled(t('buildingsView.upgrade'), getUpgradeDisabledReason(buildingType))
+                "
               >
                 <ActionIcon type="upgrade" size="md" />
               </Button>
@@ -106,22 +111,33 @@
               <Button
                 size="sm"
                 variant="outline"
-                :disabled="!canAddToWaitingQueue(buildingType)"
-                class="min-w-0 whitespace-normal px-1 text-[10px] leading-tight"
+                :aria-disabled="!canAddToWaitingQueue(buildingType)"
+                :class="!canAddToWaitingQueue(buildingType) ? 'cursor-not-allowed opacity-50' : ''"
+                class="px-0"
                 :title="t('queue.addToWaiting')"
-                @click="handleAddToWaiting(buildingType, $event)"
+                :aria-label="t('queue.addToWaiting')"
+                @click="
+                  canAddToWaitingQueue(buildingType)
+                    ? handleAddToWaiting(buildingType, $event)
+                    : notifyDisabled(t('queue.addToWaiting'), getWaitingDisabledReason(buildingType))
+                "
               >
-                {{ t('queue.addToWaiting') }}
+                <ActionIcon type="queue" size="md" />
               </Button>
 
               <Button
                 size="sm"
                 variant="destructive"
-                :disabled="!canDemolish(buildingType)"
+                :aria-disabled="!canDemolish(buildingType)"
+                :class="!canDemolish(buildingType) ? 'cursor-not-allowed opacity-50' : ''"
                 class="px-0"
                 :title="t('buildingsView.demolish')"
                 :aria-label="t('buildingsView.demolish')"
-                @click="handleDemolish(buildingType)"
+                @click="
+                  canDemolish(buildingType)
+                    ? handleDemolish(buildingType)
+                    : notifyDisabled(t('buildingsView.demolish'), getDemolishDisabledReason(buildingType))
+                "
               >
                 <ActionIcon type="demolish" size="md" />
               </Button>
@@ -199,8 +215,10 @@
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
   import ActionIcon from '@/components/common/ActionIcon.vue'
+  import { useDisabledActionHint } from '@/composables/useDisabledActionHint'
 
   const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+  const { notifyDisabled } = useDisabledActionHint()
   import { useDetailDialogStore } from '@/stores/detailDialogStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
@@ -556,6 +574,76 @@ ${refund.darkMatter ? `${t('resources.darkMatter')}: ${formatNumber(refund.darkM
     }
 
     return true
+  }
+
+  const getRequirementReason = (buildingType: BuildingType): string => {
+    const missing = getRequirementsList(buildingType)
+      .filter(requirement => !requirement.met)
+      .map(requirement => `${requirement.name} Lv${requirement.requiredLevel}`)
+    return missing.length > 0 ? `${t('errors.requirementsNotMet')}: ${missing.join(', ')}` : t('errors.requirementsNotMet')
+  }
+
+  const getUpgradeDisabledReason = (buildingType: BuildingType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const config = BUILDINGS.value[buildingType]
+    const currentLevel = getBuildingLevel(buildingType)
+    if (config.maxLevel !== undefined && currentLevel >= config.maxLevel) {
+      return t('buildingsView.maxLevelReached')
+    }
+
+    const validation = buildingValidation.validateBuildingUpgrade(
+      planet.value,
+      buildingType,
+      gameStore.player.technologies,
+      gameStore.player.officers
+    )
+    if (!validation.valid) {
+      if (validation.reason === 'errors.requirementsNotMet') return getRequirementReason(buildingType)
+      if (validation.reason === 'errors.buildingAlreadyInQueue') return t('errors.hasBuildQueue')
+      return t(validation.reason ?? 'baseHints.unknown')
+    }
+    return t('baseHints.unknown')
+  }
+
+  const getWaitingDisabledReason = (buildingType: BuildingType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    const config = BUILDINGS.value[buildingType]
+    const currentLevel = getBuildingLevel(buildingType)
+    const upgradesInBuildQueue = planet.value.buildQueue.filter(
+      queueItem => queueItem.type === 'building' && queueItem.itemType === buildingType
+    ).length
+    const waitingQueue = planet.value.waitingBuildQueue || []
+    const upgradesInWaitingQueue = waitingQueue.filter(
+      queueItem => queueItem.type === 'building' && queueItem.itemType === buildingType
+    ).length
+    const targetLevel = currentLevel + upgradesInBuildQueue + upgradesInWaitingQueue + 1
+
+    if (config.maxLevel !== undefined && targetLevel > config.maxLevel) {
+      return t('buildingsView.maxLevelReached')
+    }
+    if (!checkUpgradeRequirements(buildingType)) return getRequirementReason(buildingType)
+
+    const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
+    const maxWaitingQueue = waitingQueueLogic.getMaxBuildWaitingQueue(planet.value, bonuses.additionalBuildQueue)
+    if (waitingQueue.length >= maxWaitingQueue) return t('queue.waitingQueueFull')
+
+    const item = waitingQueueLogic.createBuildingWaitingItem(buildingType, targetLevel, planet.value.id)
+    const result = waitingQueueLogic.canAddToBuildWaitingQueue(planet.value, item, gameStore.player.officers)
+    if (!result.canAdd) return t(result.reason ?? 'queue.waitingQueueFull')
+    return t('baseHints.unknown')
+  }
+
+  const getDemolishDisabledReason = (buildingType: BuildingType): string => {
+    if (!planet.value) return t('baseHints.unknown')
+    if (getBuildingLevel(buildingType) <= 0) return t('errors.buildingLevelZero')
+
+    const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, Date.now())
+    const maxQueue = publicLogic.getMaxBuildQueue(planet.value, bonuses.additionalBuildQueue)
+    const buildingQueueCount = planet.value.buildQueue.filter(
+      queueItem => queueItem.type === 'building' || queueItem.type === 'demolish'
+    ).length
+    if (buildingQueueCount >= maxQueue) return t('errors.buildQueueFull')
+    return t('baseHints.unknown')
   }
 
   // 添加到等待队列

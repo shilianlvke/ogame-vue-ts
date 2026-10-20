@@ -75,6 +75,12 @@ export default {
     insufficientDebris: '殘骸場不足',
     launchFailed: '發射失敗'
   },
+  baseHints: {
+    resourcesEnough: '資源已足夠，可以直接建造，無需加入等待佇列。',
+    invalidQuantity: '請先填寫有效的數量。',
+    insufficientUnits: '可拆除的艦船/防禦數量不足。',
+    unknown: '目前無法執行此操作，請檢查前置條件、資源和佇列狀態。'
+  },
   nav: {
     overview: '總覽',
     base: '基地',

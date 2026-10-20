@@ -73,6 +73,12 @@ export default {
     insufficientDebris: 'Campo de escombros insuficiente',
     launchFailed: 'Lanzamiento fallido'
   },
+  baseHints: {
+    resourcesEnough: 'Ya tienes recursos suficientes; construye directamente sin la cola de espera.',
+    invalidQuantity: 'Introduce una cantidad válida.',
+    insufficientUnits: 'No hay suficientes naves/defensas para desguazar.',
+    unknown: 'Esta acción no está disponible. Revisa requisitos, recursos y colas.'
+  },
   nav: {
     overview: 'Resumen',
     base: 'Base',

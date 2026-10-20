@@ -74,6 +74,12 @@ export default {
     insufficientDebris: '残骸フィールドが不足しています',
     launchFailed: '発射に失敗しました'
   },
+  baseHints: {
+    resourcesEnough: '資源は足りています。待機キューを使わず直接建造できます。',
+    invalidQuantity: '有効な数量を入力してください。',
+    insufficientUnits: '解体できる艦船/防衛設備が不足しています。',
+    unknown: '現在この操作は実行できません。前提条件・資源・キューを確認してください。'
+  },
   nav: {
     overview: '概要',
     base: '基地',

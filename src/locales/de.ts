@@ -74,6 +74,12 @@ export default {
     insufficientDebris: 'Unzureichendes Trümmerfeld',
     launchFailed: 'Start fehlgeschlagen'
   },
+  baseHints: {
+    resourcesEnough: 'Ressourcen reichen aus; direkt bauen, keine Warteschlange nötig.',
+    invalidQuantity: 'Bitte eine gültige Menge eingeben.',
+    insufficientUnits: 'Nicht genügend Schiffe/Verteidigung zum Abwracken.',
+    unknown: 'Diese Aktion ist derzeit nicht möglich. Prüfe Voraussetzungen, Ressourcen und Warteschlangen.'
+  },
   nav: {
     overview: 'Übersicht',
     base: 'Basis',
