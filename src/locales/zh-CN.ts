@@ -1888,7 +1888,7 @@ export default {
     hintsEnabledDesc: '访问页面时显示帮助提示',
     base: {
       title: '基地',
-      message: '建筑、研究、船坞和防御已整合到基地。使用顶部滑槽切换模块；提示只会在首次打开基地时出现一次。'
+      message: '在这里升级建筑、研究科技、建造舰船和防御设施。使用顶部切换栏在四个模块之间切换。'
     },
     overview: {
       title: '星球总览',

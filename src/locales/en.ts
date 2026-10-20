@@ -1863,7 +1863,7 @@ export default {
     hintsEnabledDesc: 'Show helpful hints when visiting pages',
     base: {
       title: 'Base',
-      message: 'Buildings, research, shipyard and defense are combined in Base. Use the top switch to change modules; this hint appears only the first time you open Base.'
+      message: 'Upgrade buildings, research technologies, build ships, and construct defenses here. Use the top switch to move between the four modules.'
     },
     overview: {
       title: 'Planet Overview',

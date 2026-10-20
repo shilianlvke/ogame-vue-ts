@@ -1,9 +1,5 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6">
-    <div class="mb-4 sm:mb-6">
-      <h1 class="text-2xl font-bold sm:text-3xl">{{ t('nav.base') }}</h1>
-    </div>
-
     <!-- 四段式滑槽切换：建筑 / 研究 / 船坞 / 防御 -->
     <div
       class="relative mb-4 grid h-9 w-full grid-cols-4 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"

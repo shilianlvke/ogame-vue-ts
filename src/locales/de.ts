@@ -1835,7 +1835,7 @@ export default {
     hintsEnabledDesc: 'Hilfreiche Hinweise beim Seitenbesuch anzeigen',
     base: {
       title: 'Basis',
-      message: 'Gebäude, Forschung, Werft und Verteidigung sind in der Basis zusammengefasst. Wechsle oben zwischen den Modulen; dieser Hinweis erscheint nur beim ersten Öffnen.'
+      message: 'Hier kannst du Gebäude ausbauen, Technologien erforschen, Schiffe bauen und Verteidigung errichten. Wechsle oben zwischen den vier Modulen.'
     },
     overview: {
       title: 'Planetenübersicht',

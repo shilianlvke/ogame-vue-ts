@@ -1844,7 +1844,7 @@ export default {
     hintsEnabledDesc: 'Mostrar consejos útiles al visitar páginas',
     base: {
       title: 'Base',
-      message: 'Edificios, investigación, astillero y defensa están unidos en Base. Usa el selector superior para cambiar de módulo; este consejo solo aparece la primera vez.'
+      message: 'Aquí puedes mejorar edificios, investigar tecnologías, construir naves y defensas. Usa el selector superior para cambiar entre los cuatro módulos.'
     },
     overview: {
       title: 'Resumen del Planeta',

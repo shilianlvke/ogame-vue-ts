@@ -1806,7 +1806,7 @@ export default {
     hintsEnabledDesc: '訪問頁面時顯示幫助提示',
     base: {
       title: '基地',
-      message: '建築、研究、船塢和防禦已整合到基地。使用頂部滑槽切換模組；提示只會在首次打開基地時出現一次。'
+      message: '在這裡升級建築、研究科技、建造艦船和防禦設施。使用頂部切換欄在四個模組之間切換。'
     },
     overview: {
       title: '星球總覽',
