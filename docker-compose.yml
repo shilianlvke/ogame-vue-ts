@@ -1,24 +1,18 @@
-# 默认入口：只使用本地已有镜像（不会联网拉取）
+# 飞牛 fnOS 默认运行配置：只使用本地已有镜像（不会联网拉取）
 #
 # 完整流程：
 #   1. 在电脑（或能联网的机器）上构建并导出：
-#        docker build -t ogame-vue-ts:latest .
-#        docker save ogame-vue-ts:latest -o ogame-vue-ts.tar
-#   2. 把 tar + 本文件 + docker-compose.yml 上传到 NAS 同一目录
+#        docker build -t noskyman:latest .
+#        docker save noskyman:latest -o noskyman.tar
+#   2. 把 noskyman.tar 和本文件上传到 NAS 同一目录
 #   3. NAS 上执行：
-#        docker load -i ogame-vue-ts.tar
+#        docker load -i noskyman.tar
 #        docker compose up -d
 #
-# 想从源码构建请改用：
-#        docker compose -f docker-compose.build.yml up -d --build
+# 源码一键部署直接执行：./deploy-fnos.sh
 
 services:
   noskyman:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
     image: noskyman:latest
     container_name: noskyman
     restart: unless-stopped

@@ -35,7 +35,7 @@ OGame Vue TS 是一款受經典 OGame 遊戲啟發的單機版、基於瀏覽器
 
 - **前端框架:** [Vue 3](https://vuejs.org) + Composition API (`<script setup>` 語法)
 - **開發語言:** [TypeScript](https://www.typescriptlang.org) (啟用嚴格類型檢查)
-- **構建工具:** [Vite](https://vitejs.dev) (自定義 Rolldown-Vite 7.2.5)、[Golang](https://golang.org)(構建跨平台的Web服務端)、[Electron](https://www.electronjs.org)(構建跨平台可視化介面)
+- **構建工具:** [Vite](https://vitejs.dev) (自定義 Rolldown-Vite 7.2.5) + Node.js WebSocket 服務端
 - **狀態管理:** [Pinia](https://pinia.vuejs.org) + 持久化插件
 - **路由管理:** [Vue Router 4](https://router.vuejs.org)
 - **UI 組件:** [shadcn-vue](https://www.shadcn-vue.com) (New York 風格)
@@ -48,9 +48,8 @@ OGame Vue TS 是一款受經典 OGame 遊戲啟發的單機版、基於瀏覽器
 
 ### 環境要求
 
-- [Node.js](https://nodejs.org) (推薦 18 或更高版本)
+- [Node.js](https://nodejs.org) (推薦 22 或更高版本)
 - [pnpm](https://pnpm.io) (版本 10.13.1 或更高)
-- [Go](https://golang.org) (版本 1.21 或更高版本)(可選)
 
 ### 安裝
 
@@ -94,7 +93,7 @@ pnpm preview
 
 ## 文件
 
-- [Docker 部署指南](DOCKER.md)
+- [Docker 部署指南](DEPLOY_DOCKER.md)
 - [遊戲參考手冊](ogame-reference.md) - 建築、科技、艦船、防禦、軍官等完整資料
 
 ## 貢獻

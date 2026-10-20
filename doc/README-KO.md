@@ -35,7 +35,7 @@ OGame Vue TS는 클래식 OGame에서 영감을 받은 싱글플레이어 브라
 
 - **프론트엔드 프레임워크:** [Vue 3](https://vuejs.org) + Composition API (`<script setup>` 문법)
 - **프로그래밍 언어:** [TypeScript](https://www.typescriptlang.org) (엄격한 타입 검사 활성화)
-- **빌드 도구:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5), [Golang](https://golang.org) (크로스 플랫폼 웹 서버 구축), [Electron](https://www.electronjs.org) (크로스 플랫폼 데스크톱 애플리케이션 구축)
+- **빌드 도구:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5) + Node.js WebSocket 서버
 - **상태 관리:** [Pinia](https://pinia.vuejs.org) + 지속성 플러그인
 - **라우팅:** [Vue Router 4](https://router.vuejs.org)
 - **UI 컴포넌트:** [shadcn-vue](https://www.shadcn-vue.com) (New York 스타일)
@@ -48,9 +48,8 @@ OGame Vue TS는 클래식 OGame에서 영감을 받은 싱글플레이어 브라
 
 ### 요구 사항
 
-- [Node.js](https://nodejs.org) (버전 18 이상 권장)
+- [Node.js](https://nodejs.org) (버전 22 이상 권장)
 - [pnpm](https://pnpm.io) (버전 10.13.1 이상)
-- [Go](https://golang.org) (버전 1.21 이상) (선택 사항)
 
 ### 설치
 
@@ -94,7 +93,7 @@ pnpm preview
 
 ## 문서
 
-- [Docker 배포 가이드](DOCKER.md)
+- [Docker 배포 가이드](DEPLOY_DOCKER.md)
 - [게임 참조 설명서](ogame-reference.md) - 건물, 기술, 함선, 방어, 장교 등 전체 데이터
 
 ## 기여

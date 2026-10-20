@@ -35,7 +35,7 @@ OGame Vue TS 是一款受经典 OGame 游戏启发的单机版、基于浏览器
 
 - **前端框架:** [Vue 3](https://vuejs.org) + Composition API (`<script setup>` 语法)
 - **开发语言:** [TypeScript](https://www.typescriptlang.org) (启用严格类型检查)
-- **构建工具:** [Vite](https://vitejs.dev) (自定义 Rolldown-Vite 7.2.5)、[Golang](https://golang.org)(构建跨平台的Web服务端)、[Electron](https://www.electronjs.org)(构建跨平台可视化界面)
+- **构建工具:** [Vite](https://vitejs.dev)（Rolldown-Vite 7.2.5）+ Node.js WebSocket 服务端
 - **状态管理:** [Pinia](https://pinia.vuejs.org) + 持久化插件
 - **路由管理:** [Vue Router 4](https://router.vuejs.org)
 - **UI 组件:** [shadcn-vue](https://www.shadcn-vue.com) (New York 风格)
@@ -48,9 +48,8 @@ OGame Vue TS 是一款受经典 OGame 游戏启发的单机版、基于浏览器
 
 ### 环境要求
 
-- [Node.js](https://nodejs.org) (推荐 18 或更高版本)
-- [pnpm](https://pnpm.io) (版本 10.13.1 或更高)
-- [Go](https://golang.org) (版本 1.21 或更高版本)(可选)
+- [Node.js](https://nodejs.org)（推荐 22 或更高版本）
+- [pnpm](https://pnpm.io)（版本 10 或更高版本）
 
 ### 安装
 
@@ -98,7 +97,7 @@ pnpm preview
 
 ## 文档
 
-- [Docker 部署指南](doc/DOCKER.md)
+- [Docker 部署指南](doc/DEPLOY_DOCKER.md)
 - [游戏参考手册](doc/ogame-reference.md) - 建筑、科技、舰船、防御、军官等完整数据
 - [联机改造说明](doc/MULTIPLAYER.md) - 无头核心架构、命令层、联机服务端与部署方式
 
@@ -140,5 +139,8 @@ pnpm preview
 
 ## 部署
 
-- 本地一键启动：`start.cmd`（或 `./start.ps1`）
-- Docker / 飞牛 NAS：[doc/DEPLOY_DOCKER.md](doc/DEPLOY_DOCKER.md)
+当前仅维护飞牛 fnOS 的 Docker 部署方式：
+
+- 飞牛 NAS 一键部署：`./deploy-fnos.sh`
+- 在电脑构建并导出镜像：`./docker-build.ps1`
+- 完整说明：[doc/DEPLOY_DOCKER.md](doc/DEPLOY_DOCKER.md)

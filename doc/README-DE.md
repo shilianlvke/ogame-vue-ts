@@ -35,7 +35,7 @@ OGame Vue TS ist ein Einzelspieler-Weltraum-Strategiespiel im Browser, inspirier
 
 - **Frontend-Framework:** [Vue 3](https://vuejs.org) + Composition API (`<script setup>` Syntax)
 - **Programmiersprache:** [TypeScript](https://www.typescriptlang.org) (mit strikter Typprüfung)
-- **Build-Tool:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5), [Golang](https://golang.org) (für plattformübergreifenden Webserver), [Electron](https://www.electronjs.org) (für plattformübergreifende Desktop-Anwendung)
+- **Build-Tool:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5) + Node.js-WebSocket-Server
 - **Zustandsverwaltung:** [Pinia](https://pinia.vuejs.org) + Persistenz-Plugin
 - **Routing:** [Vue Router 4](https://router.vuejs.org)
 - **UI-Komponenten:** [shadcn-vue](https://www.shadcn-vue.com) (New York Stil)
@@ -48,9 +48,8 @@ OGame Vue TS ist ein Einzelspieler-Weltraum-Strategiespiel im Browser, inspirier
 
 ### Voraussetzungen
 
-- [Node.js](https://nodejs.org) (Version 18 oder höher empfohlen)
+- [Node.js](https://nodejs.org) (Version 22 oder höher empfohlen)
 - [pnpm](https://pnpm.io) (Version 10.13.1 oder höher)
-- [Go](https://golang.org) (Version 1.21 oder höher) (optional)
 
 ### Installation
 
@@ -94,7 +93,7 @@ Die Anwendung unterstützt vollständige Theme-Anpassung durch Tailwind CSS-Vari
 
 ## Dokumentation
 
-- [Docker-Bereitstellungsanleitung](DOCKER.md)
+- [Docker-Bereitstellungsanleitung](DEPLOY_DOCKER.md)
 - [Spielreferenzhandbuch](ogame-reference.md) - Vollständige Daten zu Gebäuden, Technologien, Schiffen, Verteidigung, Offizieren usw.
 
 ## Mitwirken

@@ -35,7 +35,7 @@ OGame Vue TS — это однопользовательская браузер�
 
 - **Frontend-фреймворк:** [Vue 3](https://vuejs.org) + Composition API (синтаксис `<script setup>`)
 - **Язык программирования:** [TypeScript](https://www.typescriptlang.org) (со строгой проверкой типов)
-- **Инструмент сборки:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5), [Golang](https://golang.org) (для кроссплатформенного веб-сервера), [Electron](https://www.electronjs.org) (для кроссплатформенного десктоп-приложения)
+- **Инструмент сборки:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5) + Node.js WebSocket-сервер
 - **Управление состоянием:** [Pinia](https://pinia.vuejs.org) + плагин персистентности
 - **Маршрутизация:** [Vue Router 4](https://router.vuejs.org)
 - **UI-компоненты:** [shadcn-vue](https://www.shadcn-vue.com) (стиль New York)
@@ -48,9 +48,8 @@ OGame Vue TS — это однопользовательская браузер�
 
 ### Требования
 
-- [Node.js](https://nodejs.org) (рекомендуется версия 18 или выше)
+- [Node.js](https://nodejs.org) (рекомендуется версия 22 или выше)
 - [pnpm](https://pnpm.io) (версия 10.13.1 или выше)
-- [Go](https://golang.org) (версия 1.21 или выше) (опционально)
 
 ### Установка
 
@@ -94,7 +93,7 @@ pnpm preview
 
 ## Документация
 
-- [Руководство по развертыванию Docker](DOCKER.md)
+- [Руководство по развертыванию Docker](DEPLOY_DOCKER.md)
 - [Справочное руководство по игре](ogame-reference.md) - Полные данные о зданиях, технологиях, кораблях, обороне, офицерах и т.д.
 
 ## Участие в разработке

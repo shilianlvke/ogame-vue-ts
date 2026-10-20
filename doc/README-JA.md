@@ -35,7 +35,7 @@ OGame Vue TSは、クラシックなOGameにインスパイアされたシング
 
 - **フロントエンドフレームワーク:** [Vue 3](https://vuejs.org) + Composition API (`<script setup>` 構文)
 - **開発言語:** [TypeScript](https://www.typescriptlang.org) (厳密な型チェック有効)
-- **ビルドツール:** [Vite](https://vitejs.dev) (カスタムRolldown-Vite 7.2.5)、[Golang](https://golang.org) (クロスプラットフォームWebサーバー)、[Electron](https://www.electronjs.org) (クロスプラットフォームビジュアルインターフェース)
+- **ビルドツール:** [Vite](https://vitejs.dev) (カスタムRolldown-Vite 7.2.5) + Node.js WebSocket サーバー
 - **状態管理:** [Pinia](https://pinia.vuejs.org) + 永続化プラグイン
 - **ルーティング:** [Vue Router 4](https://router.vuejs.org)
 - **UIコンポーネント:** [shadcn-vue](https://www.shadcn-vue.com) (New Yorkスタイル)
@@ -48,9 +48,8 @@ OGame Vue TSは、クラシックなOGameにインスパイアされたシング
 
 ### 必要条件
 
-- [Node.js](https://nodejs.org) (バージョン18以上推奨)
+- [Node.js](https://nodejs.org) (バージョン22以上推奨)
 - [pnpm](https://pnpm.io) (バージョン10.13.1以上)
-- [Go](https://golang.org) (バージョン1.21以上) (オプション)
 
 ### インストール
 
@@ -94,7 +93,7 @@ pnpm preview
 
 ## ドキュメント
 
-- [Docker デプロイガイド](DOCKER.md)
+- [Docker デプロイガイド](DEPLOY_DOCKER.md)
 - [ゲームリファレンスマニュアル](ogame-reference.md) - 建物、技術、艦船、防衛、将校などの完全なデータ
 
 ## 貢献

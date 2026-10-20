@@ -22,8 +22,6 @@ data/
 Thumbs.db
 .github/
 
-# 本地脚本与文档（不影响构建）
-start.cmd
-start.ps1
+# 本地文档（不影响构建）
 doc/
 *.log

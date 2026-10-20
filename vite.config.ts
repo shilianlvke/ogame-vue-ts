@@ -76,19 +76,6 @@ export default defineConfig(async () => {
     })
   ]
 
-  // 只在 ELECTRON_BUILD 环境变量存在时才加载 Electron 插件
-  if (process.env.ELECTRON_BUILD) {
-    // @ts-ignore - 动态导入 electron 插件
-    const { default: electron } = await import('vite-plugin-electron/simple')
-    const electronPlugins = await electron({
-      main: {
-        entry: 'electron/main.ts'
-      },
-      renderer: {}
-    })
-    plugins.push(...electronPlugins)
-  }
-
   return {
     base: './',
     define: {

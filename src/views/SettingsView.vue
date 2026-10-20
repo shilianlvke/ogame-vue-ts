@@ -167,7 +167,7 @@
       </CardHeader>
       <CardContent class="space-y-4">
         <!-- 浏览器通知 -->
-        <div class="flex flex-col gap-4 p-4 border rounded-lg" v-if="!Capacitor.isNativePlatform()">
+        <div class="flex flex-col gap-4 p-4 border rounded-lg">
           <div class="flex items-center justify-between">
             <div class="space-y-1">
               <h3 class="font-medium">{{ t('settings.browserNotifications') }}</h3>
@@ -422,9 +422,7 @@ import { dispatchCommand } from '@/core/runtime'
   } from 'lucide-vue-next'
   import { saveAs } from 'file-saver'
   import { toast } from 'vue-sonner'
-  import { Capacitor } from '@capacitor/core'
   import { decryptData, encryptData } from '@/utils/crypto'
-  import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
   import pkg from '../../package.json'
   import { CURRENT_BUILD_INFO, fetchLatestBuildInfo, formatBuildTime, isBuildChanged, reloadForUpdate } from '@/utils/appUpdate'
   import PrivacyDialog from '@/components/dialogs/PrivacyDialog.vue'
@@ -610,92 +608,8 @@ import { dispatchCommand } from '@/core/runtime'
       const fileName = `${pkg.name}-${new Date().toISOString().slice(0, 10)}-${Date.now()}.json`
       const jsonString = JSON.stringify(exportData, null, 2)
 
-      // Android/原生平台
-      if (Capacitor.isNativePlatform()) {
-        // 尝试保存到公共 Downloads 目录
-        try {
-          const permStatus = await Filesystem.checkPermissions()
-          if (permStatus.publicStorage === 'granted') {
-            const result = await Filesystem.writeFile({
-              path: `Download/${fileName}`,
-              data: jsonString,
-              directory: Directory.ExternalStorage,
-              encoding: Encoding.UTF8
-            })
-            toast.success(t('settings.exportSuccessWithPath', { path: result.uri }))
-            return
-          }
-
-          // 尝试请求权限
-          const reqResult = await Filesystem.requestPermissions()
-          if (reqResult.publicStorage === 'granted') {
-            const result = await Filesystem.writeFile({
-              path: `Download/${fileName}`,
-              data: jsonString,
-              directory: Directory.ExternalStorage,
-              encoding: Encoding.UTF8
-            })
-            toast.success(t('settings.exportSuccessWithPath', { path: result.uri }))
-            return
-          }
-        } catch (extError) {
-          console.warn('ExternalStorage failed, trying Documents:', extError)
-        }
-
-        // 备选方案：保存到应用文档目录 (TapPlay 等沙盒环境)
-        try {
-          const result = await Filesystem.writeFile({
-            path: fileName,
-            data: jsonString,
-            directory: Directory.Documents,
-            encoding: Encoding.UTF8
-          })
-          toast.success(t('settings.exportSuccessWithPath', { path: result.uri }))
-          return
-        } catch (docError) {
-          console.warn('Documents failed, trying Data:', docError)
-        }
-
-        // 最后备选：保存到应用数据目录
-        try {
-          const result = await Filesystem.writeFile({
-            path: fileName,
-            data: jsonString,
-            directory: Directory.Data,
-            encoding: Encoding.UTF8
-          })
-          toast.success(t('settings.exportSuccessWithPath', { path: result.uri }))
-          return
-        } catch (dataError) {
-          console.warn('Data directory failed:', dataError)
-        }
-
-        // 所有文件系统方式都失败，尝试 Web Share API
-        if (navigator.share && navigator.canShare) {
-          const file = new File([jsonString], fileName, { type: 'application/json' })
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: t('settings.exportData')
-            })
-            toast.success(t('settings.exportSuccess'))
-            return
-          }
-        }
-
-        // 最后的备选：复制到剪贴板
-        try {
-          await navigator.clipboard.writeText(jsonString)
-          toast.success(t('settings.exportCopiedToClipboard'))
-          return
-        } catch {
-          toast.error(t('settings.exportFailed'))
-        }
-      } else {
-        // Web 使用 file-saver
-        saveAs(new Blob([jsonString], { type: 'application/json' }), fileName)
-        toast.success(t('settings.exportSuccess'))
-      }
+      saveAs(new Blob([jsonString], { type: 'application/json' }), fileName)
+      toast.success(t('settings.exportSuccess'))
     } catch (error) {
       console.error('Export failed:', error)
       toast.error(t('settings.exportFailed'))

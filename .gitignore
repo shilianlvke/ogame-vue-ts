@@ -11,7 +11,6 @@ CLAUDE.md
 node_modules
 dist
 dist-ssr
-dist-electron
 docs
 *.local
 
@@ -26,18 +25,6 @@ docs
 *.njsproj
 *.sln
 *.sw?
-/docs
-/docs/assets
-
-# Android build outputs
-android/.gradle
-android/app/build
-android/build
-android/local.properties
-android/.idea
-android/*.iml
-android/app/*.iml
-
 # 无头引擎冒烟测试产物
 scripts/.smoke-out
 
@@ -56,15 +43,10 @@ yarn.lock
 *.keystore
 *.jks
 *.p12
-android/app/google-services.json
 
 # 构建 / 测试产物
-/pkg
 coverage
 *.tsbuildinfo
-*.apk
-*.aab
-*.ipa
 
 # 本地临时文件
 *.ini
@@ -73,7 +55,3 @@ desktop.ini
 *.bak
 *.tmp
 *.orig
-
-# 已从仓库移除、仅保留在本地的重复或生成资源
-/doc/galaxy-flight-preview.png
-/resources/icon.png

@@ -35,7 +35,7 @@ OGame Vue TS is a single-player, browser-based space strategy game inspired by t
 
 - **Frontend Framework:** [Vue 3](https://vuejs.org) with Composition API (`<script setup>`)
 - **Language:** [TypeScript](https://www.typescriptlang.org) with strict type checking
-- **Build Tool:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5)、[Golang](https://golang.org)(Building cross-platform Web server.)、[Electron](https://www.electronjs.org)(Building cross-platform visual interfaces)
+- **Build Tool:** [Vite](https://vitejs.dev) (Custom Rolldown-Vite 7.2.5) + Node.js WebSocket server
 - **State Management:** [Pinia](https://pinia.vuejs.org) with persisted state plugin
 - **Routing:** [Vue Router 4](https://router.vuejs.org)
 - **UI Components:** [shadcn-vue](https://www.shadcn-vue.com) (New York style)
@@ -48,9 +48,8 @@ OGame Vue TS is a single-player, browser-based space strategy game inspired by t
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org) (version 18 or higher recommended)
+- [Node.js](https://nodejs.org) (version 22 or higher recommended)
 - [pnpm](https://pnpm.io) (version 10.13.1 or higher)
-- [Go](https://golang.org) (version 1.21 or higher recommended) (optional for binary builds)
 
 ### Installation
 
@@ -94,7 +93,7 @@ The application supports full theme customization through Tailwind CSS variables
 
 ## Documentation
 
-- [Docker Deployment Guide](DOCKER.md)
+- [Docker Deployment Guide](DEPLOY_DOCKER.md)
 - [Game Reference Manual](ogame-reference.md) - Complete data for buildings, technologies, ships, defense, officers, etc.
 
 ## Contributing

@@ -203,7 +203,7 @@
 
     <!-- 主内容区 -->
     <SidebarInset>
-      <div class="flex flex-col h-full" :class="Capacitor.isNativePlatform() ? 'pt-[80px]' : 'pt-[60px]'">
+      <div class="flex flex-col h-full pt-[60px]">
         <!-- 顶部资源栏 - 固定定位 -->
         <header
           v-if="planet"
@@ -211,7 +211,7 @@
           class="fixed top-0 right-0 left-0 z-40 bg-card border-b px-4 sm:px-6 shadow-md"
           :class="[
             sidebarOpen ? 'lg:left-[var(--sidebar-width)]' : 'lg:left-[var(--sidebar-width-icon)]',
-            Capacitor.isNativePlatform() ? 'py-6' : 'py-3'
+            'py-3'
           ]"
         >
           <div class="flex flex-col gap-3">
@@ -219,9 +219,6 @@
             <div
               class="grid items-center gap-3 sm:gap-6"
               style="grid-template-columns: auto 1fr auto"
-              :class="{
-                'relative top-3': Capacitor.isNativePlatform()
-              }"
             >
               <!-- 左侧：汉堡菜单（移动端）/ 占位（PC端） -->
               <div>
@@ -298,7 +295,7 @@
             class="fixed right-0 left-0 z-30 bg-card border-b px-4 py-3 shadow-md lg:hidden"
             :class="[
               sidebarOpen ? 'lg:left-[var(--sidebar-width)]' : 'lg:left-[var(--sidebar-width-icon)]',
-              Capacitor.isNativePlatform() ? 'top-[80px]' : 'top-[60px]'
+              'top-[60px]'
             ]"
           >
             <div class="grid grid-cols-2 gap-3">
@@ -389,7 +386,7 @@
     </SidebarInset>
 
     <!-- 右下角固定通知按钮 -->
-    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2" :class="{ 'bottom-15': Capacitor.isNativePlatform() }">
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
       <!-- 返回顶部 -->
       <BackToTop />
       <!-- 队列通知 -->
@@ -449,20 +446,6 @@
       </DialogContent>
     </Dialog>
   </SidebarProvider>
-
-  <!-- Android 退出确认对话框 -->
-  <AlertDialog v-model:open="exitDialogOpen">
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{{ t('common.exitConfirmTitle') }}</AlertDialogTitle>
-        <AlertDialogDescription>{{ t('common.exitConfirmMessage') }}</AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>{{ t('common.cancel') }}</AlertDialogCancel>
-        <AlertDialogAction @click="exitApp">{{ t('common.confirm') }}</AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
 
   <!-- NPC 名称更新确认对话框 -->
   <AlertDialog v-model:open="npcNameUpdateDialogOpen">
@@ -586,8 +569,6 @@
   import { useAppUpdate } from '@/composables/useAppUpdate'
   import { StarsBackground } from '@/components/ui/bg-stars'
   import { ParticlesBg } from '@/components/ui/particles-bg'
-  import { App as CapacitorApp } from '@capacitor/app'
-  import { Capacitor } from '@capacitor/core'
 
   // 执行数据迁移（在 store 初始化之前）
   migrateGameData()
@@ -627,8 +608,6 @@
   const renameDialogOpen = ref(false)
   const renamingPlanetId = ref<string | null>(null)
   const newPlanetName = ref('')
-  // Android 退出确认对话框状态
-  const exitDialogOpen = ref(false)
   // NPC 名称更新对话框状态
   const npcNameUpdateDialogOpen = ref(false)
   const oldFormatNPCCount = ref(0)
@@ -1267,17 +1246,6 @@
         }
       }
 
-      // Android 返回键退出确认
-      if (Capacitor.isNativePlatform()) {
-        CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-          if (canGoBack) {
-            router.back()
-          } else {
-            exitDialogOpen.value = true
-          }
-        })
-      }
-
       // 启动版本检查定时器（每5分钟被动检查一次）
       versionCheckInterval.value = setInterval(async () => {
         const versionInfo = await checkLatestVersion(gameStore.player.lastVersionCheckTime || 0, (time: number) => {
@@ -1314,16 +1282,7 @@
     // 移除队列取消事件监听
     window.removeEventListener('cancel-build', handleCancelBuildEvent as EventListener)
     window.removeEventListener('cancel-research', handleCancelResearchEvent as EventListener)
-    // 移除 Android 返回键监听
-    if (Capacitor.isNativePlatform()) {
-      CapacitorApp.removeAllListeners()
-    }
   })
-
-  // Android 退出应用
-  const exitApp = () => {
-    CapacitorApp.exitApp()
-  }
 
   // NPC 名称更新处理
   const handleUpdateNPCNames = () => {
