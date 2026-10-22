@@ -27,7 +27,8 @@
     "dev:server": "pnpm run build:node-server && node server-dist/main.js",
     "start:server": "node server-dist/main.js",
     "preview": "vite preview",
-    "smoke:factory": "cross-env SMOKE_ENTRY=scripts/factory-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js"
+    "smoke:factory": "cross-env SMOKE_ENTRY=scripts/factory-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
+    "smoke:factory-engine": "cross-env SMOKE_ENTRY=scripts/factory-engine-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js"
   },
   "dependencies": {
     "ws": "^8.22.0"

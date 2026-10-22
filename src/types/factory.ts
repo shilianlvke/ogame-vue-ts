@@ -298,10 +298,20 @@ export interface PlanetFactory {
   infiniteResearch: Record<InfiniteResearchId, number>
   /** 矿脉剩余储量，按矿种 */
   oreReserve: Partial<Record<MaterialId, number>>
+  /** 矿脉初始储量，用于计算贫化比例 */
+  oreReserveMax?: Partial<Record<MaterialId, number>>
   /** 油井累计开采量，用于产量衰减 */
   oilExtracted: number
   /** 每 tick 的电力满足率快照，供界面显示 */
   powerRatio: number
   /** 累计产量，单位万，用于扰动值 */
   lifetimeProduced: number
+  /** 研究进度，单位研究单位 */
+  researchProgress: Partial<Record<TechId, number>>
+  /** 配给顺序：物品 → 消费配方 id 列表，靠前者优先 */
+  priority: Partial<Record<MaterialId, string[]>>
+  /** 当前工程服等级 */
+  suit?: SuitTier
+  /** 蓄电器储能，MJ */
+  storedEnergy?: number
 }
