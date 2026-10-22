@@ -1,5 +1,4 @@
-import type { FleetMission, Planet, Resources, Fleet, BattleResult, SpyReport, Player, Officer, DebrisField, NPC } from '@/types/game'
-import type { Locale } from '@/locales'
+import type { FleetMission, Planet, Resources, Fleet, BattleResult, SpyReport, Player, Officer, DebrisField } from '@/types/game'
 import { ShipType, DefenseType, MissionType, BuildingType, OfficerType, TechnologyType, ExpeditionZone } from '@/types/game'
 import { FLEET_STORAGE_CONFIG, EXPEDITION_ZONES } from '@/config/gameConfig'
 import { generateId } from '@/utils/id'
@@ -7,7 +6,6 @@ import { generatePlanetName } from './nameGenerator'
 import * as battleLogic from './battleLogic'
 import * as moonLogic from './moonLogic'
 import * as moonValidation from './moonValidation'
-import * as diplomaticLogic from './diplomaticLogic'
 import * as resourceLogic from './resourceLogic'
 import * as fleetStorageLogic from './fleetStorageLogic'
 import * as officerLogic from './officerLogic'
@@ -80,14 +78,13 @@ export const createFleetMission = (
 /**
  * 运输任务失败原因
  */
-export type TransportFailReason = 'targetNotFound' | 'giftRejected'
+export type TransportFailReason = 'targetNotFound'
 
 /**
  * 运输任务结果
  */
 export interface TransportResult {
   success: boolean
-  reputationGain?: number
   overflow?: Resources
   failReason?: TransportFailReason
 }
@@ -98,30 +95,9 @@ export interface TransportResult {
 export const processTransportArrival = (
   mission: FleetMission,
   targetPlanet: Planet | undefined,
-  player?: Player,
-  allNpcs?: NPC[],
-  locale: Locale = 'zh-CN',
+  _player?: Player,
   storageCapacityBonus: number = 0
 ): TransportResult => {
-  // 检查是否是赠送任务
-  if (mission.isGift && mission.giftTargetNpcId && player && allNpcs) {
-    const targetNpc = allNpcs.find(n => n.id === mission.giftTargetNpcId)
-    if (targetNpc) {
-      const giftResult = diplomaticLogic.handleGiftArrival(mission, player, targetNpc, locale)
-      mission.status = 'returning'
-
-      // 如果礼物被拒绝，资源返还给玩家
-      if (!giftResult.accepted) {
-        // 资源保留在cargo中，返回时会退还给玩家
-        return { success: false, reputationGain: undefined, failReason: 'giftRejected' }
-      }
-
-      // 礼物被接受，清空货物
-      mission.cargo = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
-      return { success: true, reputationGain: giftResult.reputationGain }
-    }
-  }
-
   // 正常运输任务
   if (targetPlanet) {
     // 使用安全添加函数，防止资源溢出
@@ -237,127 +213,6 @@ export const processAttackArrival = async (
       },
       createdAt: Date.now()
     }
-  }
-
-  return { battleResult, moon, debrisField }
-}
-
-/**
- * 处理NPC攻击玩家星球
- * 专门用于NPC作为攻击方的情况
- */
-export const processNPCAttackArrival = async (
-  npc: NPC,
-  mission: FleetMission,
-  targetPlanet: Planet,
-  defender: Player,
-  allPlanets: Planet[],
-  battleToFinish: boolean = false
-): Promise<{ battleResult: BattleResult; moon: Planet | null; debrisField: DebrisField | null } | null> => {
-  // 执行战斗（通过可注入的 BattleRunner 计算，浏览器端默认走 Worker）
-  const battleResult = await battleLogic.simulateBattle(
-    mission.fleet, // NPC舰队
-    targetPlanet.fleet, // 玩家舰队
-    targetPlanet.defense, // 玩家防御
-    targetPlanet.resources, // 玩家资源
-    {} as Record<OfficerType, Officer>, // NPC没有军官系统
-    defender.officers || ({} as Record<OfficerType, Officer>), // 玩家军官
-    npc.technologies, // NPC科技等级
-    defender.technologies, // 玩家科技等级
-    battleToFinish
-  )
-
-  // 更新战斗报告ID和参与者信息
-  battleResult.id = generateId('battle')
-  battleResult.attackerId = npc.id
-  battleResult.defenderId = defender.id
-  battleResult.attackerPlanetId = mission.originPlanetId
-  battleResult.defenderPlanetId = targetPlanet.id
-  battleResult.timestamp = Date.now()
-
-  // 如果NPC获胜，掠夺的资源给NPC的起始星球
-  if (battleResult.winner === 'attacker' && battleResult.plunder) {
-    const npcOriginPlanet = npc.planets.find(p => p.id === mission.originPlanetId)
-    if (npcOriginPlanet) {
-      // NPC获得掠夺的资源（当舰队返回时）
-      mission.cargo = battleResult.plunder
-    }
-  }
-
-  // 更新NPC舰队 - 计算幸存舰船
-  const survivingFleet: Partial<Fleet> = {}
-  Object.entries(mission.fleet).forEach(([shipType, initialCount]) => {
-    const lost = battleResult.attackerLosses[shipType as ShipType] || 0
-    const surviving = initialCount - lost
-    if (surviving > 0) {
-      survivingFleet[shipType as ShipType] = surviving
-    }
-  })
-  mission.fleet = survivingFleet
-
-  // 更新玩家星球舰队和防御
-  Object.entries(battleResult.defenderLosses.fleet).forEach(([shipType, lost]) => {
-    targetPlanet.fleet[shipType as ShipType] = Math.max(0, (targetPlanet.fleet[shipType as ShipType] || 0) - lost)
-  })
-
-  Object.entries(battleResult.defenderLosses.defense).forEach(([defenseType, lost]) => {
-    targetPlanet.defense[defenseType as DefenseType] = Math.max(0, (targetPlanet.defense[defenseType as DefenseType] || 0) - lost)
-  })
-
-  // 防御设施修复（70%概率）
-  const defenseBeforeBattle: Partial<Record<DefenseType, number>> = { ...targetPlanet.defense }
-  Object.entries(battleResult.defenderLosses.defense).forEach(([defenseType, lost]) => {
-    defenseBeforeBattle[defenseType as DefenseType] = (defenseBeforeBattle[defenseType as DefenseType] || 0) + lost
-  })
-  targetPlanet.defense = battleLogic.repairDefense(defenseBeforeBattle, targetPlanet.defense) as Record<DefenseType, number>
-
-  // 扣除玩家星球被掠夺的资源
-  if (battleResult.plunder) {
-    targetPlanet.resources.metal = Math.max(0, targetPlanet.resources.metal - battleResult.plunder.metal)
-    targetPlanet.resources.crystal = Math.max(0, targetPlanet.resources.crystal - battleResult.plunder.crystal)
-    targetPlanet.resources.deuterium = Math.max(0, targetPlanet.resources.deuterium - battleResult.plunder.deuterium)
-  }
-
-  mission.status = 'returning'
-
-  // 尝试生成月球（如果该位置还没有月球）
-  let moon: Planet | null = null
-  const moonCheck = moonValidation.canCreateMoon(allPlanets, targetPlanet.position, battleResult.debrisField)
-  if (moonCheck.canCreate && moonCheck.chance) {
-    if (moonValidation.shouldGenerateMoon(moonCheck.chance)) {
-      moon = moonLogic.tryGenerateMoon(battleResult.debrisField, targetPlanet.position, targetPlanet.id, targetPlanet.ownerId || 'unknown')
-    }
-  }
-
-  // 创建残骸场（如果有残骸）
-  let debrisField: DebrisField | null = null
-  const totalDebris = battleResult.debrisField.metal + battleResult.debrisField.crystal
-  if (totalDebris > 0) {
-    debrisField = {
-      id: `debris_${targetPlanet.position.galaxy}_${targetPlanet.position.system}_${targetPlanet.position.position}`,
-      position: targetPlanet.position,
-      resources: {
-        metal: battleResult.debrisField.metal,
-        crystal: battleResult.debrisField.crystal
-      },
-      createdAt: Date.now()
-    }
-  }
-
-  // NPC攻击玩家后降低好感度
-  if (!npc.relations) {
-    npc.relations = {}
-  }
-  if (!npc.relations[defender.id]) {
-    npc.relations[defender.id] = diplomaticLogic.initializeDiplomaticRelation(npc.id, defender.id)
-  }
-
-  // 根据战斗结果降低好感度
-  // NPC获胜降低更多好感度，失败降低较少
-  const reputationChange = battleResult.winner === 'attacker' ? -15 : -10
-  const relation = npc.relations[defender.id]
-  if (relation) {
-    diplomaticLogic.updateReputation(relation, reputationChange, 'attack', `NPC ${npc.name} attacked player ${defender.name}`)
   }
 
   return { battleResult, moon, debrisField }
@@ -543,9 +398,7 @@ export const processSpyArrival = (
   mission: FleetMission,
   targetPlanet: Planet | undefined,
   attacker: Player,
-  defender: Player | null,
-  allNpcs?: NPC[],
-  locale: Locale = 'zh-CN'
+  defender: Player | null
 ): SpyResult => {
   if (!targetPlanet) {
     mission.status = 'returning'
@@ -563,9 +416,6 @@ export const processSpyArrival = (
   // 计算被发现概率
   const detectionChance = calculateSpyDetectionChance(attackerSpyLevel, defenderSpyLevel, spyProbeCount)
 
-  // 判断是否被发现
-  const wasDetected = Math.random() < detectionChance
-
   const spyReport: SpyReport = {
     id: generateId('spy'),
     timestamp: Date.now(),
@@ -580,14 +430,6 @@ export const processSpyArrival = (
     buildings: visibility.showBuildings ? { ...targetPlanet.buildings } : undefined,
     technologies: visibility.showTechnologies && defender ? { ...defender.technologies } : undefined,
     detectionChance
-  }
-
-  // 如果目标是NPC星球，调用外交逻辑
-  if (allNpcs && targetPlanet.ownerId) {
-    const targetNpc = allNpcs.find(npc => npc.planets.some(p => p.id === targetPlanet.id))
-    if (targetNpc) {
-      diplomaticLogic.handleSpyReputation(attacker, targetNpc, wasDetected, locale)
-    }
   }
 
   mission.status = 'returning'
@@ -660,9 +502,7 @@ export interface RecycleResult {
 export const processRecycleArrival = (
   mission: FleetMission,
   debrisField: DebrisField | undefined,
-  player?: Player,
-  allNpcs?: NPC[],
-  locale: Locale = 'zh-CN'
+  _player?: Player
 ): RecycleResult => {
   if (!debrisField) {
     mission.status = 'returning'
@@ -706,11 +546,6 @@ export const processRecycleArrival = (
   const remainingCrystal = debrisField.resources.crystal - collectedCrystal
 
   mission.status = 'returning'
-
-  // 检查是否在NPC星球位置回收残骸，如果是则降低好感度
-  if (player && allNpcs && collectedAmount > 0) {
-    diplomaticLogic.handleDebrisRecycleReputation(player, debrisField.position, allNpcs, locale)
-  }
 
   return {
     success: true,
@@ -1204,9 +1039,7 @@ export const updateFleetMissions = async (
   debrisFields: Map<string, DebrisField>,
   attacker: Player,
   defender: Player | null,
-  now: number,
-  allNpcs?: NPC[],
-  locale?: Locale
+  now: number
 ): Promise<{
   completedMissions: string[]
   battleReports: BattleResult[]
@@ -1245,7 +1078,7 @@ export const updateFleetMissions = async (
 
       switch (mission.missionType) {
         case MissionType.Transport:
-          processTransportArrival(mission, targetPlanet, attacker, allNpcs, locale, storageCapacityBonus)
+          processTransportArrival(mission, targetPlanet, attacker, storageCapacityBonus)
           break
 
         case MissionType.Attack: {
@@ -1307,7 +1140,7 @@ export const updateFleetMissions = async (
         case MissionType.Recycle:
           const debrisId = `debris_${mission.targetPosition.galaxy}_${mission.targetPosition.system}_${mission.targetPosition.position}`
           const debrisField = debrisFields.get(debrisId)
-          const recycleResult = processRecycleArrival(mission, debrisField, attacker, allNpcs)
+          const recycleResult = processRecycleArrival(mission, debrisField, attacker)
           if (recycleResult.success && recycleResult.collectedResources) {
             if (recycleResult.remainingDebris) {
               // 更新残骸场
@@ -1362,14 +1195,6 @@ export const updateFleetMissions = async (
           if (destroyResult.success && destroyResult.planetId) {
             // 星球被摧毁
             destroyedPlanetIds.push(destroyResult.planetId)
-
-            // 处理外交关系（如果目标是NPC星球）
-            if (targetPlanet && targetPlanet.ownerId && allNpcs && locale) {
-              const planetOwner = allNpcs.find(npc => npc.id === targetPlanet.ownerId)
-              if (planetOwner) {
-                diplomaticLogic.handlePlanetDestructionReputation(attacker, targetPlanet, planetOwner, allNpcs, locale)
-              }
-            }
 
             planets.delete(targetKey)
           }

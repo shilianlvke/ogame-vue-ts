@@ -1,8 +1,8 @@
 /**
  * 排行榜逻辑模块
- * 计算玩家和NPC的各类积分，并生成排行榜
+ * 计算玩家的各类积分，并生成排行榜
  */
-import type { Player, NPC, Planet, RankingEntry, RankingCategory } from '@/types/game'
+import type { Player, Planet, RankingEntry, RankingCategory } from '@/types/game'
 import { BuildingType, TechnologyType, ShipType, DefenseType } from '@/types/game'
 import { BUILDINGS, TECHNOLOGIES, SHIPS, DEFENSES } from '@/config/gameConfig'
 
@@ -126,21 +126,6 @@ export const calculatePlayerScores = (player: Player): RankingEntry['scores'] =>
 }
 
 /**
- * 计算NPC的所有积分
- */
-export const calculateNPCScores = (npc: NPC): RankingEntry['scores'] => {
-  // 联机模式下客户端拿到的是公开视图（建筑/舰队被清空），直接用服务端算好的分数
-  if (npc.scores) return npc.scores
-  const building = calculateBuildingScore(npc.planets)
-  const research = calculateResearchScore(npc.technologies)
-  const fleet = calculateFleetScore(npc.planets)
-  const defense = calculateDefenseScore(npc.planets)
-  const total = building + research + fleet + defense
-
-  return { total, building, research, fleet, defense }
-}
-
-/**
  * 生成排行榜条目
  */
 export const createRankingEntry = (
@@ -154,25 +139,15 @@ export const createRankingEntry = (
 }
 
 /**
- * 获取完整的排行榜
+ * 获取玩家排行榜条目（联机玩家由调用方并入）
  * @param player 玩家数据
- * @param npcs NPC列表
  * @param category 排行榜类别
  * @returns 按指定类别积分排序的排行榜
  */
-export const getRanking = (player: Player, npcs: NPC[], category: RankingCategory): RankingEntry[] => {
-  const entries: RankingEntry[] = []
-
-  // 添加玩家
-  const playerScores = calculatePlayerScores(player)
-  entries.push(createRankingEntry(player.id, player.name || '玩家', true, playerScores, player.planets.length))
-
-  // 添加所有NPC
-  for (const npc of npcs) {
-    if (npc.planets.length === 0) continue // 跳过没有星球的NPC
-    const npcScores = calculateNPCScores(npc)
-    entries.push(createRankingEntry(npc.id, npc.name, false, npcScores, npc.planets.length))
-  }
+export const getRanking = (player: Player, category: RankingCategory): RankingEntry[] => {
+  const entries: RankingEntry[] = [
+    createRankingEntry(player.id, player.name || '玩家', true, calculatePlayerScores(player), player.planets.length)
+  ]
 
   // 按指定类别的积分降序排序
   entries.sort((a, b) => b.scores[category] - a.scores[category])
@@ -183,12 +158,11 @@ export const getRanking = (player: Player, npcs: NPC[], category: RankingCategor
 /**
  * 获取玩家在指定类别的排名
  * @param player 玩家数据
- * @param npcs NPC列表
  * @param category 排行榜类别
  * @returns 玩家排名（从1开始）
  */
-export const getPlayerRank = (player: Player, npcs: NPC[], category: RankingCategory): number => {
-  const ranking = getRanking(player, npcs, category)
+export const getPlayerRank = (player: Player, category: RankingCategory): number => {
+  const ranking = getRanking(player, category)
   const playerIndex = ranking.findIndex(entry => entry.isPlayer)
   return playerIndex + 1
 }
@@ -197,18 +171,17 @@ export const getPlayerRank = (player: Player, npcs: NPC[], category: RankingCate
  * 获取排行榜统计信息
  */
 export const getRankingStats = (
-  player: Player,
-  npcs: NPC[]
+  player: Player
 ): {
   totalPlayers: number
   playerRanks: Record<RankingCategory, number>
 } => {
-  const totalPlayers = 1 + npcs.filter(npc => npc.planets.length > 0).length
+  const totalPlayers = 1
   const categories: RankingCategory[] = ['total', 'building', 'research', 'fleet', 'defense']
 
   const playerRanks = {} as Record<RankingCategory, number>
   for (const category of categories) {
-    playerRanks[category] = getPlayerRank(player, npcs, category)
+    playerRanks[category] = getPlayerRank(player, category)
   }
 
   return { totalPlayers, playerRanks }

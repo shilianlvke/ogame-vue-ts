@@ -29,7 +29,6 @@ export interface StartOptions {
   /** 存档目录；不传则只在内存中运行（测试用） */
   dataDir?: string
   visibility?: VisibilityMode
-  npcCount?: number
   gameSpeed?: number
   battleToFinish?: boolean
   locale?: Locale
@@ -59,12 +58,11 @@ export const startServer = async (options: StartOptions): Promise<RunningServer>
     state = createState({
       gameSpeed: options.gameSpeed,
       battleToFinish: options.battleToFinish,
-      locale: options.locale,
-      npcCount: options.npcCount
+      locale: options.locale
     })
-    console.log(`[server] 创建新世界：${Object.keys(state.planets).length} 个 NPC 星球`)
+    console.log('[server] 创建新世界：NPC 已按工厂版 §14.2 下线，星图地点由信号系统生成')
   } else {
-    console.log(`[server] 读取存档：${Object.keys(state.players).length} 名玩家，${state.npcs.length} 个 NPC`)
+    console.log(`[server] 读取存档：${Object.keys(state.players).length} 名玩家`)
   }
 
   const room = new Room(state, {
@@ -98,7 +96,6 @@ export const startServer = async (options: StartOptions): Promise<RunningServer>
         tick: room.tickCount,
         online: room.onlineCount,
         players: room.playerCount,
-        npcs: room.npcCount(),
         uptime: Math.floor(process.uptime())
       })
       return

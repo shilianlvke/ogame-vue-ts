@@ -2183,6 +2183,17 @@ T0 与流体锚点价：
 | `config/gameConfig.ts` 建筑配置 | ~800 | 重写 |
 | `Planet.maxSpace` / `Planet.maxFleetStorage` | — | 删除，改由实例数上限与仓库上限约束 |
 
+**实施状态（2026-10-22）**
+
+NPC 相关项已完成下线：
+
+- 删除 `npcBehaviorLogic` / `npcGrowthLogic` / `diplomaticLogic` / `core/npc` / `npcStore` / NPC 名称生成器；
+- 引擎不再有 NPC 阶段；服务端不再生成 NPC 星球、不再下发 NPC 快照；旧存档加载时清理 `npc_*` 星球与 `${pkg.name}-npcs` 注册表；
+- 外交页、NPC 关系卡、外交通知、NPC 活动弹窗、礼物/贸易/联合攻击入口、GM NPC 工具、排行 NPC 条目、成就外交分类全部移除；
+- 星图地点改为静态 POI（§9.5）：遗迹 / 残骸 / 贸易站 / 巢穴 / 虫洞，由 `logic/signalLogic.ts` 确定性生成，交易站 6 小时刷新，巢穴一次性挑战。
+
+仍待后续阶段处理：`views/BuildingsView.vue`、`ShipyardView.vue` 等旧界面的彻底替换，以及工厂状态并入 `core` 存档/联机相位（§14.1）。
+
 ### 14.3 容量基线
 
 实测数据（合成状态，26 座建筑 / 180 槽位 / 55 材料 / 30 份战报 / 50 份任务报告 / 200 已发现星系）：

@@ -14,18 +14,16 @@ import type {
   DefenseType,
   Fleet,
   FleetMission,
-  NPC,
   Planet,
   Player,
   RankingEntry,
-  Resources,
-  TechnologyType
+  Resources
 } from '@/types/game'
 import type { Locale } from '@/locales'
 import type { EngineEvent, World } from './types'
 import type { GameCommand } from './commands'
 import { allPlayers, inCurrentCycle, positionKey } from './world'
-import { calculateNPCScores, calculatePlayerScores } from '@/logic/rankingLogic'
+import { calculatePlayerScores } from '@/logic/rankingLogic'
 import { getPlayerTradeStatus } from '@/logic/playerTradeLogic'
 
 /** 协议版本：客户端与服务端不一致时拒绝连接 */
@@ -98,15 +96,13 @@ export interface WorldSnapshot {
   /** 自己的完整玩家数据 */
   self: Player
   /**
-   * 其它可见星球（其他玩家 + NPC），key 为 `galaxy:system:position`；
+   * 其它可见星球（其他玩家），key 为 `galaxy:system:position`；
    * 月球使用 `galaxy:system:position:moon`，避免与同坐标行星冲突。
    */
   planets: Record<string, Planet>
-  /** NPC 列表（`planets` 字段为空数组，客户端按 ownerId 关联星球） */
-  npcs: NPC[]
   debrisFields: Record<string, DebrisField>
   players: PlayerPublicProfile[]
-  /** NPC 商队（P5）：星图上画移动光点用 */
+  /** 中立商队（P5）：星图上画移动光点用 */
   caravans?: Array<{ id: string; fromSystemId: string; toSystemId: string; departAt: number; arriveAt: number }>
 }
 
@@ -123,8 +119,6 @@ export interface ServerPatch {
   planets?: Record<string, Planet>
   /** 被移除的星球 key */
   removedPlanets?: string[]
-  /** NPC 列表（仅在 NPC 集合变化时下发） */
-  npcs?: NPC[]
   debrisFields?: Record<string, DebrisField>
   players?: PlayerPublicProfile[]
   events?: EngineEvent[]
@@ -224,54 +218,6 @@ export const toPublicPlanet = (planet: Planet): Planet => ({
   maxFleetStorage: 0
 })
 
-/**
- * NPC 公开视图：保留外交关系与身份信息，
- * 隐藏科技等级、舰队任务、侦查报告等只能由侦查获得的情报。
- */
-export const toPublicNpc = (npc: NPC): NPC => ({
-  id: npc.id,
-  name: npc.name,
-  note: npc.note,
-  planets: [], // 由 buildPublicNpcs 填充公开视图
-  technologies: {} as Record<TechnologyType, number>,
-  difficulty: npc.difficulty,
-  aiType: npc.aiType,
-  difficultyLevel: npc.difficultyLevel,
-  distanceToHomeworld: npc.distanceToHomeworld,
-  relations: npc.relations,
-  allies: npc.allies,
-  enemies: npc.enemies
-})
-
-/**
- * 构建 NPC 列表视图
- *
- * 公开模式下附带星球的**公开视图**，这样银河页/外交页仍能按 NPC 聚合星球，
- * 但看不到资源与舰队。星球对象来自世界地图，位置等静态信息是准确的。
- */
-export const buildPublicNpcs = (world: World, visibility: VisibilityMode = 'public'): NPC[] => {
-  // 只下发当前周目的 NPC（跨层 NPC 属于信息泄露）
-  const npcs = world.cycle ? world.npcs.filter(npc => npc.planets.some(planet => inCurrentCycle(world, planet))) : world.npcs
-  if (visibility === 'full') return npcs
-  return npcs.map(npc => ({
-    ...toPublicNpc(npc),
-    // 公开视图会清空建筑/舰队/科技，积分必须在服务端算好再下发
-    scores: calculateNPCScores(npc),
-    planets: npc.planets.map(toPublicPlanet)
-  }))
-}
-
-/**
- * NPC 增量签名：忽略星球数组
- *
- * 星球本身通过 `planets` 补丁单独下发，因此 NPC 列表只在
- * 身份/外交关系变化时才重发，避免每个 tick 重复几十 KB。
- */
-const npcSignature = (npcs: NPC[]): string =>
-  JSON.stringify(
-    npcs.map(npc => [npc.id, npc.name, npc.aiType, npc.difficultyLevel, npc.distanceToHomeworld, npc.relations, npc.allies, npc.enemies])
-  )
-
 /** 星球在地图中的 key（月球加后缀，避免同坐标覆盖） */
 export const planetMapKey = (planet: Planet): string =>
   planet.isMoon ? `${positionKey(planet.position)}:moon` : positionKey(planet.position)
@@ -323,16 +269,6 @@ const REPORT_KEYS = [
   'spyReports',
   'missionReports',
   'spiedNotifications',
-  'npcActivityNotifications',
-  'giftNotifications',
-  'giftRejectedNotifications',
-  'tradeOffers',
-  'intelReports',
-  'jointAttackInvites',
-  'aidNotifications',
-  'allyDefenseNotifications',
-  'attitudeChangeNotifications',
-  'diplomaticReports',
   'questNotifications',
   'playerTrades',
   'chatMessages'
@@ -375,7 +311,6 @@ export const buildSnapshot = (world: World, viewer: Player, options: SnapshotOpt
     serverTime: options.now ?? Date.now(),
     self: viewer,
     planets,
-    npcs: buildPublicNpcs(world, visibility),
     debrisFields: world.debrisFields,
     caravans: world.caravans?.map(caravan => ({
       id: caravan.id,
@@ -391,8 +326,6 @@ export const buildSnapshot = (world: World, viewer: Player, options: SnapshotOpt
 /** 增量状态（按客户端保存） */
 export interface PatchState {
   planets: Record<string, string>
-  /** NPC 列表的签名（忽略星球数组） */
-  npcsSignature: string
   players: string
   debris: string
   self: Record<string, string>
@@ -401,7 +334,6 @@ export interface PatchState {
 
 export const createPatchState = (): PatchState => ({
   planets: {},
-  npcsSignature: '',
   players: '',
   debris: '',
   self: {},
@@ -414,7 +346,6 @@ export const seedPatchState = (state: PatchState, snapshot: WorldSnapshot): void
   for (const [key, planet] of Object.entries(snapshot.planets)) {
     state.planets[key] = JSON.stringify(planet)
   }
-  state.npcsSignature = npcSignature(snapshot.npcs)
   state.players = JSON.stringify(snapshot.players)
   state.debris = JSON.stringify(snapshot.debrisFields)
   state.self = {}
@@ -458,18 +389,6 @@ export const buildPatch = (world: World, viewer: Player, state: PatchState, opti
   removed.forEach(key => delete state.planets[key])
   if (Object.keys(changedPlanets).length > 0) patch.planets = changedPlanets
   if (removed.length > 0) patch.removedPlanets = removed
-
-  // —— NPC 列表 ——
-  // —— NPC 列表 ——
-  // 签名必须基于「当前周目可见的 NPC」，否则其它层的 NPC 会让签名一直变化
-  const cycleNpcs = world.cycle
-    ? world.npcs.filter(npc => npc.planets.some(planet => inCurrentCycle(world, planet)))
-    : world.npcs
-  const signature = npcSignature(cycleNpcs)
-  if (signature !== state.npcsSignature) {
-    patch.npcs = buildPublicNpcs(world, visibility)
-    state.npcsSignature = signature
-  }
 
   // —— 玩家档案 ——
   const profiles = collectPlayerProfiles(world, options.onlinePlayerIds)

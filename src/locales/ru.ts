@@ -780,6 +780,23 @@ export default {
     scanSuccess: 'Сканирование завершено',
     renameSuccess: 'Названо {name}',
     signalSuccess: 'Сигнал обработан',
+    poiReward: 'Награда точки на карте',
+    signalKinds: {
+      derelict: 'Обломки',
+      ruin: 'Руины',
+      tradingPost: 'Торговый пост',
+      lair: 'Логово',
+      wormhole: 'Червоточина'
+    },
+    buyForDarkMatter: 'Купить за {price} тёмной материи',
+    soldOut: 'Распродано',
+    tradeRefresh: 'Товары обновляются каждые 6 часов',
+    tradeSuccess: 'Сделка завершена',
+    lairPower: 'Рекомендуемая мощь {power}',
+    lairHint: 'Одноразовое испытание: ржавый сплав ×20 и нейрокабель ×2',
+    challenge: 'Бросить вызов',
+    lairCleared: 'Логово зачищено',
+    cleared: 'Зачищено',
     scanTimeout: 'Тайм-аут сканирования, повторите'
   },
   galaxyView: {

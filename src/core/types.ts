@@ -12,7 +12,7 @@
  * - 引擎只做「就地修改」(in-place mutation)，**不允许重新赋值** `World` 的字段
  *   （否则会切断与 store 的引用关系），数组变更一律走 splice/push/pop。
  */
-import type { Player, Planet, NPC, DebrisField } from '@/types/game'
+import type { Player, Planet, DebrisField } from '@/types/game'
 import type { Locale } from '@/locales'
 
 /** 单玩家视角的世界 */
@@ -31,23 +31,15 @@ export interface World {
   players?: Player[]
   /** 非玩家星球，key = `galaxy:system:position`（对应 universeStore.planets） */
   planets: Record<string, Planet>
-  /** NPC 列表（对应 npcStore.npcs） */
-  npcs: NPC[]
   /** 残骸场，key = debris id（对应 universeStore.debrisFields） */
   debrisFields: Record<string, DebrisField>
-  /** 语言（影响 NPC 名称生成等） */
+  /** 语言（影响名称生成等） */
   locale: Locale
   /** 游戏速度倍率 */
   gameSpeed: number
   /** 战斗到底模式 */
   battleToFinish: boolean
-  /** NPC 成长累加秒数（按周目分别累计，避免多层互相清零） */
-  npcGrowthAccum: Record<number, number>
-  /** NPC 行为累加秒数（按周目分别累计） */
-  npcBehaviorAccum: Record<number, number>
-  /** NPC 注册表当前对应的周目（切换周目时重建） */
-  npcRegistryCycle?: number
-  /** NPC 商队（P5） */
+  /** 商队（P5，星图上画移动光点用） */
   caravans?: Array<import('@/logic/caravanLogic').Caravan>
   /** 上次生成商队的时间 */
   caravanSpawnAt?: number
@@ -91,12 +83,18 @@ export type EngineEvent =
     }
   /** 成就解锁 */
   | { kind: 'achievement'; id: string; tier: string }
+  /** 星图 POI 产出的工厂材料（由客户端转发到工厂存档） */
+  | {
+      kind: 'factoryMaterials'
+      materials: Partial<Record<import('@/types/factory').MaterialId, number>>
+      source: 'ruin' | 'lair' | 'other'
+    }
 
 /** 引擎运行上下文 */
 export interface EngineContext {
   /** 翻译函数 */
   t: TranslateFn
-  /** 事件出口；联机模式下可指定事件属于哪个玩家（NPC 可能针对不同玩家行动） */
+  /** 事件出口；联机模式下可指定事件属于哪个玩家（世界事件可能针对不同玩家） */
   emit: (event: EngineEvent, playerId?: string) => void
   /**
    * 随机数源（默认 Math.random）。

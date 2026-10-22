@@ -41,7 +41,7 @@ export const tickGatePhase = (world: World, deltaSeconds: number, now: number = 
   if (deltaSeconds <= 0) return []
   const gates = ensureGateStates(world)
 
-  // NPC 商队：定期生成、到点缴费
+  // 中立商队：定期生成、到点缴费
   const layout = getWorldLayout(world)
   maybeSpawnCaravans(world, layout, now)
   tickCaravans(world, now)

@@ -78,7 +78,7 @@
     <!-- 底部提示与图例 -->
     <div class="pointer-events-none absolute bottom-4 left-4 z-20 hidden items-center gap-4 text-[10px] text-white/55 sm:flex">
       <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-blue-400" />{{ t('galaxyMap.legendOwn') }}</span>
-      <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-amber-400" />{{ t('galaxyMap.legendNpc') }}</span>
+      <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-amber-400" />{{ t('galaxyMap.signal') }}</span>
       <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-cyan-300" />{{ t('galaxyMap.legendScanned') }}</span>
       <span class="text-white/35">·</span>
       <span>{{ t('galaxyMap.rightClickHint') }}</span>
@@ -140,15 +140,6 @@
                 <div class="text-muted-foreground">{{ t('galaxyMap.scanStatus') }}</div>
                 <div class="font-medium">{{ systemScan ? t('galaxyMap.scanned') : t('galaxyMap.unscanned') }}</div>
               </div>
-              <div v-if="slotNpc && !slotIsUnknown" class="col-span-2 rounded-lg bg-muted/50 p-2">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-muted-foreground">{{ slotNpc.name }}</span>
-                  <span class="font-medium">{{ slotRelationLabel }}</span>
-                </div>
-                <div v-if="slotNpc.difficultyLevel" class="mt-1 text-[10px] text-muted-foreground">
-                  {{ t('galaxyMap.difficulty') }} {{ slotNpc.difficultyLevel }}
-                </div>
-              </div>
               <div v-if="slotDebris" class="col-span-2 rounded-lg bg-muted/50 p-2">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-muted-foreground">{{ t('galaxyView.debrisField') }}</span>
@@ -203,13 +194,6 @@
                 @click="showPlanetActions(selectedSlot.planet, 'attack')"
               >
                 <Sword class="mr-2 h-4 w-4" />{{ t('galaxyView.attack') }}
-              </Button>
-              <Button
-                v-if="selectedSlot.planet && !isOwnPlanet(selectedSlot.planet) && slotNpc && systemScan"
-                variant="outline"
-                @click="showPlanetActions(selectedSlot.planet, 'gift')"
-              >
-                <Gift class="mr-2 h-4 w-4" />{{ t('galaxyView.sendGift') }}
               </Button>
               <Button
                 v-if="selectedSlot.planet && !isOwnPlanet(selectedSlot.planet) && hasInterplanetaryMissiles && systemScan"
@@ -272,11 +256,72 @@
                 <span class="text-muted-foreground">{{ t('galaxyMap.gate') }}</span>
                 <span>{{ selectedGate.owner === 'neutral' ? t('galaxyMap.neutral') : selectedGate.owner }} · {{ selectedGate.toll }}</span>
               </div>
-              <div v-if="selectedSignal" class="flex items-center justify-between gap-2">
-                <span class="text-muted-foreground">{{ t('galaxyMap.signal') }}</span>
-                <Button size="sm" variant="outline" class="h-6 px-2 text-[10px]" @click="handleSignal">
-                  {{ selectedSignal.kind === 'wormhole' ? t('galaxyMap.warp') : t('galaxyMap.collect') }}
-                </Button>
+              <div v-if="selectedSignal" class="space-y-1 rounded-lg bg-muted/50 p-2 text-xs">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-muted-foreground">
+                    {{ t('galaxyMap.signal') }} · {{ signalKindLabel(selectedSignal.kind) }}
+                  </span>
+                  <Button
+                    v-if="selectedSignal.kind === 'wormhole'"
+                    size="sm"
+                    variant="outline"
+                    class="h-6 px-2 text-[10px]"
+                    @click="handleSignal"
+                  >
+                    {{ t('galaxyMap.warp') }}
+                  </Button>
+                  <Button
+                    v-else-if="selectedSignal.kind === 'derelict' || selectedSignal.kind === 'ruin'"
+                    size="sm"
+                    variant="outline"
+                    class="h-6 px-2 text-[10px]"
+                    :disabled="signalClaimed"
+                    @click="handleSignal"
+                  >
+                    {{ signalClaimed ? t('galaxyMap.cleared') : t('galaxyMap.collect') }}
+                  </Button>
+                </div>
+
+                <div v-if="selectedSignal.kind === 'tradingPost' && selectedSignal.goods" class="space-y-1">
+                  <div
+                    v-for="(good, index) in selectedSignal.goods"
+                    :key="index"
+                    class="flex items-center justify-between gap-2"
+                  >
+                    <span>
+                      <ResourceIcon :type="good.material" size="sm" class="mr-1 inline align-[-2px]" />
+                      {{ good.amount.toLocaleString() }}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      class="h-6 px-2 text-[10px]"
+                      :disabled="isTradeSold(index)"
+                      @click="handleTrade(index)"
+                    >
+                      {{ isTradeSold(index) ? t('galaxyMap.soldOut') : t('galaxyMap.buyForDarkMatter', { price: good.price }) }}
+                    </Button>
+                  </div>
+                  <div class="text-[10px] text-muted-foreground">{{ t('galaxyMap.tradeRefresh') }}</div>
+                </div>
+
+                <div v-else-if="selectedSignal.kind === 'lair'" class="space-y-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-muted-foreground">
+                      {{ t('galaxyMap.lairPower', { power: selectedSignal.lairPower ?? 0 }) }}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      class="h-6 px-2 text-[10px]"
+                      :disabled="lairCleared"
+                      @click="handleLair"
+                    >
+                      {{ lairCleared ? t('galaxyMap.cleared') : t('galaxyMap.challenge') }}
+                    </Button>
+                  </div>
+                  <div class="text-[10px] text-muted-foreground">{{ t('galaxyMap.lairHint') }}</div>
+                </div>
               </div>
               <div v-if="selectedSystemScan" class="flex justify-between gap-2">
                 <span class="text-muted-foreground">{{ t('galaxyMap.scanCount') }}</span>
@@ -449,7 +494,6 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useGameStore } from '@/stores/gameStore'
   import { useUniverseStore } from '@/stores/universeStore'
-  import { useNPCStore } from '@/stores/npcStore'
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { Button } from '@/components/ui/button'
@@ -470,7 +514,7 @@
   import * as gameLogic from '@/logic/gameLogic'
   import * as moonLogic from '@/logic/moonLogic'
   import { formatNumber } from '@/utils/format'
-  import { BuildingType, RelationStatus, type DebrisField, type FleetMission, type Planet } from '@/types/game'
+  import { BuildingType, type DebrisField, type FleetMission, type Planet } from '@/types/game'
   import type { StarSystem } from '@/types/galaxy'
   import { dispatchCommand } from '@/core/runtime'
   import { PHALANX_SCAN_COST } from '@/core/commands'
@@ -480,7 +524,6 @@
     ArrowLeft,
     Bomb,
     Eye,
-    Gift,
     Globe,
     Home,
     Maximize2,
@@ -498,7 +541,6 @@
 
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
-  const npcStore = useNPCStore()
   const netStore = useNetStore()
   const router = useRouter()
   const route = useRoute()
@@ -514,7 +556,6 @@
   const selectedRegion = ref<number | null>(null)
   const focusKind = ref<'planet' | 'system' | 'region' | null>(null)
   const renameDraft = ref('')
-  const highlightNpcId = ref<string | undefined>(undefined)
 
   const alertDialogOpen = ref(false)
   const alertDialogTitle = ref('')
@@ -542,7 +583,6 @@
 
   const systemSlots = computed<GalaxyMapSlot[]>(() => getSystemPlanets(currentGalaxy.value, currentSystem.value))
   const selectedSlot = computed(() => systemSlots.value.find(slot => slot.position === selectedSlotPosition.value) ?? null)
-  const slotNpc = computed(() => getPlanetNPC(selectedSlot.value?.planet ?? null))
   const slotIsUnknown = computed(
     () => !!selectedSlot.value?.planet && !isOwnPlanet(selectedSlot.value.planet) && !systemScan.value
   )
@@ -551,23 +591,15 @@
     if (isOwnPlanet(selectedSlot.value.planet) || systemScan.value) return selectedSlot.value.planet.name
     return `${t('galaxyMap.orbit')} ${selectedSlot.value.position} · ${t('galaxyMap.unscanned')}`
   })
-  const slotRelation = computed(() => getRelation(selectedSlot.value?.planet ?? null))
-  const slotRelationLabel = computed(() => {
-    if (!slotRelation.value) return t('galaxyMap.neutral')
-    const key = `diplomacy.status.${slotRelation.value.status}`
-    const translated = t(key)
-    return translated === key ? slotRelation.value.status : translated
-  })
   const slotOwnerLabel = computed(() => {
     if (!selectedSlot.value?.planet) return t('galaxyView.emptySlot')
     if (isOwnPlanet(selectedSlot.value.planet)) return t('galaxyView.mine')
     if (slotIsUnknown.value) return t('galaxyMap.unscanned')
-    return slotNpc.value?.name ?? selectedSlot.value.planet.ownerId ?? t('galaxyMap.other')
+    return t('galaxyMap.other')
   })
   const slotOwnerBadgeVariant = computed<'default' | 'secondary' | 'destructive' | 'outline'>(() => {
     if (!selectedSlot.value?.planet || slotIsUnknown.value) return 'outline'
     if (isOwnPlanet(selectedSlot.value.planet)) return 'default'
-    if (slotRelation.value?.status === RelationStatus.Hostile) return 'destructive'
     return 'secondary'
   })
   const slotDebris = computed(() =>
@@ -592,9 +624,29 @@
     selectedSystem.value ? buildGateInfos(layout.value)[selectedSystem.value.id] : undefined
   )
   const allSystemIds = computed(() => layout.value.regions.flatMap(region => region.systems.map(system => system.id)))
+  /** 用于贸易站 6 小时批次与倒计时的轻量时钟 */
+  const nowTs = ref(Date.now())
   const selectedSignal = computed(() =>
-    selectedSystem.value ? signalOf(layout.value.seed, selectedSystem.value.id, allSystemIds.value) : undefined
+    selectedSystem.value
+      ? signalOf(layout.value.seed, selectedSystem.value.id, allSystemIds.value, nowTs.value, currentCycle.value)
+      : undefined
   )
+  const selectedSignalRecord = computed(() =>
+    selectedSystem.value ? gameStore.player.discoveredSystems?.[selectedSystem.value.id] : undefined
+  )
+  const signalClaimed = computed(() => Boolean(selectedSignalRecord.value?.signalClaimed))
+  const lairCleared = computed(() => Boolean(selectedSignalRecord.value?.lairCleared))
+  const isTradeSold = (index: number): boolean => {
+    const record = selectedSignalRecord.value
+    if (!record || !selectedSignal.value?.goods) return false
+    if (record.tradeBucket !== selectedSignal.value.tradeBucket) return false
+    return record.tradePurchased?.includes(index) ?? false
+  }
+  const signalKindLabel = (kind: string): string => {
+    const key = `galaxyMap.signalKinds.${kind}`
+    const translated = t(key)
+    return translated === key ? kind : translated
+  }
   const selectedOrbits = computed(() => {
     if (!selectedSystem.value) return []
     return getSystemPlanets(selectedSystem.value.galaxy, selectedSystem.value.index).map(slot => {
@@ -648,11 +700,7 @@
         universeStore.planets[key] ||
         null
       const moon =
-        gameStore.player.planets.find(item => item.isMoon && item.parentPlanetId === planet?.id) ||
-        npcStore.npcs
-          .flatMap(npc => npc.planets)
-          .find(item => item.isMoon && item.parentPlanetId === planet?.id) ||
-        null
+        gameStore.player.planets.find(item => item.isMoon && item.parentPlanetId === planet?.id) || null
       return { position: pos.position, planet, moon }
     })
   }
@@ -661,23 +709,6 @@
     universeStore.debrisFields[`debris_${galaxy}_${system}_${position}`] || null
 
   const isOwnPlanet = (planet: Planet | null): boolean => !!planet && planet.ownerId === gameStore.player.id
-
-  const getPlanetNPC = (planet: Planet | null) => {
-    if (!planet || isOwnPlanet(planet)) return null
-    return npcStore.npcs.find(npc =>
-      npc.planets.some(
-        item =>
-          item.position.galaxy === planet.position.galaxy &&
-          item.position.system === planet.position.system &&
-          item.position.position === planet.position.position
-      )
-    )
-  }
-
-  const getRelation = (planet: Planet | null) => {
-    const npc = getPlanetNPC(planet)
-    return npc?.relations?.[gameStore.player.id] ?? null
-  }
 
   const formatCoords = (position: { galaxy: number; system: number; position: number }): string =>
     `[${position.galaxy}:${position.system}:${position.position}]`
@@ -803,6 +834,20 @@
     else toast.success(t('galaxyMap.signalSuccess'))
   }
 
+  const handleTrade = (goodIndex: number): void => {
+    if (!selectedSystem.value) return
+    const result = dispatchCommand({ type: 'signal.trade', systemId: selectedSystem.value.id, goodIndex })
+    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+    else toast.success(t('galaxyMap.tradeSuccess'))
+  }
+
+  const handleLair = (): void => {
+    if (!selectedSystem.value) return
+    const result = dispatchCommand({ type: 'signal.lair', systemId: selectedSystem.value.id })
+    if (!result.ok) toast.error(t(result.reason ?? 'errors.unknown'))
+    else toast.success(t('galaxyMap.lairCleared'))
+  }
+
   const handleAlertDialogConfirm = (): void => {
     alertDialogConfirmAction.value?.()
     alertDialogOpen.value = false
@@ -810,7 +855,7 @@
 
   const showPlanetActions = (
     planet: Planet | null,
-    action: 'spy' | 'attack' | 'colonize' | 'recycle' | 'gift',
+    action: 'spy' | 'attack' | 'colonize' | 'recycle',
     position?: number
   ): void => {
     const targetPos = planet ? planet.position : { galaxy: currentGalaxy.value, system: currentSystem.value, position: position! }
@@ -819,15 +864,13 @@
       spy: 'galaxyView.scoutPlanetTitle',
       attack: 'galaxyView.attackPlanetTitle',
       colonize: 'galaxyView.colonizePlanetTitle',
-      recycle: 'galaxyView.recyclePlanetTitle',
-      gift: 'galaxyView.giftPlanetTitle'
+      recycle: 'galaxyView.recyclePlanetTitle'
     } as const
     const messageMap = {
       spy: 'galaxyView.scoutPlanetMessage',
       attack: 'galaxyView.attackPlanetMessage',
       colonize: 'galaxyView.colonizePlanetMessage',
-      recycle: 'galaxyView.recyclePlanetMessage',
-      gift: 'galaxyView.giftPlanetMessage'
+      recycle: 'galaxyView.recyclePlanetMessage'
     } as const
     alertDialogTitle.value = t(titleMap[action])
     alertDialogMessage.value = t(messageMap[action]).replace('{coordinates}', coordinates)
@@ -838,8 +881,7 @@
           galaxy: targetPos.galaxy,
           system: targetPos.system,
           position: targetPos.position,
-          mission: action === 'gift' ? undefined : action,
-          gift: action === 'gift' ? '1' : undefined
+          mission: action
         }
       })
     }
@@ -924,10 +966,6 @@
   const getPlanetPositionById = (planetId: string): { galaxy: number; system: number; position: number } | null => {
     const playerPlanet = gameStore.player.planets.find(planet => planet.id === planetId)
     if (playerPlanet) return playerPlanet.position
-    for (const npc of npcStore.npcs) {
-      const npcPlanet = npc.planets.find(planet => planet.id === planetId)
-      if (npcPlanet) return npcPlanet.position
-    }
     for (const planet of Object.values(universeStore.planets)) {
       if (planet?.id === planetId) return planet.position
     }
@@ -968,16 +1006,7 @@
     }
     window.setTimeout(() => {
       const detected: FleetMission[] = []
-      const npc = getPlanetNPC(phalanxTargetPlanet.value)
-      npc?.fleetMissions?.forEach(mission => {
-        const origin = getPlanetPositionById(mission.originPlanetId)
-        const from = origin && origin.galaxy === targetPosition.galaxy && origin.system === targetPosition.system && origin.position === targetPosition.position
-        const to =
-          mission.targetPosition.galaxy === targetPosition.galaxy &&
-          mission.targetPosition.system === targetPosition.system &&
-          mission.targetPosition.position === targetPosition.position
-        if (from || to) detected.push(mission)
-      })
+      // NPC 已下线；单机模式下没有其他舰队。联机模式走上面的 waitForScan 分支。
       phalanxScanResults.value = detected
       phalanxScanning.value = false
     }, 800)
@@ -995,17 +1024,12 @@
       currentGalaxy.value = gameStore.currentPlanet.position.galaxy
       currentSystem.value = gameStore.currentPlanet.position.system
     }
-    if (route.query.highlightNpc) highlightNpcId.value = String(route.query.highlightNpc)
-    const highlighted = highlightNpcId.value ? npcStore.npcs.find(npc => npc.id === highlightNpcId.value) : null
-    const highlightedPlanet = highlighted?.planets.find(planet => !planet.isMoon)
-    if (highlightedPlanet) {
-      currentGalaxy.value = highlightedPlanet.position.galaxy
-      currentSystem.value = highlightedPlanet.position.system
-      selectedSlotPosition.value = highlightedPlanet.position.position
+    if (route.query.highlightNpc) {
+      // 旧链接可能带 highlightNpc；NPC 已下线，忽略即可
     }
     selectedRegion.value = regionOf(currentGalaxy.value)
     selectedSystemId.value = `${currentCycle.value}:${regionOf(currentGalaxy.value)}:${currentSystem.value}`
-    if (!highlightedPlanet) selectedSlotPosition.value = gameStore.currentPlanet?.position.position ?? 1
+    selectedSlotPosition.value = gameStore.currentPlanet?.position.position ?? 1
   }
 
   const handleKeydown = (event: KeyboardEvent): void => {
@@ -1014,11 +1038,14 @@
     }
   }
 
+  let signalClock: number | undefined
+
   onMounted(() => {
     setSidebarOpen(false)
     setOpenMobile(false)
     document.documentElement.classList.add('galaxy-immersive')
     window.addEventListener('keydown', handleKeydown)
+    signalClock = window.setInterval(() => (nowTs.value = Date.now()), 30_000)
     loadQueryOrHome()
     const first = systemSlots.value.find(slot => slot.planet)
     if (!selectedSlotPosition.value) selectedSlotPosition.value = first?.position ?? 1
@@ -1034,6 +1061,7 @@
 
   onBeforeUnmount(() => {
     if (scanInFlightTimer) window.clearTimeout(scanInFlightTimer)
+    if (signalClock) window.clearInterval(signalClock)
     window.removeEventListener('keydown', handleKeydown)
     document.documentElement.classList.remove('galaxy-immersive')
   })

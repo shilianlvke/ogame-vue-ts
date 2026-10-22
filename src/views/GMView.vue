@@ -158,66 +158,6 @@
       </TabsContent>
     </Tabs>
 
-    <!-- NPC测试 -->
-    <Card class="border-primary">
-      <CardHeader>
-        <CardTitle>{{ t('gmView.npcTesting') || 'NPC Testing' }}</CardTitle>
-        <CardDescription>{{ t('gmView.npcTestingDesc') || 'Test NPC spy and attack behavior' }}</CardDescription>
-      </CardHeader>
-      <CardContent class="space-y-3">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="space-y-2">
-            <Label>{{ t('gmView.selectNPC') || 'Select NPC' }}</Label>
-            <Select v-model="selectedNPCId">
-              <SelectTrigger class="w-full">
-                <SelectValue :placeholder="t('gmView.chooseNPC') || 'Choose NPC'" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="npc in npcStore.npcs" :key="npc.id" :value="npc.id">
-                  {{ npc.name }} ({{ t(`diplomacy.diagnostic.difficultyLevels.${npc.difficulty}`) }})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div class="space-y-2">
-            <Label>{{ t('gmView.targetPlanet') || 'Target Planet' }}</Label>
-            <Select v-model="targetPlanetIndex">
-              <SelectTrigger class="w-full">
-                <SelectValue :placeholder="t('gmView.chooseTarget') || 'Choose Target Planet'" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="(planet, index) in gameStore.player.planets" :key="planet.id" :value="index.toString()">
-                  {{ planet.name }} ({{ planet.position.galaxy }}:{{ planet.position.system }}:{{ planet.position.position }})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <Button @click="testNPCSpy" variant="outline" class="w-full" :disabled="!selectedNPC">
-            {{ t('gmView.testSpy') || 'Test Spy' }}
-          </Button>
-          <Button @click="testNPCAttack" variant="outline" class="w-full" :disabled="!selectedNPC">
-            {{ t('gmView.testAttack') || 'Test Attack' }}
-          </Button>
-        </div>
-
-        <Button @click="testNPCSpyAndAttack" variant="default" class="w-full" :disabled="!selectedNPC">
-          {{ t('gmView.testSpyAndAttack') || 'Test Spy & Attack' }}
-        </Button>
-
-        <Button @click="initializeNPCFleet" variant="secondary" class="w-full" :disabled="!selectedNPC">
-          {{ t('gmView.initializeFleet') || 'Initialize NPC Fleet' }}
-        </Button>
-
-        <Button @click="accelerateAllMissions" variant="secondary" class="w-full" :disabled="!selectedNPC">
-          {{ t('gmView.accelerateMissions') || 'Accelerate All Missions (5s)' }}
-        </Button>
-      </CardContent>
-    </Card>
-
     <!-- 队列管理 -->
     <Card class="border-primary">
       <CardHeader>
@@ -271,24 +211,6 @@
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-
-    <!-- AlertDialog 提示对话框 -->
-    <AlertDialog :open="alertDialogOpen" @update:open="alertDialogOpen = $event">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{{ alertDialogTitle }}</AlertDialogTitle>
-          <AlertDialogDescription v-if="alertDialogMessage" class="whitespace-pre-line">
-            {{ alertDialogMessage }}
-          </AlertDialogDescription>
-          <AlertDialogDescription v-else class="sr-only">
-            {{ alertDialogTitle }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction @click="handleAlertConfirm">{{ t('common.confirm') }}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   </div>
 </template>
 
@@ -299,8 +221,6 @@
   import { toast } from 'vue-sonner'
   import { useGameStore } from '@/stores/gameStore'
 import { applyMaxAccount } from '@/logic/devAccount'
-  import { useNPCStore } from '@/stores/npcStore'
-  import { useUniverseStore } from '@/stores/universeStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -323,7 +243,6 @@ import { applyMaxAccount } from '@/logic/devAccount'
     AlertDialogTitle
   } from '@/components/ui/alert-dialog'
   import { BuildingType, TechnologyType, ShipType, DefenseType, OfficerType } from '@/types/game'
-  import * as npcBehaviorLogic from '@/logic/npcBehaviorLogic'
   import * as publicLogic from '@/logic/publicLogic'
   import { calculateMaxFleetStorage } from '@/logic/fleetStorageLogic'
   import { calculateMissileSiloCapacity } from '@/logic/missileLogic'
@@ -610,8 +529,6 @@ import { applyMaxAccount } from '@/logic/devAccount'
 
   const router = useRouter()
   const gameStore = useGameStore()
-  const npcStore = useNPCStore()
-  const universeStore = useUniverseStore()
   const { t } = useI18n()
   const { BUILDINGS, TECHNOLOGIES, SHIPS, DEFENSES, OFFICERS } = useGameConfig()
 
@@ -627,14 +544,6 @@ import { applyMaxAccount } from '@/logic/devAccount'
   // 默认选中当前正在游玩的星球
   const selectedPlanetId = ref<string>(gameStore.currentPlanetId || gameStore.player.planets[0]?.id || '')
   const officerDays = ref<Record<OfficerType, number>>({} as Record<OfficerType, number>)
-  const selectedNPCId = ref<string>(npcStore.npcs[0]?.id || '')
-  const targetPlanetIndex = ref<string>('0')
-
-  // AlertDialog 状态
-  const alertDialogOpen = ref(false)
-  const alertDialogTitle = ref('')
-  const alertDialogMessage = ref('')
-  const alertDialogCallback = ref<(() => void) | null>(null)
 
   // Reset Dialog 状态
   const resetDialogOpen = ref(false)
@@ -652,14 +561,6 @@ import { applyMaxAccount } from '@/logic/devAccount'
 
   const selectedPlanet = computed(() => {
     return gameStore.player.planets.find(p => p.id === selectedPlanetId.value)
-  })
-
-  const selectedNPC = computed(() => {
-    return npcStore.npcs.find(npc => npc.id === selectedNPCId.value)
-  })
-
-  const allPlanets = computed(() => {
-    return [...gameStore.player.planets, ...Object.values(universeStore.planets)]
   })
 
   const resourceTypes = ['metal', 'crystal', 'deuterium', 'darkMatter'] as const
@@ -858,133 +759,6 @@ import { applyMaxAccount } from '@/logic/devAccount'
     window.location.reload()
   }
 
-  // 显示AlertDialog的辅助函数
-  const showAlert = (title: string, message: string, callback?: () => void) => {
-    alertDialogTitle.value = title
-    alertDialogMessage.value = message
-    alertDialogCallback.value = callback || null
-    alertDialogOpen.value = true
-  }
-
-  // AlertDialog确认处理
-  const handleAlertConfirm = () => {
-    alertDialogOpen.value = false
-    if (alertDialogCallback.value) {
-      alertDialogCallback.value()
-      alertDialogCallback.value = null
-    }
-  }
-
-  // NPC测试函数
-  const testNPCSpy = () => {
-    if (!selectedNPC.value) {
-      showAlert(t('gmView.selectNPCFirst') || 'Please select an NPC first', '')
-      return
-    }
-
-    const mission = npcBehaviorLogic.forceNPCSpyPlayer(
-      selectedNPC.value,
-      gameStore.player,
-      allPlanets.value,
-      parseInt(targetPlanetIndex.value)
-    )
-
-    if (mission) {
-      showAlert(t('gmView.npcWillSpyIn5s', { npcName: selectedNPC.value.name }), t('gmView.testSpyMessage'), () => {
-        // 加速任务到5秒后到达（在确认后执行，这样时间更准确）
-        npcBehaviorLogic.accelerateNPCMission(selectedNPC.value!, mission.id, 5, gameStore.player)
-      })
-    } else {
-      showAlert(t('gmView.npcNoProbes') || 'NPC does not have spy probes', '')
-    }
-  }
-
-  const testNPCAttack = () => {
-    if (!selectedNPC.value) {
-      showAlert(t('gmView.selectNPCFirst') || 'Please select an NPC first', '')
-      return
-    }
-
-    const mission = npcBehaviorLogic.forceNPCAttackPlayer(
-      selectedNPC.value,
-      gameStore.player,
-      allPlanets.value,
-      parseInt(targetPlanetIndex.value)
-    )
-
-    if (mission) {
-      showAlert(t('gmView.npcWillAttackIn5s', { npcName: selectedNPC.value.name }), t('gmView.testAttackMessage'), () => {
-        // 加速任务到5秒后到达（在确认后执行，这样时间更准确）
-        npcBehaviorLogic.accelerateNPCMission(selectedNPC.value!, mission.id, 5, gameStore.player)
-      })
-    } else {
-      showAlert(t('gmView.npcNoSpyReport') || 'NPC needs to spy first', '')
-    }
-  }
-
-  const testNPCSpyAndAttack = () => {
-    if (!selectedNPC.value) {
-      showAlert(t('gmView.selectNPCFirst') || 'Please select an NPC first', '')
-      return
-    }
-
-    const { spyMission, attackMission } = npcBehaviorLogic.forceNPCSpyAndAttack(
-      selectedNPC.value,
-      gameStore.player,
-      allPlanets.value,
-      parseInt(targetPlanetIndex.value)
-    )
-
-    if (spyMission && attackMission) {
-      showAlert(t('gmView.npcWillSpyAndAttack', { npcName: selectedNPC.value.name }), t('gmView.testSpyAndAttackMessage'), () => {
-        // 加速任务：侦查5秒后到达，攻击10秒后到达（在确认后执行，这样时间更准确）
-        npcBehaviorLogic.accelerateNPCMission(selectedNPC.value!, spyMission.id, 5, gameStore.player)
-        npcBehaviorLogic.accelerateNPCMission(selectedNPC.value!, attackMission.id, 10, gameStore.player)
-      })
-    } else {
-      showAlert(t('gmView.npcMissionFailed') || 'Failed to create missions', '')
-    }
-  }
-
-  const accelerateAllMissions = () => {
-    if (!selectedNPC.value) {
-      showAlert(t('gmView.selectNPCFirst') || 'Please select an NPC first', '')
-      return
-    }
-
-    const count = npcBehaviorLogic.accelerateAllNPCMissions(selectedNPC.value, 5, gameStore.player)
-    showAlert(t('gmView.acceleratedMissions', { count }), '')
-  }
-
-  // 初始化NPC舰队
-  const initializeNPCFleet = () => {
-    if (!selectedNPC.value) {
-      showAlert(t('gmView.selectNPCFirst') || 'Please select an NPC first', '')
-      return
-    }
-
-    // 给NPC的第一个星球添加基础舰队
-    const npcPlanet = selectedNPC.value.planets[0]
-    if (!npcPlanet) {
-      showAlert(t('gmView.npcNoPlanets'), '')
-      return
-    }
-
-    // 添加间谍探测器
-    npcPlanet.fleet[ShipType.EspionageProbe] = (npcPlanet.fleet[ShipType.EspionageProbe] || 0) + 100
-
-    // 添加战斗舰船
-    npcPlanet.fleet[ShipType.LightFighter] = (npcPlanet.fleet[ShipType.LightFighter] || 0) + 500
-    npcPlanet.fleet[ShipType.HeavyFighter] = (npcPlanet.fleet[ShipType.HeavyFighter] || 0) + 300
-    npcPlanet.fleet[ShipType.Cruiser] = (npcPlanet.fleet[ShipType.Cruiser] || 0) + 200
-    npcPlanet.fleet[ShipType.Battleship] = (npcPlanet.fleet[ShipType.Battleship] || 0) + 100
-    npcPlanet.fleet[ShipType.Bomber] = (npcPlanet.fleet[ShipType.Bomber] || 0) + 50
-    npcPlanet.fleet[ShipType.Destroyer] = (npcPlanet.fleet[ShipType.Destroyer] || 0) + 30
-    npcPlanet.fleet[ShipType.Battlecruiser] = (npcPlanet.fleet[ShipType.Battlecruiser] || 0) + 20
-
-    showAlert(t('gmView.npcFleetInitialized', { npcName: selectedNPC.value.name }), t('gmView.npcFleetDetails'))
-  }
-
   // 一键拉满所有资源
   const handleMaxAccount = () => {
   applyMaxAccount(gameStore.player)
@@ -1064,21 +838,6 @@ const maxAllResources = () => {
         mission.status = 'returning'
         mission.returnTime = now - 1
         missionCount++
-      }
-    })
-
-    // 完成所有NPC任务
-    npcStore.npcs.forEach(npc => {
-      if (npc.fleetMissions) {
-        npc.fleetMissions.forEach(mission => {
-          if (mission.status === 'outbound') {
-            const originalFlightTime = mission.arrivalTime - mission.departureTime
-            mission.arrivalTime = now - 1
-            mission.returnTime = now + originalFlightTime - 1
-          } else if (mission.status === 'returning' && mission.returnTime) {
-            mission.returnTime = now - 1
-          }
-        })
       }
     })
 

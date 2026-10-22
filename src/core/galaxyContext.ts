@@ -2,7 +2,7 @@
  * 星图与 World 的桥接
  *
  * `World` 本身不持有整张星图（1024 个恒星系太大、也没必要落盘），
- * 这里按需构建并缓存在 world 上，供矿脉、NPC 难度、传感器阵列等逻辑查询。
+ * 这里按需构建并缓存在 world 上，供矿脉、星图查询、传感器阵列等逻辑查询。
  */
 import { regionOfGalaxy } from '@/config/galaxyConfig'
 import { DEFAULT_LAYOUT_SEED } from '@/config/galaxyConfig'

@@ -29,7 +29,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -61,7 +60,7 @@ const main = async () => {
   const allIds = layout.regions.flatMap(region => region.systems.map(system => system.id))
   const signal = allIds
     .map(id => signalOf(layout.seed, id, allIds))
-    .find(item => item && item.kind !== 'wormhole')
+    .find(item => item && (item.kind === 'derelict' || item.kind === 'ruin'))
   assert.ok(signal, '应存在可领取信号')
   player.discoveredSystems![signal!.systemId] = { at: Date.now(), scans: 1 }
   const metalBefore = planet.resources.metal
@@ -108,14 +107,14 @@ const main = async () => {
 
   // 7) 战役新目标类型：星图相关进度可被正确统计
   const objective = (type: string, required = 1) => ({ id: `obj_${type}`, type, required }) as never
-  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.ScanSystem, 1), []) >= 1, '扫描目标应完成')
-  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.NameSystem, 1), []) >= 1, '命名目标应完成')
-  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.CollectSignal, 1), []) >= 1, '信号目标应完成')
+  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.ScanSystem, 1)) >= 1, '扫描目标应完成')
+  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.NameSystem, 1)) >= 1, '命名目标应完成')
+  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.CollectSignal, 1)) >= 1, '信号目标应完成')
   assert.ok(
-    checkObjectiveProgress(player, objective(ObjectiveType.CaptureGate, 1), [], { gates: world.gates }) >= 1,
+    checkObjectiveProgress(player, objective(ObjectiveType.CaptureGate, 1), { gates: world.gates }) >= 1,
     '星门目标应完成'
   )
-  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.CycleJump, 1), []) >= 1, '跃迁目标应完成')
+  assert.ok(checkObjectiveProgress(player, objective(ObjectiveType.CycleJump, 1)) >= 1, '跃迁目标应完成')
   console.log('[max] 战役目标：扫描 / 命名 / 信号 / 星门 / 跃迁 五种进度均可统计')
 
   console.log('✅ 满级账号集成测试通过：满级 / 命名 / 信号 / 星门 / 跃迁 全部正常')

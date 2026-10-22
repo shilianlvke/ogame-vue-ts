@@ -437,22 +437,6 @@
       </DialogContent>
     </Dialog>
   </SidebarProvider>
-
-  <!-- NPC 名称更新确认对话框 -->
-  <AlertDialog v-model:open="npcNameUpdateDialogOpen">
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{{ t('settings.npcNameUpdateTitle') }}</AlertDialogTitle>
-        <AlertDialogDescription>
-          {{ t('settings.npcNameUpdateMessage', { count: oldFormatNPCCount }) }}
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel @click="handleSkipNPCNameUpdate">{{ t('settings.npcNameUpdateCancel') }}</AlertDialogCancel>
-        <AlertDialogAction @click="handleUpdateNPCNames">{{ t('settings.npcNameUpdateConfirm') }}</AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
 </template>
 
 <script setup lang="ts">
@@ -460,7 +444,7 @@
   import { RouterView, useRouter } from 'vue-router'
   import { useGameStore } from '@/stores/gameStore'
   import { useUniverseStore } from '@/stores/universeStore'
-  import { useNPCStore } from '@/stores/npcStore'
+  import { useFactoryStore } from '@/stores/factoryStore'
   import { useNetStore } from '@/stores/netStore'
   import { useTheme } from '@/composables/useTheme'
   import { useI18n } from '@/composables/useI18n'
@@ -538,16 +522,15 @@
   import * as resourceLogic from '@/logic/resourceLogic'
   import * as publicLogic from '@/logic/publicLogic'
   import * as oreDepositLogic from '@/logic/oreDepositLogic'
-  import { countOldFormatNPCs, updateNPCName } from '@/logic/npcNameGenerator'
   // 无头核心：游戏推进逻辑（可同时在浏览器与 Node 服务端运行）
   import { createWorld as createGameWorld } from '@/core/world'
   import { tick } from '@/core/engine'
-  import { generateNpcPlanets } from '@/core/generate'
   import { createEngineContext } from '@/core/types'
   import type { EngineEvent } from '@/core/types'
   import { setBattleRunner } from '@/core/battleRunner'
   import { workerBattleRunner } from '@/workers/workerBattleRunner'
   import { dispatchCommand, setGameRuntime } from '@/core/runtime'
+  import { saveStorage } from '@/services/saveStorage'
   import pkg from '../package.json'
   import { toast } from 'vue-sonner'
   import { migrateGameData } from '@/utils/migration'
@@ -559,10 +542,13 @@
   // 执行数据迁移（在 store 初始化之前）
   migrateGameData()
 
+  // NPC 系统已按 §14.2 下线：清掉旧存档里的 NPC 注册表，释放存储空间
+  saveStorage.removeItem(`${pkg.name}-npcs`)
+
   const router = useRouter()
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
-  const npcStore = useNPCStore()
+  const factoryStore = useFactoryStore()
   const netStore = useNetStore()
   const { isDark } = useTheme()
   const { t } = useI18n()
@@ -594,9 +580,6 @@
   const renameDialogOpen = ref(false)
   const renamingPlanetId = ref<string | null>(null)
   const newPlanetName = ref('')
-  // NPC 名称更新对话框状态
-  const npcNameUpdateDialogOpen = ref(false)
-  const oldFormatNPCCount = ref(0)
   // 功能解锁要求配置
   const featureRequirements: Record<string, { building: BuildingType; level: number }> = {
     '/fleet': { building: BuildingType.Shipyard, level: 1 },
@@ -668,26 +651,8 @@
   const unreadMessagesCount = computed(() => {
     const unreadBattles = gameStore.player.battleReports.filter(r => !r.read).length
     const unreadSpies = gameStore.player.spyReports.filter(r => !r.read).length
-    const unreadSpied = gameStore.player.spiedNotifications?.filter(n => !n.read).length || 0
     const unreadMissions = gameStore.player.missionReports?.filter(r => !r.read).length || 0
-    const unreadNPCActivity = gameStore.player.npcActivityNotifications?.filter(n => !n.read).length || 0
-    const unreadGifts = gameStore.player.giftNotifications?.filter(n => !n.read).length || 0
-    const unreadGiftRejected = gameStore.player.giftRejectedNotifications?.filter(n => !n.read).length || 0
-    const unreadTradeOffers = gameStore.player.tradeOffers?.filter(o => !o.read).length || 0
-    const unreadIntelReports = gameStore.player.intelReports?.filter(r => !r.read).length || 0
-    const unreadJointAttacks = gameStore.player.jointAttackInvites?.filter(i => !i.read).length || 0
-    return (
-      unreadBattles +
-      unreadSpies +
-      unreadSpied +
-      unreadMissions +
-      unreadNPCActivity +
-      unreadGifts +
-      unreadGiftRejected +
-      unreadTradeOffers +
-      unreadIntelReports +
-      unreadJointAttacks
-    )
+    return unreadBattles + unreadSpies + unreadMissions
   })
 
   // 正在执行的舰队任务数量（包括飞行中的导弹）
@@ -795,16 +760,36 @@
       gameStore.player.planets.forEach(planet => {
         oreDepositLogic.migrateOreDeposits(planet)
       })
-      // 迁移NPC星球的矿脉储量
-      npcStore.npcs.forEach(npc => {
-        npc.planets.forEach(planet => {
-          oreDepositLogic.migrateOreDeposits(planet)
-        })
-      })
-      // 迁移宇宙地图中的星球（NPC星球的副本）
+      // 迁移宇宙地图中的星球矿脉数据（旧存档兼容）
       Object.values(universeStore.planets).forEach(planet => {
         oreDepositLogic.migrateOreDeposits(planet)
       })
+
+      // NPC 已下线：移除旧存档中的 NPC 星球，避免留下无法交互的幽灵星球
+      for (const key of Object.keys(universeStore.planets)) {
+        const planet = universeStore.planets[key]
+        if (planet?.ownerId?.startsWith('npc_')) {
+          delete universeStore.planets[key]
+        }
+      }
+
+      // 清理旧存档里只属于 NPC 系统的通知数组，避免它们继续参与补丁体积
+      const legacyNpcFields = [
+        'npcActivityNotifications',
+        'giftNotifications',
+        'giftRejectedNotifications',
+        'tradeOffers',
+        'intelReports',
+        'jointAttackInvites',
+        'aidNotifications',
+        'allyDefenseNotifications',
+        'attitudeChangeNotifications',
+        'diplomaticReports',
+        'spiedNotifications'
+      ] as const
+      for (const field of legacyNpcFields) {
+        delete (gameStore.player as unknown as Record<string, unknown>)[field]
+      }
 
       // 计算离线收益（直接同步计算，应用游戏速度）
       const bonuses = officerLogic.calculateActiveBonuses(gameStore.player.officers, now)
@@ -818,12 +803,7 @@
         resourceLogic.updatePlanetResources(planet, now, bonuses, gameStore.gameSpeed, miningTechLevel, techBonuses)
       })
 
-      // 只在没有NPC星球时才生成（首次加载已有玩家数据时）
-      if (Object.keys(universeStore.planets).length === 0) {
-        generateNPCPlanets()
-      }
-
-      // 数据迁移：为没有 bonusPoints 的玩家计算奖励积分
+          // 数据迁移：为没有 bonusPoints 的玩家计算奖励积分
       if (gameStore.player.bonusPoints === undefined) {
         // 计算基础积分（建筑、科技、舰船、防御）
         let totalCost = 0
@@ -859,8 +839,7 @@
     gameStore.player.planets = [initialPlanet]
     gameStore.currentPlanetId = initialPlanet.id
     gameStore.player.campaignProgress = campaignLogic.initializeCampaignProgress(gameStore.player)
-    // 新玩家初始化时生成NPC星球
-    generateNPCPlanets()
+    // 新玩家不再生成 NPC 星球；星图 POI 由信号系统承载
     // 初始化玩家积分
     gameStore.player.points = publicLogic.calculatePlayerPoints(gameStore.player)
   }
@@ -877,7 +856,6 @@
   const world = createGameWorld({
     player: gameStore.player,
     planets: universeStore.planets,
-    npcs: npcStore.npcs,
     debrisFields: universeStore.debrisFields,
     locale: gameStore.locale,
     gameSpeed: gameStore.gameSpeed,
@@ -917,6 +895,14 @@
         toast.success(t('achievements.unlocked'), { description: `${achievementName} (${tierName})` })
         break
       }
+      case 'factoryMaterials': {
+        factoryStore.grantMaterials(event.materials)
+        const summary = Object.entries(event.materials)
+          .map(([id, n]) => `${id} ×${n}`)
+          .join('、')
+        toast.success(t('galaxyMap.poiReward'), { description: summary })
+        break
+      }
     }
   }
 
@@ -931,11 +917,6 @@
     onReject: reason => toast.error(t(reason ?? 'errors.unknown')),
     onError: message => toast.error(message)
   })
-
-  const generateNPCPlanets = () => {
-    syncWorldFromStores()
-    generateNpcPlanets(world, t('planet.planetPrefix'))
-  }
 
   // 防止一次 tick 未结束时重入（战斗结算为异步）
   let isTicking = false
@@ -1211,15 +1192,6 @@
         })
       }
 
-      // 检测旧格式 NPC 名称
-      if (npcStore.npcs.length > 0) {
-        const oldCount = countOldFormatNPCs(npcStore.npcs, gameStore.locale)
-        if (oldCount > 0) {
-          oldFormatNPCCount.value = oldCount
-          npcNameUpdateDialogOpen.value = true
-        }
-      }
-
       // 启动版本检查定时器（每5分钟被动检查一次）
       versionCheckInterval.value = setInterval(async () => {
         const versionInfo = await checkLatestVersion(gameStore.player.lastVersionCheckTime || 0, (time: number) => {
@@ -1257,25 +1229,6 @@
     window.removeEventListener('cancel-build', handleCancelBuildEvent as EventListener)
     window.removeEventListener('cancel-research', handleCancelResearchEvent as EventListener)
   })
-
-  // NPC 名称更新处理
-  const handleUpdateNPCNames = () => {
-    let updatedCount = 0
-    npcStore.npcs.forEach(npc => {
-      const newName = updateNPCName(npc.id, gameStore.locale)
-      if (newName !== npc.name) {
-        npc.name = newName
-        updatedCount++
-      }
-    })
-    npcNameUpdateDialogOpen.value = false
-    toast.success(t('settings.npcNameUpdateSuccess', { count: updatedCount }))
-  }
-
-  const handleSkipNPCNameUpdate = () => {
-    npcNameUpdateDialogOpen.value = false
-    toast.info(t('settings.npcNameUpdateSkipped'))
-  }
 </script>
 
 <style scoped>

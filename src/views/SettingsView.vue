@@ -590,8 +590,6 @@ import { dispatchCommand } from '@/core/runtime'
       const gameData = saveStorage.getItem(pkg.name)
       // 获取地图数据
       const universeData = saveStorage.getItem(`${pkg.name}-universe`)
-      // 获取npc数据
-      const npcData = saveStorage.getItem(`${pkg.name}-npcs`)
 
       if (!gameData) {
         toast.error(t('settings.exportFailed'))
@@ -601,7 +599,6 @@ import { dispatchCommand } from '@/core/runtime'
       // 合并数据
       const exportData = {
         game: gameData,
-        npcs: npcData,
         universe: universeData || null
       }
 
@@ -648,7 +645,6 @@ import { dispatchCommand } from '@/core/runtime'
               const data = decryptData(importData.data)
               saveStorage.setItem(pkg.name, encryptData(data.game))
               saveStorage.setItem(`${pkg.name}-universe`, encryptData(data.universe))
-              saveStorage.setItem(`${pkg.name}-npcs`, encryptData(data.npcs))
               setTimeout(() => window.location.reload(), 1000)
               return
             }
@@ -668,10 +664,6 @@ import { dispatchCommand } from '@/core/runtime'
 
             if (importData.universe) {
               saveStorage.setItem(`${pkg.name}-universe`, importData.universe)
-            }
-
-            if (importData.npcs) {
-              saveStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
             }
 
             toast.success(t('settings.importSuccess'))
@@ -785,7 +777,6 @@ import { dispatchCommand } from '@/core/runtime'
       // 获取游戏数据
       const gameData = saveStorage.getItem(pkg.name)
       const universeData = saveStorage.getItem(`${pkg.name}-universe`)
-      const npcData = saveStorage.getItem(`${pkg.name}-npcs`)
 
       if (!gameData) {
         toast.error(t('settings.exportFailed'))
@@ -795,7 +786,6 @@ import { dispatchCommand } from '@/core/runtime'
       // 合并数据
       const exportData = {
         game: gameData,
-        npcs: npcData,
         universe: universeData || null
       }
 
@@ -846,9 +836,6 @@ import { dispatchCommand } from '@/core/runtime'
             }
             if (importData.universe) {
               saveStorage.setItem(`${pkg.name}-universe`, importData.universe)
-            }
-            if (importData.npcs) {
-              saveStorage.setItem(`${pkg.name}-npcs`, importData.npcs)
             }
           }
 

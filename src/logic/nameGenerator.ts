@@ -85,7 +85,7 @@ export const generatePlanetName = (seed: string): string => {
 }
 
 /**
- * NPC 指挥官名：两个短词，如 `Vex Arano`
+ * 指挥官名：两个短词，如 `Vex Arano`
  */
 export const generateCommanderName = (seed: string): string => {
   const rand = mulberry32(hash32(`${seed}#commander`))

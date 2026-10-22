@@ -761,6 +761,23 @@ export default {
     scanSuccess: '스캔 완료',
     renameSuccess: '{name}(으)로 이름 지정',
     signalSuccess: '신호 처리 완료',
+    poiReward: '성도 지점 보상',
+    signalKinds: {
+      derelict: '잔해',
+      ruin: '유적',
+      tradingPost: '교역소',
+      lair: '둥지',
+      wormhole: '웜홀'
+    },
+    buyForDarkMatter: '암흑 물질 {price}로 구매',
+    soldOut: '품절',
+    tradeRefresh: '상품은 6시간마다 갱신',
+    tradeSuccess: '거래 완료',
+    lairPower: '권장 전투력 {power}',
+    lairHint: '1회성 도전. 승리 시 녹 합금 ×20, 신경 케이블 ×2',
+    challenge: '도전',
+    lairCleared: '둥지 정리 완료',
+    cleared: '정리됨',
     scanTimeout: '스캔 시간 초과, 다시 시도하세요'
   },
   galaxyView: {

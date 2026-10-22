@@ -5,14 +5,13 @@
  * 函数只做「就地修改」，因此响应式更新可以正常触发；
  * 同时它不依赖 Vue，可以在 Node 里直接单测。
  */
-import type { DebrisField, NPC, Planet, Player } from '@/types/game'
+import type { DebrisField, Planet, Player } from '@/types/game'
 import type { ServerPatch, WorldSnapshot } from '@/core/protocol'
 
 /** 需要被服务端状态覆盖的本地槽位 */
 export interface GameStateTarget {
   player: Player
   planets: Record<string, Planet>
-  npcs: NPC[]
   debrisFields: Record<string, DebrisField>
 }
 
@@ -52,7 +51,6 @@ export const pickCurrentPlanetId = (player: Player, currentId: string): string =
 export const applySnapshot = (target: GameStateTarget, snapshot: WorldSnapshot): { currentPlanetId: string } => {
   replaceObjectContents(target.player, snapshot.self)
   replaceRecord(target.planets, snapshot.planets)
-  replaceArrayContents(target.npcs, snapshot.npcs)
   replaceRecord(target.debrisFields, snapshot.debrisFields)
   if (snapshot.caravans) (target as { caravans?: typeof snapshot.caravans }).caravans = snapshot.caravans
   return { currentPlanetId: pickCurrentPlanetId(target.player, '') }
@@ -79,9 +77,6 @@ export const applyPatch = (target: GameStateTarget, patch: ServerPatch, currentP
     for (const key of patch.removedPlanets) {
       delete target.planets[key]
     }
-  }
-  if (patch.npcs) {
-    replaceArrayContents(target.npcs, patch.npcs)
   }
   if (patch.debrisFields) {
     replaceRecord(target.debrisFields, patch.debrisFields)

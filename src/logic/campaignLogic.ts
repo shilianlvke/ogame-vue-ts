@@ -12,8 +12,6 @@ import {
   type QuestReward,
   type QuestNotification,
   type CampaignQuestConfig,
-  type NPC,
-  RelationStatus,
   type BuildingType,
   type TechnologyType,
   type ShipType
@@ -228,7 +226,6 @@ export const startQuest = (player: Player, questId: string): { success: boolean;
 export const checkObjectiveProgress = (
   player: Player,
   objective: QuestObjective,
-  npcs: NPC[],
   world?: { gates?: Record<string, { owner: string }> }
 ): number => {
   switch (objective.type) {
@@ -300,30 +297,6 @@ export const checkObjectiveProgress = (
       return Math.min(colonyCount, objective.required)
     }
 
-    case ObjectiveType.SpyTarget: {
-      // 统计侦查报告数量
-      const target = objective.target
-      if (target === 'any') {
-        return Math.min(player.spyReports.length, objective.required)
-      } else if (target === 'hostile') {
-        // 统计敌对NPC的侦查报告
-        const hostileNpcIds = npcs
-          .filter(npc => {
-            const relation = npc.relations?.[player.id]
-            return relation?.status === RelationStatus.Hostile
-          })
-          .map(npc => npc.id)
-        const hostileReports = player.spyReports.filter(report => hostileNpcIds.includes(report.targetPlayerId || ''))
-        return Math.min(hostileReports.length, objective.required)
-      }
-      return 0
-    }
-
-    case ObjectiveType.SendGift: {
-      // 从成就统计中获取送礼次数
-      return Math.min(player.achievementStats?.giftsSent || 0, objective.required)
-    }
-
     case ObjectiveType.Expedition: {
       // 从成就统计中获取探险次数（使用 expeditionsTotal）
       return Math.min(player.achievementStats?.expeditionsTotal || 0, objective.required)
@@ -345,30 +318,6 @@ export const checkObjectiveProgress = (
       return Math.min(player.achievementStats?.recyclingMissions || 0, objective.required)
     }
 
-    case ObjectiveType.ReachRelation: {
-      // 检查是否有任何NPC达到指定关系等级
-      const targetStatus = objective.target as string
-      const hasRelation = npcs.some(npc => {
-        const relation = npc.relations?.[player.id]
-        return relation?.status === targetStatus
-      })
-      return hasRelation ? 1 : 0
-    }
-
-    case ObjectiveType.FormAlliance: {
-      // 检查是否有盟友（使用 Friendly 作为最高关系等级）
-      const hasAlliance = npcs.some(npc => {
-        const relation = npc.relations?.[player.id]
-        return relation?.status === RelationStatus.Friendly && (relation.reputation || 0) >= 80
-      })
-      return hasAlliance ? 1 : 0
-    }
-
-    case ObjectiveType.DefeatNPC: {
-      // 检查攻击NPC获胜次数
-      return Math.min(player.achievementStats?.attacksWon || 0, objective.required)
-    }
-
     case ObjectiveType.DestroyPlanet: {
       return Math.min(player.achievementStats?.planetDestructions || 0, objective.required)
     }
@@ -384,7 +333,6 @@ export const checkObjectiveProgress = (
 export const updateQuestProgress = (
   player: Player,
   questId: string,
-  npcs: NPC[],
   world?: { gates?: Record<string, { owner: string }> }
 ): {
   updated: boolean
@@ -411,7 +359,7 @@ export const updateQuestProgress = (
     const objProgress = questProgress.objectives[objective.id]
     if (!objProgress || objProgress.completed) return
 
-    const newProgress = checkObjectiveProgress(player, objective, npcs, world)
+    const newProgress = checkObjectiveProgress(player, objective, world)
     if (newProgress !== objProgress.current) {
       objProgress.current = newProgress
       result.updated = true
@@ -683,7 +631,6 @@ export const getUnreadQuestNotificationCount = (player: Player): number => {
  */
 export const checkAllActiveQuestsProgress = (
   player: Player,
-  npcs: NPC[],
   world?: { gates?: Record<string, { owner: string }> }
 ): QuestNotification[] => {
   const notifications: QuestNotification[] = []
@@ -695,7 +642,7 @@ export const checkAllActiveQuestsProgress = (
   Object.entries(progress.questProgress).forEach(([questId, questProgress]) => {
     if (questProgress.status !== QuestStatus.Active) return
 
-    const result = updateQuestProgress(player, questId, npcs, world)
+    const result = updateQuestProgress(player, questId, world)
 
     // 为完成的目标创建通知
     result.completedObjectives.forEach(objId => {

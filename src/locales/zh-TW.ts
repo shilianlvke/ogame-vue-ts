@@ -771,6 +771,23 @@ export default {
     scanSuccess: '掃描完成',
     renameSuccess: '已命名為 {name}',
     signalSuccess: '訊號處理完成',
+    poiReward: '星圖地點獎勵',
+    signalKinds: {
+      derelict: '殘骸',
+      ruin: '遺跡',
+      tradingPost: '貿易站',
+      lair: '巢穴',
+      wormhole: '蟲洞'
+    },
+    buyForDarkMatter: '暗物質購買 · {price}',
+    soldOut: '已售出',
+    tradeRefresh: '每 6 小時刷新商品',
+    tradeSuccess: '交易完成',
+    lairPower: '建議戰力 {power}',
+    lairHint: '一次性挑戰，勝利後獲得鏽蝕合金 ×20、神經索 ×2',
+    challenge: '挑戰',
+    lairCleared: '巢穴已清理',
+    cleared: '已清理',
     scanTimeout: '掃描結果逾時，請重試'
   },
   galaxyView: {

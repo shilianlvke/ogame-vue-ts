@@ -778,6 +778,23 @@ export default {
     scanSuccess: 'Scan abgeschlossen',
     renameSuccess: 'Benannt als {name}',
     signalSuccess: 'Signal bearbeitet',
+    poiReward: 'Belohnung der Sternkarte',
+    signalKinds: {
+      derelict: 'Wrack',
+      ruin: 'Ruinen',
+      tradingPost: 'Handelsposten',
+      lair: 'Nest',
+      wormhole: 'Wurmloch'
+    },
+    buyForDarkMatter: 'Für {price} Dunkle Materie kaufen',
+    soldOut: 'Ausverkauft',
+    tradeRefresh: 'Waren alle 6 Stunden neu',
+    tradeSuccess: 'Handel abgeschlossen',
+    lairPower: 'Empfohlene Stärke {power}',
+    lairHint: 'Einmalige Herausforderung: Rostlegierung ×20 und Neuralkabel ×2',
+    challenge: 'Herausfordern',
+    lairCleared: 'Nest gesäubert',
+    cleared: 'Erledigt',
     scanTimeout: 'Scan-Zeitüberschreitung, bitte erneut versuchen'
   },
   galaxyView: {

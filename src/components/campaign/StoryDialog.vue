@@ -90,7 +90,7 @@
   import { VisuallyHidden } from 'reka-ui'
   import { Button } from '@/components/ui/button'
   import type { StoryDialogue, DialogueChoice } from '@/types/game'
-  import { User, Bot, HelpCircle, MessageCircle, ChevronRight } from 'lucide-vue-next'
+  import { User, HelpCircle, MessageCircle, ChevronRight } from 'lucide-vue-next'
 
   const props = defineProps<{
     dialogues: StoryDialogue[]
@@ -127,8 +127,6 @@
     switch (currentDialogue.value?.speaker) {
       case 'player':
         return User
-      case 'npc':
-        return Bot
       case 'mysterious':
         return HelpCircle
       default:
@@ -141,8 +139,6 @@
     switch (currentDialogue.value?.speaker) {
       case 'player':
         return { bg: 'bg-blue-500/20', text: 'text-blue-400' }
-      case 'npc':
-        return { bg: 'bg-green-500/20', text: 'text-green-400' }
       case 'mysterious':
         return { bg: 'bg-purple-500/20', text: 'text-purple-400' }
       default:
@@ -158,8 +154,6 @@
     switch (dialogue.speaker) {
       case 'player':
         return t('campaign.dialogue.player')
-      case 'npc':
-        return t('campaign.dialogue.npc')
       case 'mysterious':
         return t('campaign.dialogue.mysterious')
       default:

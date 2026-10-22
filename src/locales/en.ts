@@ -81,7 +81,11 @@ export default {
     cannotAbandonHomePlanet: 'Cannot abandon home planet',
     hasBuildQueue: 'Please wait for build queue to complete',
     hasFleetOnPlanet: 'Please transfer or scrap all fleet first',
-    hasDefenseOnPlanet: 'Please demolish all defense first'
+    hasDefenseOnPlanet: 'Please demolish all defense first',
+    noSignal: 'No interactable site in this system',
+    alreadyClaimed: 'Already claimed',
+    requiresDiscovery: 'Discover this system first',
+    invalidTarget: 'Invalid target'
   },
   baseHints: {
     resourcesEnough: 'You already have enough resources; build directly without using the waiting queue.',
@@ -781,6 +785,23 @@ export default {
     scanSuccess: 'Scan complete',
     renameSuccess: 'Named {name}',
     signalSuccess: 'Signal handled',
+    poiReward: 'Star map POI reward',
+    signalKinds: {
+      derelict: 'Derelict',
+      ruin: 'Ruins',
+      tradingPost: 'Trading Post',
+      lair: 'Lair',
+      wormhole: 'Wormhole'
+    },
+    buyForDarkMatter: 'Buy for {price} dark matter',
+    soldOut: 'Sold out',
+    tradeRefresh: 'Goods refresh every 6 hours',
+    tradeSuccess: 'Trade complete',
+    lairPower: 'Recommended power: {power}',
+    lairHint: 'One-time challenge; rewards rust alloy ×20 and neural cord ×2',
+    challenge: 'Challenge',
+    lairCleared: 'Lair cleared',
+    cleared: 'Cleared',
     scanTimeout: 'Scan timed out, please retry'
   },
   galaxyView: {

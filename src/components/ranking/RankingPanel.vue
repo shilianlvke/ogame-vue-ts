@@ -86,7 +86,6 @@
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
   import { useGameStore } from '@/stores/gameStore'
-  import { useNPCStore } from '@/stores/npcStore'
   import { useNetStore } from '@/stores/netStore'
   import { useI18n } from '@/composables/useI18n'
   import { formatNumber } from '@/utils/format'
@@ -99,7 +98,6 @@
 
   const { t } = useI18n()
   const gameStore = useGameStore()
-  const npcStore = useNPCStore()
   const netStore = useNetStore()
 
   const rootRef = ref<HTMLElement | null>(null)
@@ -120,7 +118,7 @@
 
   // 获取排行榜数据
   const rankingData = computed<RankingEntry[]>(() => {
-    const entries = getRanking(gameStore.player, npcStore.npcs, activeCategory.value)
+    const entries = getRanking(gameStore.player, activeCategory.value)
 
     // 联机模式：并入其他真人玩家（积分由服务端计算后随档案下发）
     for (const profile of netStore.players) {

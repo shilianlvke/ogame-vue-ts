@@ -82,7 +82,11 @@ export default {
     cannotAbandonHomePlanet: '不能放弃母星',
     hasBuildQueue: '请等待建造队列完成',
     hasFleetOnPlanet: '请先转移或拆除所有舰船',
-    hasDefenseOnPlanet: '请先拆除所有防御设施'
+    hasDefenseOnPlanet: '请先拆除所有防御设施',
+    noSignal: '该恒星系没有可交互的地点',
+    alreadyClaimed: '已经领取过',
+    requiresDiscovery: '请先发现该恒星系',
+    invalidTarget: '目标无效'
   },
   baseHints: {
     resourcesEnough: '资源已足够，可以直接建造，无需加入等待队列。',
@@ -771,6 +775,23 @@ export default {
     scanSuccess: '扫描完成',
     renameSuccess: '已命名为 {name}',
     signalSuccess: '信号处理完成',
+    poiReward: '星图地点奖励',
+    signalKinds: {
+      derelict: '残骸',
+      ruin: '遗迹',
+      tradingPost: '贸易站',
+      lair: '巢穴',
+      wormhole: '虫洞'
+    },
+    buyForDarkMatter: '暗物质购买 · {price}',
+    soldOut: '已售出',
+    tradeRefresh: '每 6 小时刷新商品',
+    tradeSuccess: '交易完成',
+    lairPower: '建议战力 {power}',
+    lairHint: '一次性挑战，胜利后获得锈蚀合金 ×20、神经索 ×2',
+    challenge: '挑战',
+    lairCleared: '巢穴已清理',
+    cleared: '已清理',
     scanTimeout: '扫描结果超时，请重试'
   },
   galaxyView: {

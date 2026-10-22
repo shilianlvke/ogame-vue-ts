@@ -187,7 +187,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -275,7 +274,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -398,7 +396,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -437,7 +434,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -464,7 +460,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -486,12 +481,11 @@ const main = async () => {
   assert.ok(planMissionRoute(blockadeWorld, farA, farB, 12500, Date.now()), '解封后应恢复')
   console.log('[gate] 封锁：全封后跨区不可达，解封后恢复')
 
-  // 20) NPC 商队：到达后向星门所有者缴费
+  // 20) 商队：到达后向星门所有者缴费
   const caravanWorld = createWorld({
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -519,7 +513,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -549,7 +542,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 2,
@@ -587,21 +579,29 @@ const main = async () => {
   for (const signal of signals) {
     if (signal.kind === 'wormhole') {
       assert.ok(signal.targetSystemId && signal.targetSystemId !== signal.systemId, '虫洞目标非法')
+    } else if (signal.kind === 'tradingPost') {
+      assert.equal(signal.goods?.length, 3, '贸易站应有 3 个商品位')
+      assert.ok(
+        (signal.goods ?? []).every(good => good.amount > 0 && good.price > 0),
+        '贸易站商品数值应为正'
+      )
     } else {
       assert.ok(signal.reward.metal + signal.reward.crystal + signal.reward.deuterium > 0, '奖励应为正')
+      if (signal.kind === 'lair') {
+        assert.ok((signal.lairPower ?? 0) > 0, '巢穴战力应为正')
+      }
     }
   }
   console.log(`[signal] ${signals.length}/${allSystemIds.length} 个恒星系存在未知信号`)
 
   // 24) signal.collect：发现后领取奖励、不可重复
-  const collectible = signals.find(signal => signal.kind !== 'wormhole')
+  const collectible = signals.find(signal => signal.kind === 'derelict' || signal.kind === 'ruin')
   assert.ok(collectible, '应存在可领取的残骸/遗迹信号')
 
   const signalWorld = createWorld({
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -643,7 +643,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -668,7 +667,6 @@ const main = async () => {
     player,
     players: [player],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     cycle: 1,
@@ -679,42 +677,6 @@ const main = async () => {
   assert.equal(snapshot.caravans?.[0]?.fromSystemId, '1:1:1', '快照应包含商队起点')
   assert.equal(snapshot.caravans?.[0]?.toSystemId, '1:1:2', '快照应包含商队终点')
   console.log('[gate] 快照：商队已暴露给客户端')
-
-  // 28) NPC 排行榜积分：公开视图下也必须非 0
-  const fakeNpc = {
-    id: 'npc_test_1',
-    name: 'Test NPC',
-    planets: [
-      {
-        id: 'npc_planet_1',
-        name: 'N',
-        ownerId: 'npc_test_1',
-        position: { galaxy: 1, system: 2, position: 1 },
-        buildings: { metalMine: 20, crystalMine: 20, solarPlant: 20 },
-        fleet: { cruiser: 100 },
-        defense: { rocketLauncher: 50 },
-        technologies: {}
-      }
-    ],
-    technologies: { energyTechnology: 5, combustionDrive: 5 },
-    difficulty: 'easy'
-  } as never
-
-  const npcWorld = createWorld({
-    player,
-    players: [player],
-    planets: {},
-    npcs: [fakeNpc],
-    debrisFields: {},
-    locale: 'zh-CN',
-    cycle: 1,
-    layoutSeed: layout.seed
-  })
-  const npcSnap = buildSnapshot(npcWorld, player)
-  const npcEntry = npcSnap.npcs[0] as { scores?: { total: number }; planets: Array<{ buildings?: Record<string, number> }> }
-  assert.ok((npcEntry.scores?.total ?? 0) > 0, 'NPC 排行榜积分应大于 0')
-  assert.equal(npcEntry.planets[0]?.buildings?.metalMine ?? 0, 0, '公开视图仍应清空建筑')
-  console.log(`[ranking] NPC 积分：${npcEntry.scores?.total}（公开视图建筑已清空）`)
 
   console.log('✅ 星图冒烟通过：规模 / 确定性 / 布局 / 连通 / 属性 / 路径 / 性能 / 经济 / 跳数 / 扫描命名 / 3D / 飞行 全部正常')
 }

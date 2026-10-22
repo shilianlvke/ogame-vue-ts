@@ -12,6 +12,7 @@ import {
   setModuleCount,
   setOreSlot,
   setSlot,
+  storageCap,
   tickFactory,
   upgradeBuilding,
   type FactoryContext,
@@ -276,6 +277,15 @@ export const useFactoryStore = defineStore('factory', {
         applyReward(def.reward, this.factory, account)
         this.darkMatter = account.darkMatter
         this.achievements.push(id)
+      }
+    },
+
+    /** 星图 POI 奖励：直接写入工厂仓库（受仓储上限约束） */
+    grantMaterials(materials: Partial<Record<MaterialId, number>>) {
+      const cap = storageCap(this.factory)
+      for (const [k, v] of Object.entries(materials)) {
+        const id = k as MaterialId
+        this.factory.stock[id] = Math.min(cap, (this.factory.stock[id] ?? 0) + (v as number))
       }
     },
 

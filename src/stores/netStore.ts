@@ -13,7 +13,6 @@ import pkg from '../../package.json'
 import { saveStorage } from '@/services/saveStorage'
 import { useGameStore } from './gameStore'
 import { useUniverseStore } from './universeStore'
-import { useNPCStore } from './npcStore'
 import { OnlineClient } from '@/net/onlineClient'
 import type { NetStatus } from '@/net/onlineClient'
 import { applyPatch, applySnapshot } from '@/net/apply'
@@ -27,7 +26,7 @@ import type { FleetMission, Player } from '@/types/game'
 const NET_STORAGE_KEY = `${pkg.name}-online`
 /** 连接时备份单机存档，退出联机时恢复 */
 const BACKUP_PREFIX = `${pkg.name}-local-backup:`
-const LOCAL_SAVE_KEYS = [pkg.name, `${pkg.name}-universe`, `${pkg.name}-npcs`]
+const LOCAL_SAVE_KEYS = [pkg.name, `${pkg.name}-universe`]
 
 /**
  * 只属于本地客户的玩家字段：连接/重连时不应被服务端数据覆盖
@@ -363,7 +362,6 @@ export const useNetStore = defineStore('net', {
     handleWelcome(message: WelcomeMessage): void {
       const gameStore = useGameStore()
       const universeStore = useUniverseStore()
-      const npcStore = useNPCStore()
 
       // 保留本机偏好字段（隐私协议、引导、主题等）
       const carryOver: Partial<Player> = {}
@@ -376,7 +374,6 @@ export const useNetStore = defineStore('net', {
       const target = {
         player: gameStore.player,
         planets: universeStore.planets,
-        npcs: npcStore.npcs,
         debrisFields: universeStore.debrisFields
       }
 
@@ -398,12 +395,10 @@ export const useNetStore = defineStore('net', {
     handlePatch(message: ServerPatch): void {
       const gameStore = useGameStore()
       const universeStore = useUniverseStore()
-      const npcStore = useNPCStore()
 
       const target = {
         player: gameStore.player,
         planets: universeStore.planets,
-        npcs: npcStore.npcs,
         debrisFields: universeStore.debrisFields
       }
 

@@ -1,11 +1,8 @@
 /**
  * 服务端世界状态：定义、创建、序列化
  */
-import type { DebrisField, NPC, Planet, Player } from '@/types/game'
+import type { DebrisField, Planet, Player } from '@/types/game'
 import type { Locale } from '@/locales'
-import { createWorld } from '@/core/world'
-import { generateNpcPlanets } from '@/core/generate'
-import * as gameLogic from '@/logic/gameLogic'
 
 /** 存档格式版本 */
 export const STATE_VERSION = 1
@@ -32,9 +29,8 @@ export interface ServerState {
   locale: Locale
   accounts: Record<string, Account>
   players: Record<string, Player>
-  /** NPC 星球（key = galaxy:system:position） */
+  /** 星球（key = galaxy:system:position），NPC 已下线后主要承载玩家前哨/星图记录 */
   planets: Record<string, Planet>
-  npcs: NPC[]
   debrisFields: Record<string, DebrisField>
   /** 每个玩家的成就检查累加器（秒） */
   achievementAccum: Record<string, number>
@@ -46,14 +42,12 @@ export interface CreateStateOptions {
   gameSpeed?: number
   battleToFinish?: boolean
   locale?: Locale
-  npcCount?: number
-  planetPrefix?: string
 }
 
-/** 创建一份全新的世界状态（含 NPC 星球） */
+/** 创建一份全新的世界状态（NPC 已下线，星球由玩家前哨/信号系统承载） */
 export const createState = (options: CreateStateOptions = {}): ServerState => {
   const locale = options.locale ?? 'zh-CN'
-  const state: ServerState = {
+  return {
     version: STATE_VERSION,
     createdAt: Date.now(),
     gameSpeed: options.gameSpeed ?? 1,
@@ -62,26 +56,9 @@ export const createState = (options: CreateStateOptions = {}): ServerState => {
     accounts: {},
     players: {},
     planets: {},
-    npcs: [],
     debrisFields: {},
     achievementAccum: {}
   }
-
-  // 用一个占位玩家构造 World，只为生成 NPC 星球
-  const placeholder = gameLogic.initializePlayer('system', 'System')
-  const world = createWorld({
-    player: placeholder,
-    planets: state.planets,
-    npcs: state.npcs,
-    debrisFields: state.debrisFields,
-    locale,
-    gameSpeed: state.gameSpeed,
-    battleToFinish: state.battleToFinish
-  })
-
-  generateNpcPlanets(world, options.planetPrefix ?? 'Planet', options.npcCount ?? 200)
-
-  return state
 }
 
 /** 序列化（落盘用） */
@@ -99,7 +76,6 @@ export const parseState = (raw: string): ServerState | null => {
     parsed.accounts ??= {}
     parsed.players ??= {}
     parsed.planets ??= {}
-    parsed.npcs ??= []
     parsed.debrisFields ??= {}
     parsed.achievementAccum ??= {}
     return parsed

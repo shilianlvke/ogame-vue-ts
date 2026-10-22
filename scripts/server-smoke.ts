@@ -23,7 +23,6 @@ import { dispatchCommand } from '@/core/runtime'
 import { PHALANX_SCAN_COST } from '@/core/commands'
 import { useGameStore } from '@/stores/gameStore'
 import { useUniverseStore } from '@/stores/universeStore'
-import { useNPCStore } from '@/stores/npcStore'
 import { useNetStore } from '@/stores/netStore'
 import { BuildingType, DefenseType, MissionType, ShipType, TechnologyType } from '@/types/game'
 import { startServer } from '../server/app'
@@ -143,7 +142,6 @@ const main = async () => {
     staticDir,
     dataDir,
     visibility: 'public',
-    npcCount: 40,
     tickMs: 3_600_000, // 测试中手动推进 tick
     autosaveMs: 3_600_000
   })
@@ -151,7 +149,7 @@ const main = async () => {
   const base = `http://127.0.0.1:${server.port}`
 
   // 1) 运维接口
-  const health = (await (await fetch(`${base}/health`)).json()) as { ok: boolean; npcs: number }
+  const health = (await (await fetch(`${base}/health`)).json()) as { ok: boolean }
   assert(health.ok === true, '/health 未返回 ok')
   const info = (await (await fetch(`${base}/api/info`)).json()) as { protocolVersion: number; visibility: string }
   assert(info.protocolVersion === PROTOCOL_VERSION, '/api/info 协议版本不正确')
@@ -183,11 +181,6 @@ const main = async () => {
     '玩家上线补丁'
   )
   console.log('[players] 玩家上线实时推送正常')
-  assert(alice.snapshot.npcs.length > 0, '快照中没有 NPC')
-  const npcSample = alice.snapshot.npcs.find(npc => npc.planets.length > 0)
-  assert(!!npcSample, 'NPC 未携带公开星球视图')
-  assert((npcSample!.planets[0].resources.metal ?? -1) === 0, 'NPC 星球公开视图泄露了资源')
-  assert(Object.keys(npcSample!.planets[0].fleet).length === 0, 'NPC 星球公开视图泄露了舰队')
 
   // 3.5) 账号体系：密码注册 / 密码错误 / 无密码 / 换设备登录
   {
@@ -603,13 +596,12 @@ const main = async () => {
     console.log('[players] 玩家交易创建/接受与资源结算正常')
   }
 
-  // 7.6) PvP：Alice 侦查 Bob —— 防守方收到被侦查通知
+  // 7.6) PvP：Alice 侦查 Bob —— 攻击方拿到侦查报告
   {
     const alicePlayer = server.room.profileOf(alice.playerId)!
     const bobPlayer = server.room.profileOf(bob.playerId)!
     const bobHomePlanet = bobPlayer.planets[0]
     alicePlayer.planets[0].fleet.espionageProbe = 5
-    const spiedBefore = bobPlayer.spiedNotifications?.length ?? 0
 
     alice.client.send({
       t: 'cmd',
@@ -628,9 +620,9 @@ const main = async () => {
     assert(!!spyMission, '侦查任务未创建')
     await server.room.tickOnce(spyMission!.arrivalTime + 1000)
 
-    assert((bobPlayer.spiedNotifications?.length ?? 0) === spiedBefore + 1, '防守方没有收到被侦查通知')
+    // 被侦查通知的 UI 已随 §14.2 下线；这里只验证侦查报告仍能送达
     assert((alicePlayer.spyReports?.length ?? 0) > 0, '攻击方没有拿到侦查报告')
-    console.log('[pvp] 侦查通知与侦查报告均已送达')
+    console.log('[pvp] 侦查报告已送达')
   }
 
   // 7.7) 传感器阵列：服务端结算扫描结果
@@ -764,7 +756,6 @@ const main = async () => {
 
   const saved = JSON.parse(readFileSync(join(dataDir, 'world.json'), 'utf8')) as {
     players: Record<string, unknown>
-    npcs: unknown[]
   }
   assert(Object.keys(saved.players).length === 3, '存档中的玩家数量不正确')
 
@@ -774,7 +765,6 @@ const main = async () => {
     staticDir,
     dataDir,
     visibility: 'public',
-    npcCount: 40,
     tickMs: 3_600_000,
     autosaveMs: 3_600_000
   })
@@ -839,7 +829,6 @@ const runClientStoreScenario = async (port: number, room: Room): Promise<void> =
 
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
-  const npcStore = useNPCStore()
   const netStore = useNetStore()
 
   let lastReject: string | undefined
@@ -855,7 +844,6 @@ const runClientStoreScenario = async (port: number, room: Room): Promise<void> =
 
   assert(netStore.playerId === gameStore.player.id, '客户端玩家 ID 与服务端不一致')
   assert(Object.keys(universeStore.planets).length > 0, '客户端没有收到可见星球')
-  assert(npcStore.npcs.length > 0, '客户端没有收到 NPC')
 
   // 服务端侧准备资源与前置建筑（模拟正常发育）
   const serverPlayer = room.profileOf(netStore.playerId)!

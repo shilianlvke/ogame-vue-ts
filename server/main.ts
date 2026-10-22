@@ -10,7 +10,7 @@
  *   STATIC_DIR=docs       前端构建产物目录
  *   DATA_DIR=data         存档目录（world.json）
  *   GAME_SPEED=1          游戏速度倍率
- *   NPC_COUNT=200         新建世界时的 NPC 星球数
+ *   NPC_COUNT=200         新建世界时的 NPC 星球数（已废弃，NPC 已下线）
  *   VISIBILITY=public     public | full
  *   LOCALE=zh-CN          默认语言
  *   BATTLE_TO_FINISH=0    1 = 战斗到底模式
@@ -59,7 +59,6 @@ const running = await startServer({
   staticDir: resolve(env.STATIC_DIR ?? 'docs'),
   dataDir: resolve(env.DATA_DIR ?? 'data'),
   visibility,
-  npcCount: num(env.NPC_COUNT, 200),
   gameSpeed: num(env.GAME_SPEED, 1),
   battleToFinish: bool(env.BATTLE_TO_FINISH, false),
   locale: (env.LOCALE ?? 'zh-CN') as Locale,

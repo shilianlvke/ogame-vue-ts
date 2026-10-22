@@ -2,7 +2,7 @@
   <div class="w-full">
     <!-- 分类标签 -->
     <Tabs v-model="activeCategory" class="w-full">
-      <TabsList class="grid h-10 w-full grid-cols-5">
+      <TabsList class="grid h-10 w-full grid-cols-4">
         <TabsTrigger v-for="category in categories" :key="category.value" :value="category.value" class="text-xs sm:text-sm">
           {{ t(`achievements.categories.${category.value}`) }}
           <Badge v-if="getCategoryUnlockedCount(category.value) > 0" class="ml-1 h-5 bg-primary px-1.5 text-[10px] text-primary-foreground">
@@ -132,15 +132,7 @@
     Recycle,
     Pickaxe,
     Zap,
-    Fuel,
-    Handshake as HandshakeIcon,
-    Angry,
-    Gift,
-    HeartHandshake,
-    Target,
-    ScanEye,
-    Banknote,
-    BadgeDollarSign
+    Fuel
   } from 'lucide-vue-next'
 
   const { t } = useI18n()
@@ -152,8 +144,7 @@
     { value: AchievementCategory.Resource },
     { value: AchievementCategory.Building },
     { value: AchievementCategory.Combat },
-    { value: AchievementCategory.Mission },
-    { value: AchievementCategory.Diplomacy }
+    { value: AchievementCategory.Mission }
   ]
 
   const tierOrder = TIER_ORDER
@@ -187,15 +178,7 @@
     Recycle,
     Pickaxe,
     Zap,
-    Fuel,
-    HandshakeIcon,
-    Angry,
-    Gift,
-    HeartHandshake,
-    Target,
-    ScanEye,
-    Banknote,
-    BadgeDollarSign
+    Fuel
   }
 
   const getIcon = (iconName: string) => {

@@ -771,6 +771,23 @@ export default {
     scanSuccess: 'Escaneo completado',
     renameSuccess: 'Nombrado {name}',
     signalSuccess: 'Señal procesada',
+    poiReward: 'Recompensa del mapa estelar',
+    signalKinds: {
+      derelict: 'Restos',
+      ruin: 'Ruinas',
+      tradingPost: 'Puesto comercial',
+      lair: 'Guarida',
+      wormhole: 'Agujero de gusano'
+    },
+    buyForDarkMatter: 'Comprar por {price} materia oscura',
+    soldOut: 'Agotado',
+    tradeRefresh: 'Los productos se renuevan cada 6 horas',
+    tradeSuccess: 'Comercio completado',
+    lairPower: 'Poder recomendado {power}',
+    lairHint: 'Desafío único: recompensa aleación de óxido ×20 y cable neuronal ×2',
+    challenge: 'Desafiar',
+    lairCleared: 'Guarida despejada',
+    cleared: 'Despejado',
     scanTimeout: 'Tiempo de escaneo agotado, reintenta'
   },
   galaxyView: {

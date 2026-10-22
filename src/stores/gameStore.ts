@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import type {
   Planet,
   Player,
@@ -8,7 +8,6 @@ import type {
   SpyReport,
   Officer,
   SpiedNotification,
-  NPCActivityNotification,
   IncomingFleetAlert,
   MissileAttack,
   AchievementStats,
@@ -42,11 +41,8 @@ export const useGameStore = defineStore('game', {
       battleReports: [] as BattleResult[],
       spyReports: [] as SpyReport[],
       spiedNotifications: [] as SpiedNotification[],
-      npcActivityNotifications: [] as NPCActivityNotification[],
       missionReports: [],
       incomingFleetAlerts: [] as IncomingFleetAlert[],
-      giftNotifications: [],
-      giftRejectedNotifications: [],
       points: 0,
       bonusPoints: 0,
       isGMEnabled: false, // 鏄庣‘璁剧疆 GM 妯″紡榛樿涓?false

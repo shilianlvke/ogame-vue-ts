@@ -34,7 +34,6 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useGameStore } from '@/stores/gameStore'
-  import { useNPCStore } from '@/stores/npcStore'
   import { useI18n } from '@/composables/useI18n'
   import { useTheme } from '@/composables/useTheme'
   import { DEFAULT_LAYOUT_SEED, LAYOUT_CONFIG, regionOfGalaxy } from '@/config/galaxyConfig'
@@ -82,7 +81,6 @@
   }>()
 
   const gameStore = useGameStore()
-  const npcStore = useNPCStore()
   const { t } = useI18n()
   const { isDark } = useTheme()
 
@@ -361,25 +359,9 @@
 
   const isOwnPlanet = (planet: Planet | null): boolean => !!planet && planet.ownerId === gameStore.player.id
 
-  const npcOfPlanet = (planet: Planet | null) => {
-    if (!planet || isOwnPlanet(planet)) return null
-    return npcStore.npcs.find(npc =>
-      npc.planets.some(
-        item =>
-          item.position.galaxy === planet.position.galaxy &&
-          item.position.system === planet.position.system &&
-          item.position.position === planet.position.position
-      )
-    )
-  }
-
   const ownerColor = (planet: Planet | null): string => {
     if (!planet) return COLORS.empty
     if (isOwnPlanet(planet)) return COLORS.own
-    const npc = npcOfPlanet(planet)
-    const relation = npc?.relations?.[gameStore.player.id]
-    if (relation?.status === 'hostile') return COLORS.hostile
-    if (relation?.status === 'friendly') return COLORS.friendly
     return COLORS.npc
   }
 
@@ -943,7 +925,7 @@
       const owner = isOwnPlanet(slot.planet)
         ? t('galaxyView.mine')
         : scanned
-          ? npcOfPlanet(slot.planet)?.name ?? (slot.planet?.ownerId ? slot.planet.ownerId : t('galaxyView.emptySlot'))
+          ? slot.planet?.ownerId || t('galaxyView.emptySlot')
           : t('galaxyMap.unscanned')
       const lines = [`[${props.galaxy}:${props.system}:${slot.position}]`, owner]
       if (slot.planet && !scanned && !isOwnPlanet(slot.planet)) lines.push(t('galaxyMap.unscanned'))

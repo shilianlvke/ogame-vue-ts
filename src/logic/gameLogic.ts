@@ -30,12 +30,8 @@ export const initializePlayer = (playerId: string, playerName: string = 'Command
     battleReports: [],
     spyReports: [],
     spiedNotifications: [],
-    npcActivityNotifications: [],
     missionReports: [],
     incomingFleetAlerts: [],
-    giftNotifications: [],
-    giftRejectedNotifications: [],
-    diplomaticReports: [],
     playerTrades: [],
     points: 0
   }
@@ -85,7 +81,7 @@ export const generateSystemPositions = (
 }
 
 /**
- * 生成随机NPC星球位置
+ * 生成随机星球位置（旧 9×10×10 坐标系，仅存档兼容使用）
  */
 export const generateRandomPosition = (): { galaxy: number; system: number; position: number } => {
   return {
@@ -375,52 +371,6 @@ export const trackMissionStats = (
 
   if (details?.fuelAmount) {
     achievementLogic.updateFuelConsumptionStats(stats, details.fuelAmount)
-  }
-}
-
-/**
- * 更新外交统计
- */
-export const trackDiplomacyStats = (
-  player: Player,
-  eventType: string,
-  details?: {
-    resourcesAmount?: number
-    friendlyCount?: number
-    hostileCount?: number
-  }
-): void => {
-  if (!player.achievementStats) {
-    player.achievementStats = achievementLogic.initializeAchievementStats()
-  }
-
-  const stats = player.achievementStats
-
-  switch (eventType) {
-    case 'gift':
-      if (details?.resourcesAmount) {
-        achievementLogic.updateGiftStats(stats, details.resourcesAmount)
-      }
-      break
-    case 'attackedByNPC':
-      achievementLogic.updateAttackedByNPCStats(stats)
-      break
-    case 'spiedByNPC':
-      achievementLogic.updateSpiedByNPCStats(stats)
-      break
-    case 'debrisRecycledByNPC':
-      if (details?.resourcesAmount) {
-        achievementLogic.updateDebrisRecycledByNPCStats(stats, details.resourcesAmount)
-      }
-      break
-    case 'updateRelations':
-      if (details?.friendlyCount !== undefined) {
-        achievementLogic.updateFriendlyNPCStats(stats, details.friendlyCount)
-      }
-      if (details?.hostileCount !== undefined) {
-        achievementLogic.updateHostileNPCStats(stats, details.hostileCount)
-      }
-      break
   }
 }
 

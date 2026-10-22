@@ -800,6 +800,23 @@ export default {
     scanSuccess: 'スキャン完了',
     renameSuccess: '{name} と命名',
     signalSuccess: '信号を処理しました',
+    poiReward: '星図地点の報酬',
+    signalKinds: {
+      derelict: '残骸',
+      ruin: '遺跡',
+      tradingPost: '交易拠点',
+      lair: '巣穴',
+      wormhole: 'ワームホール'
+    },
+    buyForDarkMatter: '暗黒物質 {price} で購入',
+    soldOut: '売り切れ',
+    tradeRefresh: '商品は6時間ごとに更新',
+    tradeSuccess: '取引完了',
+    lairPower: '推奨戦力 {power}',
+    lairHint: '一度きりの挑戦。勝利で錆合金×20、神経索×2',
+    challenge: '挑戦',
+    lairCleared: '巣穴を掃討',
+    cleared: '掃討済み',
     scanTimeout: 'スキャンがタイムアウトしました'
   },
   galaxyView: {

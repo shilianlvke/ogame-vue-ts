@@ -242,22 +242,6 @@
             <CardTitle>{{ t('fleetView.transportResources') }}</CardTitle>
           </CardHeader>
           <CardContent>
-            <!-- 赠送模式切换（仅当目标是NPC星球时显示） -->
-            <div v-if="targetNpc" class="mb-4 p-3 border rounded-lg bg-muted/50">
-              <div class="flex items-center gap-2 mb-2">
-                <Checkbox id="gift-mode" v-model:checked="isGiftMode" />
-                <Label for="gift-mode" class="flex items-center gap-2 cursor-pointer">
-                  <Gift class="h-4 w-4" />
-                  {{ t('fleetView.giftMode') }}
-                </Label>
-              </div>
-              <p class="text-xs text-muted-foreground">{{ t('fleetView.giftModeDescription') }} {{ targetNpc.name }}</p>
-              <div v-if="isGiftMode && (cargo.metal > 0 || cargo.crystal > 0 || cargo.deuterium > 0)" class="mt-2 text-xs">
-                <span class="text-muted-foreground">{{ t('fleetView.estimatedReputationGain') }}:</span>
-                <span class="ml-1 font-semibold text-green-600 dark:text-green-400">+{{ calculateGiftReputation() }}</span>
-              </div>
-            </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div v-for="res in cargoResourceFields" :key="res.key" class="space-y-2">
                 <Label :for="`cargo-${res.key}`" class="text-xs sm:text-sm flex items-center gap-2">
@@ -604,10 +588,9 @@
 <script setup lang="ts">
   import { useGameStore } from '@/stores/gameStore'
   import { useUniverseStore } from '@/stores/universeStore'
-  import { useNPCStore } from '@/stores/npcStore'
   import { useI18n } from '@/composables/useI18n'
   import { useGameConfig } from '@/composables/useGameConfig'
-  import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+  import { computed, ref, onMounted, onUnmounted } from 'vue'
   import { useRoute } from 'vue-router'
   import { ShipType, MissionType, BuildingType, TechnologyType, ExpeditionZone } from '@/types/game'
   import type { Fleet, Resources, FleetPreset } from '@/types/game'
@@ -619,7 +602,6 @@
   import { Label } from '@/components/ui/label'
   import { Badge } from '@/components/ui/badge'
   import { Progress } from '@/components/ui/progress'
-  import { Checkbox } from '@/components/ui/checkbox'
   import ResourceIcon from '@/components/common/ResourceIcon.vue'
   import {
     AlertDialog,
@@ -641,7 +623,6 @@
     Users,
     Recycle,
     Skull,
-    Gift,
     Compass,
     Save,
     Trash2,
@@ -661,7 +642,6 @@
   import * as shipLogic from '@/logic/shipLogic'
   import * as officerLogic from '@/logic/officerLogic'
   import * as publicLogic from '@/logic/publicLogic'
-  import * as diplomaticLogic from '@/logic/diplomaticLogic'
   import * as moonLogic from '@/logic/moonLogic'
   import { generateId } from '@/utils/id'
   import { dispatchCommand } from '@/core/runtime'
@@ -669,7 +649,6 @@
   const route = useRoute()
   const gameStore = useGameStore()
   const universeStore = useUniverseStore()
-  const npcStore = useNPCStore()
   const { t } = useI18n()
   const { SHIPS } = useGameConfig()
   const planet = computed(() => gameStore.currentPlanet)
@@ -879,7 +858,7 @@
       currentTime.value = Date.now()
     }, 1000) // 每秒更新一次
 
-    const { galaxy, system, position, mission, gift } = route.query
+    const { galaxy, system, position, mission } = route.query
 
     // 如果有参数，填充数据
     if (galaxy || system || position) {
@@ -897,10 +876,6 @@
         selectedMission.value = MissionType.Colonize
       } else if (mission === 'recycle') {
         selectedMission.value = MissionType.Recycle
-      } else if (gift === '1') {
-        // 如果有gift参数，设置为运输任务并启用赠送模式
-        selectedMission.value = MissionType.Transport
-        isGiftMode.value = true
       }
 
       // 自动切换到派遣舰队标签
@@ -914,21 +889,6 @@
       clearInterval(timeInterval)
     }
   })
-
-  // 检查目标是否为NPC星球
-  const targetNpc = computed(() => {
-    return npcStore.npcs.find(npc =>
-      npc.planets.some(
-        p =>
-          p.position.galaxy === targetPosition.value.galaxy &&
-          p.position.system === targetPosition.value.system &&
-          p.position.position === targetPosition.value.position
-      )
-    )
-  })
-
-  // 是否为赠送模式
-  const isGiftMode = ref(false)
 
   // 舰队预设相关状态
   const MAX_PRESETS = 5
@@ -1140,18 +1100,6 @@
     }
   }
 
-  // 监听目标NPC变化，当目标不再是NPC时自动禁用赠送模式
-  watch(targetNpc, newValue => {
-    if (!newValue && isGiftMode.value) {
-      isGiftMode.value = false
-    }
-  })
-
-  // 计算赠送的预估好感度增加值
-  const calculateGiftReputation = (): number => {
-    return diplomaticLogic.calculateGiftReputationGain(cargo.value)
-  }
-
   // 可用任务类型
   const availableMissions = computed(() => [
     { type: MissionType.Attack, name: t('fleetView.attackMission'), icon: Sword },
@@ -1297,8 +1245,6 @@
       fleet,
       cargo,
       isMoonTarget,
-      isGift: missionType === MissionType.Transport && isGiftMode.value && !!targetNpc.value,
-      giftTargetNpcId: targetNpc.value?.id,
       expeditionZone: missionType === MissionType.Expedition ? selectedExpeditionZone.value : undefined
     })
     return result.ok
@@ -1339,7 +1285,6 @@
         selectedFleet.value[key as ShipType] = 0
       })
       cargo.value = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
-      isGiftMode.value = false
       activeTab.value = 'missions'
     } else {
       alertDialogTitle.value = t('fleetView.sendFailed')

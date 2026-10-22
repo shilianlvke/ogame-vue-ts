@@ -97,17 +97,7 @@ export const initializeAchievementStats = (): AchievementStats => {
     recyclingMissions: 0,
     recycledResources: 0,
     planetDestructions: 0,
-    fuelConsumed: 0,
-
-    // 外交统计
-    friendlyNPCCount: 0,
-    hostileNPCCount: 0,
-    giftsSent: 0,
-    giftResourcesTotal: 0,
-    attackedByNPC: 0,
-    spiedByNPC: 0,
-    debrisRecycledByNPC: 0,
-    debrisResourcesLostToNPC: 0
+    fuelConsumed: 0
   }
 }
 
@@ -407,38 +397,6 @@ export const updatePlanetDestructionStats = (stats: AchievementStats): void => {
 // 更新燃料消耗统计
 export const updateFuelConsumptionStats = (stats: AchievementStats, fuelAmount: number): void => {
   stats.fuelConsumed += fuelAmount
-}
-
-// 更新友好NPC数量
-export const updateFriendlyNPCStats = (stats: AchievementStats, count: number): void => {
-  stats.friendlyNPCCount = count
-}
-
-// 更新敌对NPC数量
-export const updateHostileNPCStats = (stats: AchievementStats, count: number): void => {
-  stats.hostileNPCCount = count
-}
-
-// 更新送礼统计
-export const updateGiftStats = (stats: AchievementStats, resourcesAmount: number): void => {
-  stats.giftsSent += 1
-  stats.giftResourcesTotal += resourcesAmount
-}
-
-// 更新被NPC攻击统计
-export const updateAttackedByNPCStats = (stats: AchievementStats): void => {
-  stats.attackedByNPC += 1
-}
-
-// 更新被NPC侦查统计
-export const updateSpiedByNPCStats = (stats: AchievementStats): void => {
-  stats.spiedByNPC += 1
-}
-
-// 更新被NPC回收残骸统计
-export const updateDebrisRecycledByNPCStats = (stats: AchievementStats, resourcesAmount: number): void => {
-  stats.debrisRecycledByNPC += 1
-  stats.debrisResourcesLostToNPC += resourcesAmount
 }
 
 // 获取成就的下一个目标

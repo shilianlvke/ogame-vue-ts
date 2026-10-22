@@ -2,8 +2,6 @@ import type { Planet, Resources } from '@/types/game'
 import { ShipType, DefenseType, BuildingType } from '@/types/game'
 import { MOON_CONFIG, PLANET_CONFIG, FLEET_STORAGE_CONFIG } from '@/config/gameConfig'
 import { generateId } from '@/utils/id'
-import { npcIdOf, npcPlanetIdOf } from '@/core/ids'
-import { generatePlanetName } from './nameGenerator'
 import * as oreDepositLogic from './oreDepositLogic'
 
 /**
@@ -77,83 +75,6 @@ export const createInitialPlanet = (
   initialPlanet.temperature = generatePlanetTemperature(initialPlanet.position.position)
 
   return initialPlanet
-}
-
-/**
- * 创建NPC星球
- */
-export const createNPCPlanet = (
-  npcId: number,
-  position: { galaxy: number; system: number; position: number },
-  _planetPrefix: string = 'Planet',
-  cycle: number = 1,
-  oreModifiers: { metal: number; crystal: number; deuterium: number } = { metal: 1, crystal: 1, deuterium: 1 }
-): Planet => {
-  const npcPlanet: Planet = {
-    id: npcPlanetIdOf(cycle, npcId),
-    name: generatePlanetName(`${cycle}:${position.galaxy}:${position.system}:${position.position}`),
-    ownerId: npcIdOf(cycle, npcId),
-    position,
-    resources: {
-      metal: Math.floor(Math.random() * 10000) + 5000,
-      crystal: Math.floor(Math.random() * 5000) + 2000,
-      deuterium: Math.floor(Math.random() * 2000) + 500,
-      darkMatter: Math.floor(Math.random() * 100),
-      energy: 0
-    },
-    buildings: {} as Record<BuildingType, number>,
-    fleet: {
-      [ShipType.LightFighter]: Math.floor(Math.random() * 50),
-      [ShipType.HeavyFighter]: Math.floor(Math.random() * 20),
-      [ShipType.Cruiser]: Math.floor(Math.random() * 10),
-      [ShipType.Battleship]: Math.floor(Math.random() * 5),
-      [ShipType.Battlecruiser]: Math.floor(Math.random() * 3),
-      [ShipType.Bomber]: Math.floor(Math.random() * 2),
-      [ShipType.Destroyer]: Math.floor(Math.random() * 2),
-      [ShipType.SmallCargo]: Math.floor(Math.random() * 10),
-      [ShipType.LargeCargo]: Math.floor(Math.random() * 5),
-      [ShipType.ColonyShip]: 0,
-      [ShipType.Recycler]: 0,
-      [ShipType.EspionageProbe]: 0,
-      [ShipType.SolarSatellite]: Math.floor(Math.random() * 20),
-      [ShipType.DarkMatterHarvester]: 0,
-      [ShipType.Deathstar]: 0
-    },
-    defense: {
-      [DefenseType.RocketLauncher]: Math.floor(Math.random() * 100),
-      [DefenseType.LightLaser]: Math.floor(Math.random() * 50),
-      [DefenseType.HeavyLaser]: Math.floor(Math.random() * 20),
-      [DefenseType.GaussCannon]: Math.floor(Math.random() * 10),
-      [DefenseType.IonCannon]: Math.floor(Math.random() * 10),
-      [DefenseType.PlasmaTurret]: Math.floor(Math.random() * 5),
-      [DefenseType.SmallShieldDome]: Math.random() > 0.5 ? 1 : 0,
-      [DefenseType.LargeShieldDome]: Math.random() > 0.8 ? 1 : 0,
-      [DefenseType.AntiBallisticMissile]: Math.floor(Math.random() * 3),
-      [DefenseType.InterplanetaryMissile]: Math.floor(Math.random() * 2),
-      [DefenseType.PlanetaryShield]: 0
-    },
-    buildQueue: [],
-    waitingBuildQueue: [], // 等待队列
-    lastUpdate: Date.now(),
-    maxSpace: 200,
-    maxFleetStorage: FLEET_STORAGE_CONFIG.baseStorage,
-    isMoon: false
-  }
-
-  // 初始化所有建筑等级为0
-  // 实际的建筑等级会在 initializeNPCByDistance 中根据距离难度系统设置
-  // 这里只做基础初始化，避免随机设置不合理的等级（如月球专属建筑）
-  Object.values(BuildingType).forEach(building => {
-    npcPlanet.buildings[building] = 0
-  })
-
-  // 初始化矿脉储量
-  npcPlanet.oreDeposits = oreDepositLogic.generateOreDeposits(npcPlanet.position, oreModifiers)
-
-  // 初始化温度
-  npcPlanet.temperature = generatePlanetTemperature(npcPlanet.position.position)
-
-  return npcPlanet
 }
 
 /**

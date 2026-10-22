@@ -178,7 +178,6 @@
   import { useI18n } from '@/composables/useI18n'
   import { useGameStore } from '@/stores/gameStore'
   import { dispatchCommand } from '@/core/runtime'
-  import { useNPCStore } from '@/stores/npcStore'
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
   import { Button } from '@/components/ui/button'
@@ -197,7 +196,6 @@
 
   const { t } = useI18n()
   const gameStore = useGameStore()
-  const npcStore = useNPCStore()
 
   // 初始化/迁移战役进度（新增章节需要修复旧存档）
   onMounted(() => {
@@ -342,7 +340,8 @@
     const result = dispatchCommand({ type: 'campaign.start', questId })
     if (result.ok) {
       toast.success(t('campaign.notifications.questStarted'))
-      campaignLogic.checkAllActiveQuestsProgress(gameStore.player, npcStore.npcs)
+      // NPC 系统已下线，任务进度检查不再需要 NPC 数据
+      campaignLogic.checkAllActiveQuestsProgress(gameStore.player)
     } else if (result.reason) {
       toast.error(t(result.reason))
     }
@@ -392,68 +391,21 @@
 
   // 处理对话选项选择
   const handleDialogueChoice = (choice: DialogueChoice) => {
-    if (!choice.effect) return
+    // 目前只剩分支解锁一种对话效果
+    if (choice.effect !== 'unlock_branch' || !choice.branchId) return
 
-    const DEFAULT_REPUTATION_CHANGE = 10
-
-    switch (choice.effect) {
-      case 'reputation_up':
-      case 'reputation_down': {
-        // 需要指定NPC ID才能修改声望
-        if (!choice.npcId) {
-          return
-        }
-
-        const npc = npcStore.npcs.find(n => n.id === choice.npcId)
-        if (!npc) {
-          return
-        }
-
-        const change =
-          choice.effect === 'reputation_up' ? choice.value ?? DEFAULT_REPUTATION_CHANGE : -(choice.value ?? DEFAULT_REPUTATION_CHANGE)
-
-        // 走命令层：联机模式下本地改 NPC 关系会被服务端补丁覆盖
-        const result = dispatchCommand({
-          type: 'campaign.choice',
-          effect: choice.effect,
-          npcId: choice.npcId,
-          value: choice.value
-        })
-        if (!result.ok) {
-          if (result.reason) toast.error(t(result.reason))
-          return
-        }
-
-        // 显示提示
-        if (change > 0) {
-          toast.success(t('campaign.notifications.reputationUp', { npcName: npc.name, value: change }))
-        } else {
-          toast.warning(t('campaign.notifications.reputationDown', { npcName: npc.name, value: Math.abs(change) }))
-        }
-        break
-      }
-
-      case 'unlock_branch': {
-        // 解锁分支任务
-        if (!choice.branchId) {
-          return
-        }
-
-        // 走命令层：联机模式下本地改战役进度会被服务端补丁覆盖
-        const result = dispatchCommand({
-          type: 'campaign.choice',
-          effect: 'unlock_branch',
-          branchId: choice.branchId
-        })
-        if (!result.ok) {
-          if (result.reason) toast.error(t(result.reason))
-          return
-        }
-
-        toast.success(t('campaign.notifications.branchUnlocked'))
-        break
-      }
+    // 走命令层：联机模式下本地改战役进度会被服务端补丁覆盖
+    const result = dispatchCommand({
+      type: 'campaign.choice',
+      effect: 'unlock_branch',
+      branchId: choice.branchId
+    })
+    if (!result.ok) {
+      if (result.reason) toast.error(t(result.reason))
+      return
     }
+
+    toast.success(t('campaign.notifications.branchUnlocked'))
   }
 
   // 监听章节变化，自动选择第一个可用任务

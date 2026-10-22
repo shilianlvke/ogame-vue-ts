@@ -27,7 +27,7 @@ import type {
   Position,
   Resources
 } from '@/types/game'
-import { BuildingType, DiplomaticEventType, MissionType, ShipType, TechnologyType } from '@/types/game'
+import { BuildingType, MissionType, ShipType, TechnologyType } from '@/types/game'
 import type { EngineContext, World } from './types'
 import { allPlayers, collectAllPlanets, findPlanetAt, findPlayerById, replaceArray } from './world'
 import { getWorldLayout, hopsBetween, systemIdAt } from './galaxyContext'
@@ -35,7 +35,7 @@ import { laneHops } from '@/logic/hyperlaneLogic'
 import { planMissionRoute, resolveDistance } from '@/logic/fleetRouteLogic'
 import { computeRouteTolls } from '@/logic/tollLogic'
 import { scheduleCycleJump } from '@/logic/cycleLogic'
-import { signalOf } from '@/logic/signalLogic'
+import { signalOf, tradeBucketOf } from '@/logic/signalLogic'
 import { getRouteMode } from '@/config/routeMode'
 import * as buildingLogic from '@/logic/buildingLogic'
 import * as buildingValidation from '@/logic/buildingValidation'
@@ -51,13 +51,11 @@ import * as planetLogic from '@/logic/planetLogic'
 import * as resourceLogic from '@/logic/resourceLogic'
 import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
 import * as campaignLogic from '@/logic/campaignLogic'
-import * as diplomaticLogic from '@/logic/diplomaticLogic'
 import * as messageLogic from '@/logic/messageLogic'
 import * as playerTradeLogic from '@/logic/playerTradeLogic'
-import * as npcBehaviorLogic from '@/logic/npcBehaviorLogic'
 import type { MessageCollection } from '@/logic/messageLogic'
 import * as gameLogic from '@/logic/gameLogic'
-import { DIPLOMATIC_CONFIG, EXPEDITION_ZONES } from '@/config/gameConfig'
+import { EXPEDITION_ZONES } from '@/config/gameConfig'
 
 /** 传感器阵列单次扫描消耗的重氢（原先硬编码在 GalaxyView 中） */
 export const PHALANX_SCAN_COST = 5000
@@ -86,9 +84,6 @@ export interface FleetSendCommand {
   cargo?: Resources
   /** 目标是否为月球 */
   isMoonTarget?: boolean
-  /** 是否为赠送资源（仅运输任务） */
-  isGift?: boolean
-  giftTargetNpcId?: string
   /** 探险区域（仅探险任务） */
   expeditionZone?: ExpeditionZone
 }
@@ -135,6 +130,8 @@ export type GameCommand =
   | { type: 'galaxy.jump' }
   | { type: 'signal.collect'; systemId: string }
   | { type: 'signal.warp'; systemId: string }
+  | { type: 'signal.trade'; systemId: string; goodIndex: number }
+  | { type: 'signal.lair'; systemId: string }
   | { type: 'planet.rename'; planetId: string; name: string }
   | { type: 'queue.addWaiting'; kind: 'building'; planetId: string; itemType: BuildingType; targetLevel: number }
   | { type: 'queue.addWaiting'; kind: 'research'; itemType: TechnologyType; targetLevel: number }
@@ -144,22 +141,13 @@ export type GameCommand =
   | { type: 'campaign.claim'; questId: string }
   | {
       type: 'campaign.choice'
-      effect: 'reputation_up' | 'reputation_down' | 'unlock_branch'
-      npcId?: string
-      value?: number
+      effect: 'unlock_branch'
       branchId?: string
     }
   // 消息 / 通知（服务端权威数组）
   | { type: 'messages.clear'; collections: MessageCollection[] }
   | { type: 'messages.delete'; collection: MessageCollection; id: string }
   | { type: 'messages.markRead'; collections: MessageCollection[]; id?: string }
-  // 外交通知响应（礼物 / 贸易 / 联合攻击）
-  | {
-      type: 'diplomacy.respond'
-      kind: 'gift' | 'trade' | 'jointAttack'
-      action: 'accept' | 'decline'
-      id: string
-    }
   // 玩家间交易
   | {
       type: 'player.trade.create'
@@ -230,7 +218,6 @@ export const collectFleetsAt = (world: World, target: Position): FleetMission[] 
     }
   }
 
-  for (const npc of world.npcs) push(npc.fleetMissions)
   for (const player of allPlayers(world)) push(player.fleetMissions)
   return result
 }
@@ -472,12 +459,6 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
         mission.targetIsMoon = true
       }
 
-      // 如果是赠送模式，标记任务
-      if (command.missionType === MissionType.Transport && command.isGift && command.giftTargetNpcId) {
-        mission.isGift = true
-        mission.giftTargetNpcId = command.giftTargetNpcId
-      }
-
       // 如果是探险任务，设置探险区域
       if (command.missionType === MissionType.Expedition && command.expeditionZone) {
         mission.expeditionZone = command.expeditionZone
@@ -491,9 +472,9 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
         const fleetSize = Object.values(mission.fleet).reduce((sum, count) => sum + (count ?? 0), 0)
         targetOwner.incomingFleetAlerts.push({
           id: mission.id,
-          // 复用 NPC 警报结构：把发起者写进 npcId/npcName 字段
-          npcId: player.id,
-          npcName: player.name,
+          // 来袭警报：发起者写入 attackerId/attackerName 字段
+          attackerId: player.id,
+          attackerName: player.name,
           missionType: mission.missionType,
           targetPlanetId: targetPlanet.id,
           targetPlanetName: targetPlanet.name,
@@ -736,45 +717,17 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       return succeed()
     }
     case 'campaign.choice': {
-      if (
-        command.effect !== 'reputation_up' &&
-        command.effect !== 'reputation_down' &&
-        command.effect !== 'unlock_branch'
-      ) {
-        return fail()
+      if (command.effect !== 'unlock_branch') return fail()
+      if (!command.branchId) return fail()
+      if (!player.campaignProgress) {
+        player.campaignProgress = campaignLogic.initializeCampaignProgress(player)
       }
-
-      if (command.effect === 'unlock_branch') {
-        if (!command.branchId) return fail()
-        if (!player.campaignProgress) {
-          player.campaignProgress = campaignLogic.initializeCampaignProgress(player)
-        }
-        if (!player.campaignProgress.unlockedBranches) {
-          player.campaignProgress.unlockedBranches = []
-        }
-        if (!player.campaignProgress.unlockedBranches.includes(command.branchId)) {
-          player.campaignProgress.unlockedBranches.push(command.branchId)
-        }
-        return succeed()
+      if (!player.campaignProgress.unlockedBranches) {
+        player.campaignProgress.unlockedBranches = []
       }
-
-      if (!command.npcId) return fail()
-      const npc = world.npcs.find(candidate => candidate.id === command.npcId)
-      if (!npc) return fail('errors.requirementsNotMet')
-      if (!npc.relations) npc.relations = {}
-
-      // 客户端只传意图，数值由服务端收敛，避免伪造超大/非法好感度变化
-      const requestedChange =
-        typeof command.value === 'number' && Number.isFinite(command.value) ? command.value : 10
-      const baseChange = Math.min(Math.max(requestedChange, 1), 20)
-      const change = command.effect === 'reputation_up' ? baseChange : -baseChange
-      const relation = diplomaticLogic.getOrCreateRelation(npc.relations, npc.id, player.id)
-      npc.relations[player.id] = diplomaticLogic.updateReputation(
-        relation,
-        change,
-        DiplomaticEventType.CampaignChoice,
-        ctx.t('campaign.dialogue.choiceEffect')
-      )
+      if (!player.campaignProgress.unlockedBranches.includes(command.branchId)) {
+        player.campaignProgress.unlockedBranches.push(command.branchId)
+      }
       return succeed()
     }
     case 'queue.addWaiting': {
@@ -849,77 +802,6 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       messageLogic.markMessagesRead(player, command.collections, command.id)
       return succeed()
     }
-    case 'diplomacy.respond': {
-      if (command.kind !== 'gift' && command.kind !== 'trade' && command.kind !== 'jointAttack') {
-        return fail()
-      }
-      if (command.action !== 'accept' && command.action !== 'decline') {
-        return fail()
-      }
-
-      if (command.kind === 'gift') {
-        const gift = player.giftNotifications?.find(candidate => candidate.id === command.id)
-        if (!gift) return fail('errors.requirementsNotMet')
-        const npc = world.npcs.find(candidate => candidate.id === gift.fromNpcId)
-        if (!npc) return fail('errors.requirementsNotMet')
-
-        if (command.action === 'accept') {
-          diplomaticLogic.acceptNPCGift(player, npc, gift, world.locale)
-        } else {
-          diplomaticLogic.rejectNPCGift(player, npc, gift, world.locale)
-        }
-        return succeed()
-      }
-
-      if (command.kind === 'trade') {
-        const index = player.tradeOffers?.findIndex(candidate => candidate.id === command.id) ?? -1
-        if (index < 0) return fail('errors.requirementsNotMet')
-        const offer = player.tradeOffers![index]!
-        if (offer.status !== 'pending' || now > offer.expiresAt) {
-          player.tradeOffers!.splice(index, 1)
-          return fail('npcBehavior.trade.expired')
-        }
-
-        if (command.action === 'accept') {
-          const npc = world.npcs.find(candidate => candidate.id === offer.npcId)
-          const planet = player.planets[0]
-          if (!npc || !planet) return fail('errors.requirementsNotMet')
-
-          const result = npcBehaviorLogic.acceptTradeOffer(offer, npc, player, planet)
-          if (!result.success) {
-            // 帮助函数可能把状态改成 expired；TS 的收窄看不到这次外部修改
-            if ((offer as { status: string }).status === 'expired') player.tradeOffers!.splice(index, 1)
-            return fail(result.reason ?? 'npcBehavior.trade.acceptFailed')
-          }
-        }
-
-        player.tradeOffers!.splice(index, 1)
-        return succeed()
-      }
-
-      const index = player.jointAttackInvites?.findIndex(candidate => candidate.id === command.id) ?? -1
-      if (index < 0) return fail('errors.requirementsNotMet')
-      const invite = player.jointAttackInvites![index]!
-      if (invite.status !== 'pending' || now > invite.expiresAt) {
-        player.jointAttackInvites!.splice(index, 1)
-        return fail('npcBehavior.jointAttack.expired')
-      }
-
-      if (command.action === 'accept') {
-        const npc = world.npcs.find(candidate => candidate.id === invite.fromNpcId)
-        if (!npc) return fail('errors.requirementsNotMet')
-        if (!npc.relations) npc.relations = {}
-        const relation = diplomaticLogic.getOrCreateRelation(npc.relations, npc.id, player.id)
-        npc.relations[player.id] = {
-          ...relation,
-          reputation: Math.min(DIPLOMATIC_CONFIG.MAX_REPUTATION, relation.reputation + 15),
-          lastUpdated: now
-        }
-      }
-
-      player.jointAttackInvites!.splice(index, 1)
-      return succeed()
-    }
     case 'player.trade.create': {
       const target = findPlayerById(world, command.toPlayerId)
       if (!target || target.id === player.id) return fail('errors.requirementsNotMet')
@@ -958,7 +840,7 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       if (trade.status !== 'pending') return fail('errors.requirementsNotMet')
       if (now >= trade.expiresAt) {
         playerTradeLogic.setPlayerTradeStatus(from, player, trade.id, 'expired')
-        return fail('npcBehavior.trade.expired')
+        return fail('players.tradeExpired')
       }
 
       const senderTrade = playerTradeLogic.getPlayerTradeStatus(from)
@@ -1028,8 +910,16 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       if (!record) return { ok: false, reason: 'errors.requiresDiscovery' }
       if (record.signalClaimed) return { ok: false, reason: 'errors.alreadyClaimed' }
 
-      const signal = signalOf(world.layoutSeed ?? 20261018, command.systemId, [...getWorldLayout(world).systemIndex.keys()])
-      if (!signal || signal.kind === 'wormhole') return { ok: false, reason: 'errors.noSignal' }
+      const signal = signalOf(
+        world.layoutSeed ?? 20261018,
+        command.systemId,
+        [...getWorldLayout(world).systemIndex.keys()],
+        now,
+        player.cycle ?? 1
+      )
+      if (!signal || (signal.kind !== 'derelict' && signal.kind !== 'ruin')) {
+        return { ok: false, reason: 'errors.noSignal' }
+      }
 
       const target = player.planets[0]
       if (!target) return { ok: false, reason: 'errors.requirementsNotMet' }
@@ -1037,6 +927,100 @@ export const applyCommand = (world: World, ctx: EngineContext, command: GameComm
       target.resources.crystal += signal.reward.crystal
       target.resources.deuterium += signal.reward.deuterium
       record.signalClaimed = true
+
+      // 遗迹额外产出工厂材料（§9.5：锈蚀合金 ×3~8）
+      if (signal.kind === 'ruin') {
+        const rand = ctx.random ?? Math.random
+        ctx.emit(
+          { kind: 'factoryMaterials', materials: { rustAlloy: 3 + Math.floor(rand() * 6) }, source: 'ruin' },
+          player.id
+        )
+      }
+      return { ok: true }
+    }
+    case 'signal.trade': {
+      const record = player.discoveredSystems?.[command.systemId]
+      if (!record) return { ok: false, reason: 'errors.requiresDiscovery' }
+
+      const signal = signalOf(
+        world.layoutSeed ?? 20261018,
+        command.systemId,
+        [...getWorldLayout(world).systemIndex.keys()],
+        now,
+        player.cycle ?? 1
+      )
+      if (!signal || signal.kind !== 'tradingPost' || !signal.goods) {
+        return { ok: false, reason: 'errors.noSignal' }
+      }
+
+      const bucket = tradeBucketOf(now)
+      if (record.tradeBucket !== bucket) {
+        record.tradeBucket = bucket
+        record.tradePurchased = []
+      }
+      const purchased = record.tradePurchased ?? []
+      if (purchased.includes(command.goodIndex)) return { ok: false, reason: 'errors.alreadyClaimed' }
+      const good = signal.goods[command.goodIndex]
+      if (!good) return { ok: false, reason: 'errors.invalidTarget' }
+
+      const target = player.planets[0]
+      if (!target) return { ok: false, reason: 'errors.requirementsNotMet' }
+      if (target.resources.darkMatter < good.price) {
+        return { ok: false, reason: 'errors.insufficientResources' }
+      }
+
+      target.resources.darkMatter -= good.price
+      target.resources[good.material] += good.amount
+      record.tradePurchased = [...purchased, command.goodIndex]
+      return { ok: true }
+    }
+    case 'signal.lair': {
+      const record = player.discoveredSystems?.[command.systemId]
+      if (!record) return { ok: false, reason: 'errors.requiresDiscovery' }
+      if (record.lairCleared) return { ok: false, reason: 'errors.alreadyClaimed' }
+
+      const signal = signalOf(
+        world.layoutSeed ?? 20261018,
+        command.systemId,
+        [...getWorldLayout(world).systemIndex.keys()],
+        now,
+        player.cycle ?? 1
+      )
+      if (!signal || signal.kind !== 'lair') return { ok: false, reason: 'errors.noSignal' }
+
+      const target = player.planets[0]
+      if (!target) return { ok: false, reason: 'errors.requirementsNotMet' }
+      const power = fleetLogic.calculatePlanetDefensePower(target.fleet, target.defense)
+      if (power < (signal.lairPower ?? 0)) return { ok: false, reason: 'errors.insufficientShips' }
+
+      // 巢穴战损：每类作战舰船损失 10%（至少 1 艘），运输/殖民/探测器不参战
+      const combatShips: ShipType[] = [
+        ShipType.LightFighter,
+        ShipType.HeavyFighter,
+        ShipType.Cruiser,
+        ShipType.Battleship,
+        ShipType.Battlecruiser,
+        ShipType.Bomber,
+        ShipType.Destroyer,
+        ShipType.Deathstar
+      ]
+      for (const ship of combatShips) {
+        const count = target.fleet[ship] ?? 0
+        if (count > 0) target.fleet[ship] = Math.max(0, count - Math.max(1, Math.floor(count * 0.1)))
+      }
+
+      target.resources.metal += signal.reward.metal
+      target.resources.crystal += signal.reward.crystal
+      target.resources.deuterium += signal.reward.deuterium
+      record.lairCleared = true
+      ctx.emit(
+        {
+          kind: 'factoryMaterials',
+          materials: { rustAlloy: 20, neuralCord: 2 },
+          source: 'lair'
+        },
+        player.id
+      )
       return { ok: true }
     }
     case 'galaxy.jump': {

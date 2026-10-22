@@ -51,14 +51,6 @@ const hints: Hint[] = [
     delay: 500
   },
   {
-    id: 'diplomacy_intro',
-    route: '/diplomacy',
-    titleKey: 'hints.diplomacy.title',
-    messageKey: 'hints.diplomacy.message',
-    icon: 'handshake',
-    delay: 500
-  },
-  {
     id: 'messages_intro',
     route: '/messages',
     titleKey: 'hints.messages.title',

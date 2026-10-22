@@ -8,32 +8,19 @@
  */
 import { reactive } from 'vue'
 import { createWorld } from '@/core/world'
-import { generateNpcPlanets } from '@/core/generate'
-import { tick, tickNpcPhase } from '@/core/engine'
+import { tick } from '@/core/engine'
 import { createEngineContext } from '@/core/types'
 import type { EngineEvent } from '@/core/types'
 import { applyCommand } from '@/core/commands'
 import { buildPatch, buildSnapshot, createPatchState, seedPatchState } from '@/core/protocol'
 import { applyPatch, applySnapshot } from '@/net/apply'
-import { ensureNpcRegistry, updateNpcBehavior, updateNpcGrowth } from '@/core/npc'
-import { selectNPCBehaviorTarget } from '@/logic/npcBehaviorLogic'
 import * as gameLogic from '@/logic/gameLogic'
 import * as planetLogic from '@/logic/planetLogic'
 import * as fleetLogic from '@/logic/fleetLogic'
 import * as buildingLogic from '@/logic/buildingLogic'
 import * as waitingQueueLogic from '@/logic/waitingQueueLogic'
-import type {
-  Resources,
-  FleetMission,
-  Planet,
-  NPC,
-  DebrisField,
-  SpiedNotification,
-  GiftNotification,
-  TradeOffer,
-  JointAttackInvite
-} from '@/types/game'
-import { BuildingType, DefenseType, MissionType, NPCAIType, OfficerType, ShipType } from '@/types/game'
+import type { Resources, FleetMission, Planet, DebrisField, QuestNotification } from '@/types/game'
+import { BuildingType, DefenseType, MissionType, OfficerType, ShipType, TechnologyType } from '@/types/game'
 
 const t = (key: string) => key
 let eventCount = 0
@@ -41,19 +28,29 @@ const ctx = createEngineContext({ t, emit: () => (eventCount += 1) })
 
 const player = gameLogic.initializePlayer('player1', 'Tester')
 const home = planetLogic.createInitialPlanet(player.id, 'Home')
+home.id = 'home_player1'
+home.position = { galaxy: 1, system: 1, position: 1 }
 player.planets = [home]
+
+// 另一位玩家作为非 NPC 的战斗/舰队目标，避免依赖已下线的 NPC 系统
+const rival = gameLogic.initializePlayer('player2', 'Rival')
+const rivalHome = planetLogic.createInitialPlanet(rival.id, 'Rival Home')
+rivalHome.id = 'home_rival'
+rivalHome.position = { galaxy: 2, system: 2, position: 2 }
+rivalHome.fleet[ShipType.LightFighter] = 20
+rivalHome.defense[DefenseType.RocketLauncher] = 10
+rivalHome.resources = { metal: 20_000, crystal: 20_000, deuterium: 5_000, darkMatter: 0, energy: 0 }
+rival.planets = [rivalHome]
 
 const world = createWorld({
   player,
+  players: [player, rival],
   planets: {},
-  npcs: [],
   debrisFields: {},
   locale: 'zh-CN',
   gameSpeed: 1,
   battleToFinish: true
 })
-
-generateNpcPlanets(world, 'Planet', 200)
 
 const emptyCargo: Resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
 
@@ -70,16 +67,14 @@ const run = async () => {
   console.log('—— 无头引擎冒烟测试 ——')
   console.log(`宇宙星球数：${Object.keys(world.planets).length}`)
 
-  // 直接攻击一个 NPC 星球，验证 Node 环境下战斗执行器（直算）可用
-  const target = Object.values(world.planets).find(p => !!p.ownerId && p.ownerId !== player.id)
-  if (!target) fail('未找到可攻击的 NPC 星球')
-
+  // 直接攻击另一位玩家的星球，验证 Node 环境下战斗执行器（直算）可用
+  const target = rivalHome
   const mission: FleetMission = {
     id: 'smoke-mission-1',
     playerId: player.id,
     originPlanetId: home.id,
-    targetPosition: { ...target!.position },
-    targetPlanetId: target!.id,
+    targetPosition: { ...target.position },
+    targetPlanetId: target.id,
     missionType: MissionType.Attack,
     fleet: { lightFighter: 50, cruiser: 10 },
     cargo: { ...emptyCargo },
@@ -88,72 +83,62 @@ const run = async () => {
     status: 'outbound'
   }
 
-  const attackResult = await fleetLogic.processAttackArrival(mission, target!, player, null, player.planets, true)
+  const attackResult = await fleetLogic.processAttackArrival(mission, target, player, rival, player.planets, true)
   if (!attackResult) fail('战斗结算返回空（processAttackArrival 失败）')
   const rounds = attackResult!.battleResult.rounds ?? 0
   console.log(`战斗结算成功：回合=${rounds}，胜者=${attackResult!.battleResult.winner}`)
   assertFinite('战报掠夺金属', attackResult!.battleResult.plunder.metal)
   assertFinite('战报残骸金属', attackResult!.battleResult.debrisField.metal)
 
-  // 玩家积分需要 >= 1000 才会脱离 NPC 新手保护，否则 NPC 不会侦查/攻击
-  player.points = 5000
+  // 6 小时模拟前先排入建造 / 研究队列，验证玩家侧引擎在无 NPC 环境下仍能推进
+  home.resources = { metal: 1_000_000, crystal: 1_000_000, deuterium: 1_000_000, darkMatter: 0, energy: 0 }
+  home.buildings[BuildingType.SolarPlant] = 1
+  home.buildings[BuildingType.ResearchLab] = 1
+  const metalMineBefore = home.buildings[BuildingType.MetalMine] ?? 0
 
-  // 先跑一个 tick 让 NPC 注册表建立
-  let now = Date.now()
-  await tick(world, ctx, now, 5)
-  if (world.npcs.length === 0) fail('首个 tick 后 NPC 注册表仍未建立')
-
-  // 强制若干 NPC 进入敌对状态并具备侦查/攻击能力，确定性验证行为链路
-  const hostileTargets = world.npcs.slice(0, 5)
-  hostileTargets.forEach(npc => {
-    if (!npc.relations) npc.relations = {}
-    npc.relations[player.id] = {
-      fromId: npc.id,
-      toId: player.id,
-      reputation: -80,
-      status: 'hostile',
-      lastUpdated: now,
-      history: []
-    }
-    npc.lastSpyTime = 0
-    npc.lastAttackTime = 0
-    npc.fleetMissions = []
-    const npcPlanet = npc.planets.find(p => !p.isMoon) ?? npc.planets[0]
-    if (npcPlanet) {
-      npcPlanet.fleet.espionageProbe = Math.max(npcPlanet.fleet.espionageProbe ?? 0, 10)
-      npcPlanet.fleet.lightFighter = Math.max(npcPlanet.fleet.lightFighter ?? 0, 200)
-    }
+  const buildQueued = applyCommand(world, ctx, {
+    type: 'building.upgrade',
+    planetId: home.id,
+    buildingType: BuildingType.MetalMine
   })
+  if (!buildQueued.ok) fail(`6 小时模拟前建筑入队失败（${buildQueued.reason}）`)
 
-  // 预置一份对玩家母星的侦查报告，让「NPC 主动攻击」这条链路不依赖侦查飞行的随机时序
-  {
-    const seeded = hostileTargets[0]
-    const targetPlanet = player.planets[0]
-    if (seeded && targetPlanet) {
-      seeded.playerSpyReports = {
-        [targetPlanet.id]: {
-          id: 'seed-spy-report',
-          timestamp: now,
-          spyId: seeded.id,
-          targetPlanetId: targetPlanet.id,
-          targetPlanetName: targetPlanet.name,
-          targetPosition: targetPlanet.position,
-          targetPlayerId: player.id,
-          resources: { ...targetPlanet.resources },
-          fleet: { ...targetPlanet.fleet },
-          defense: { ...targetPlanet.defense },
-          buildings: { ...targetPlanet.buildings },
-          technologies: { ...player.technologies },
-          detectionChance: 100
-        }
-      }
-    }
+  const researchQueued = applyCommand(world, ctx, {
+    type: 'research.start',
+    planetId: home.id,
+    techType: TechnologyType.EnergyTechnology
+  })
+  if (!researchQueued.ok) fail(`6 小时模拟前研究入队失败（${researchQueued.reason}）`)
+
+  // 回收任务：6 小时内到达、清空残骸场并把回收船送回母星
+  const debrisPosition = { galaxy: 5, system: 5, position: 5 }
+  const debrisId = `debris_${debrisPosition.galaxy}_${debrisPosition.system}_${debrisPosition.position}`
+  world.debrisFields[debrisId] = {
+    id: debrisId,
+    position: debrisPosition,
+    resources: { metal: 30_000, crystal: 10_000 },
+    createdAt: Date.now()
   }
+  const recycleMission: FleetMission = {
+    id: 'smoke-recycle-1',
+    playerId: player.id,
+    originPlanetId: home.id,
+    targetPosition: debrisPosition,
+    debrisFieldId: debrisId,
+    missionType: MissionType.Recycle,
+    fleet: { [ShipType.Recycler]: 2 },
+    cargo: { ...emptyCargo },
+    departureTime: Date.now() - 5000,
+    arrivalTime: Date.now() + 5000,
+    status: 'outbound'
+  }
+  player.fleetMissions.push(recycleMission)
 
   // 快进模拟：每个 tick 代表 5 秒，共 6 小时
   const TICKS = 4320
   const STEP_MS = 5000
   const started = Date.now()
+  let now = Date.now()
 
   for (let i = 0; i < TICKS; i++) {
     now += STEP_MS
@@ -163,23 +148,30 @@ const run = async () => {
   const elapsed = ((Date.now() - started) / 1000).toFixed(2)
   console.log(`模拟完成：${TICKS} ticks（${(TICKS * STEP_MS) / 3600000} 小时），耗时 ${elapsed}s，事件 ${eventCount} 个`)
 
-  // 校验
-  if (world.npcs.length === 0) fail('NPC 注册表未建立')
-
-  const missionCount = world.npcs.reduce((sum, npc) => sum + (npc.fleetMissions?.length ?? 0), 0)
-  const spiedByNpc = player.spiedNotifications?.length ?? 0
-  console.log(`NPC 数量：${world.npcs.length}，在途 NPC 任务：${missionCount}，被侦查通知：${spiedByNpc}`)
-  if (spiedByNpc === 0) fail('6 小时内没有任何 NPC 侦查玩家，行为系统可能未运行')
-  if (player.battleReports.length === 0) fail('6 小时内没有任何 NPC 攻击结算，战斗链路可能未运行')
-  console.log(`玩家战报：${player.battleReports.length}（含 NPC 来袭）`)
+  // 建造 / 研究 / 回收结果校验
+  if (home.buildings[BuildingType.MetalMine] !== metalMineBefore + 1) {
+    fail(`6 小时内金属矿未完成升级（${home.buildings[BuildingType.MetalMine]}）`)
+  }
+  if ((player.technologies[TechnologyType.EnergyTechnology] ?? 0) !== 1) {
+    fail('6 小时内能源技术研究未完成')
+  }
+  if (player.fleetMissions.includes(recycleMission)) fail('6 小时内回收舰队未返回')
+  if (world.debrisFields[debrisId]) fail('回收任务完成后残骸场仍存在')
+  if ((home.fleet[ShipType.Recycler] ?? 0) !== 2) fail('回收舰队未返回母星')
+  const recycleReport = (player.missionReports ?? []).find(
+    report => report.missionType === MissionType.Recycle && report.success
+  )
+  if (!recycleReport) fail('回收任务未生成成功报告')
+  console.log('建造 / 研究 / 回收链路正常：金属矿升级、能源技术完成、回收舰队已返航')
 
   assertFinite('玩家金属', home.resources.metal)
   assertFinite('玩家晶体', home.resources.crystal)
   assertFinite('玩家重氢', home.resources.deuterium)
   if (home.resources.metal < 0) fail('玩家金属为负')
 
+  const planetsToCheck = [...player.planets, ...rival.planets, ...Object.values(world.planets)]
   let planetCount = 0
-  for (const planet of Object.values(world.planets)) {
+  for (const planet of planetsToCheck) {
     planetCount += 1
     assertFinite(`星球 ${planet.id} 金属`, planet.resources.metal)
     assertFinite(`星球 ${planet.id} 晶体`, planet.resources.crystal)
@@ -198,9 +190,6 @@ const run = async () => {
   // 场景 D：验证客户端联机同步（snapshot / patch → 本地状态）
   await runOnlineApplyScenario()
 
-  // 场景 E：验证 NPC 在多个玩家之间分配注意力
-  await runMultiPlayerNpcScenario()
-
   console.log('✅ 无头引擎冒烟测试通过')
 }
 
@@ -212,26 +201,27 @@ const run = async () => {
  */
 const runReactiveScenario = async () => {
   const state = reactive({
-    player: gameLogic.initializePlayer('player2', 'ClientTester'),
+    player: gameLogic.initializePlayer('player3', 'ClientTester'),
     planets: {} as Record<string, Planet>,
-    npcs: [] as NPC[],
     debrisFields: {} as Record<string, DebrisField>
   })
 
-  const home = planetLogic.createInitialPlanet('player2', 'Home2')
+  const home = planetLogic.createInitialPlanet('player3', 'Home3')
   state.player.planets = [home]
 
   const world = createWorld({
     player: state.player,
     planets: state.planets,
-    npcs: state.npcs,
     debrisFields: state.debrisFields,
     locale: 'zh-CN'
   })
 
-  generateNpcPlanets(world, 'Planet', 50)
-  const generated = Object.keys(state.planets).length
-  if (generated === 0 || generated > 50) fail(`场景 B：星球未写入响应式 state（${generated} 个）`)
+  // NPC 已下线，直接放入一张星图星球，验证 world.planets 仍然指向响应式对象
+  const frontier = planetLogic.createInitialPlanet('frontier', 'Frontier')
+  frontier.id = 'frontier_1'
+  frontier.position = { galaxy: 3, system: 3, position: 3 }
+  state.planets['3:3:3'] = frontier
+  if (Object.keys(state.planets).length === 0) fail('场景 B：星球未写入响应式 state')
 
   // 入队一个 3 秒完成的建筑升级，验证队列推进与事件抛出
   const levelBefore = state.player.planets[0].buildings[BuildingType.MetalMine] ?? 0
@@ -251,10 +241,9 @@ const runReactiveScenario = async () => {
   // 引用完整性：引擎不得替换 World 字段（否则会切断与 Pinia 的连接）
   if (world.player !== state.player) fail('场景 B：world.player 引用被切断')
   if (world.planets !== state.planets) fail('场景 B：world.planets 引用被切断')
-  if (world.npcs !== state.npcs) fail('场景 B：world.npcs 引用被切断')
+  if (world.debrisFields !== state.debrisFields) fail('场景 B：world.debrisFields 引用被切断')
 
   // 就地修改必须可见
-  if (state.npcs.length === 0) fail('场景 B：NPC 注册表未写入响应式数组')
   if (Object.keys(state.planets).length === 0) fail('场景 B：宇宙地图为空')
   if (home.buildings.metalMine !== levelBefore + 1) {
     fail(`场景 B：建筑队列未生效（metalMine=${home.buildings.metalMine}，期望 ${levelBefore + 1}）`)
@@ -267,7 +256,9 @@ const runReactiveScenario = async () => {
     fail('场景 B：资源出现非有限数值')
   }
 
-  console.log(`场景 B（Pinia 引用语义）通过：NPC ${state.npcs.length} 个，事件 ${events.length} 个，金属矿 Lv${home.buildings.metalMine}`)
+  console.log(
+    `场景 B（Pinia 引用语义）通过：星图星球 ${Object.keys(state.planets).length} 个，事件 ${events.length} 个，金属矿 Lv${home.buildings.metalMine}`
+  )
 }
 
 /**
@@ -279,20 +270,25 @@ const runReactiveScenario = async () => {
  * - 非本玩家星球的操作必须被拒绝（服务端防作弊的基础）。
  */
 const runCommandScenario = async () => {
-  const player = gameLogic.initializePlayer('player3', 'CmdTester')
-  const home = planetLogic.createInitialPlanet('player3', 'Home3')
+  const player = gameLogic.initializePlayer('player4', 'CmdTester')
+  const home = planetLogic.createInitialPlanet('player4', 'Home4')
   player.planets = [home]
+
+  const rival = gameLogic.initializePlayer('player4_rival', 'Rival')
+  const rivalHome = planetLogic.createInitialPlanet(rival.id, 'Rival Home')
+  rivalHome.id = 'rival_home_cmd'
+  rivalHome.position = { galaxy: 2, system: 2, position: 2 }
+  rival.planets = [rivalHome]
 
   const world = createWorld({
     player,
+    players: [player, rival],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN',
     gameSpeed: 1,
     battleToFinish: true
   })
-  generateNpcPlanets(world, 'Planet', 20)
 
   const ctx = createEngineContext({ t, emit: () => {} })
 
@@ -321,15 +317,12 @@ const runCommandScenario = async () => {
   if (home.resources.metal >= 1_000_000) fail('场景 C：建筑升级未扣除资源')
 
   // 3) 非本玩家星球 → 拒绝
-  const foreignPlanet = Object.values(world.planets).find(planet => !!planet.ownerId)
-  if (foreignPlanet) {
-    const foreign = applyCommand(world, ctx, {
-      type: 'building.upgrade',
-      planetId: foreignPlanet.id,
-      buildingType: BuildingType.MetalMine
-    })
-    if (foreign.ok) fail('场景 C：竟然能操作他人星球')
-  }
+  const foreign = applyCommand(world, ctx, {
+    type: 'building.upgrade',
+    planetId: rivalHome.id,
+    buildingType: BuildingType.MetalMine
+  })
+  if (foreign.ok) fail('场景 C：竟然能操作他人星球')
 
   // 4) 船厂建船（轻型战斗机需要船厂 + 燃烧引擎 Lv1）
   home.buildings[BuildingType.Shipyard] = 1
@@ -403,147 +396,44 @@ const runCommandScenario = async () => {
 
   // 4.3) 消息/通知的删除、清空、已读必须走命令层
   const messageTime = Date.now()
-  const firstSpied: SpiedNotification = {
-    id: 'smoke-spied-1',
+  const firstNotice: QuestNotification = {
+    id: 'smoke-quest-1',
     timestamp: messageTime,
-    npcId: 'npc_smoke',
-    npcName: 'Smoke NPC',
-    targetPlanetId: home.id,
-    targetPlanetName: home.name,
-    detectionSuccess: true,
+    questId: 'quest_smoke',
+    questTitleKey: 'campaign.smoke.title',
+    eventType: 'unlocked',
+    messageKey: 'campaign.smoke.unlocked',
     read: false
   }
-  const secondSpied: SpiedNotification = {
-    ...firstSpied,
-    id: 'smoke-spied-2',
+  const secondNotice: QuestNotification = {
+    ...firstNotice,
+    id: 'smoke-quest-2',
     timestamp: messageTime + 1
   }
-  player.spiedNotifications = [firstSpied, secondSpied]
+  player.questNotifications = [firstNotice, secondNotice]
 
   const markRead = applyCommand(world, ctx, {
     type: 'messages.markRead',
-    collections: ['spiedNotifications'],
-    id: firstSpied.id
+    collections: ['questNotifications'],
+    id: firstNotice.id
   })
-  if (!markRead.ok || !firstSpied.read) fail('场景 C：消息已读命令未生效')
-  if (secondSpied.read) fail('场景 C：消息已读命令误改了其他通知')
+  if (!markRead.ok || !firstNotice.read) fail('场景 C：消息已读命令未生效')
+  if (secondNotice.read) fail('场景 C：消息已读命令误改了其他通知')
 
   const deleted = applyCommand(world, ctx, {
     type: 'messages.delete',
-    collection: 'spiedNotifications',
-    id: secondSpied.id
+    collection: 'questNotifications',
+    id: secondNotice.id
   })
-  if (!deleted.ok || player.spiedNotifications.length !== 1) fail('场景 C：消息删除命令未生效')
+  if (!deleted.ok || player.questNotifications.length !== 1) fail('场景 C：消息删除命令未生效')
 
   const cleared = applyCommand(world, ctx, {
     type: 'messages.clear',
-    collections: ['spiedNotifications']
+    collections: ['questNotifications']
   })
-  if (!cleared.ok || player.spiedNotifications.length !== 0) fail('场景 C：消息清空命令未生效')
+  if (!cleared.ok || player.questNotifications.length !== 0) fail('场景 C：消息清空命令未生效')
 
-  // 4.4) 外交通知的接受/拒绝必须走命令层，并真正修改服务端状态
-  ensureNpcRegistry(world, ctx)
-  const npc = world.npcs[0]
-  if (!npc) fail('场景 C：没有可用于外交测试的 NPC')
-  if (!npc.relations) npc.relations = {}
-  if (!npc.relations[player.id]) {
-    npc.relations[player.id] = {
-      fromId: npc.id,
-      toId: player.id,
-      reputation: 0,
-      status: 'neutral',
-      lastUpdated: messageTime,
-      history: []
-    }
-  }
-
-  const gift: GiftNotification = {
-    id: 'smoke-gift-1',
-    timestamp: messageTime,
-    fromNpcId: npc.id,
-    fromNpcName: npc.name,
-    resources: { metal: 100, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 },
-    currentReputation: npc.relations[player.id].reputation,
-    expectedReputationGain: 5,
-    expiresAt: messageTime + 60_000,
-    read: false
-  }
-  home.resources = { metal: 0, crystal: 0, deuterium: 0, darkMatter: 0, energy: 0 }
-  player.giftNotifications = [gift]
-  const acceptedGift = applyCommand(world, ctx, {
-    type: 'diplomacy.respond',
-    kind: 'gift',
-    action: 'accept',
-    id: gift.id
-  })
-  if (!acceptedGift.ok || player.giftNotifications.length !== 0) fail('场景 C：接受礼物命令未移除通知')
-  if (home.resources.metal !== 100) fail('场景 C：接受礼物命令未发放资源')
-
-  const npcPlanet = npc.planets[0]
-  if (!npcPlanet) fail('场景 C：NPC 没有星球')
-  npcPlanet.resources = { metal: 10_000, crystal: 10_000, deuterium: 10_000, darkMatter: 0, energy: 0 }
-  home.resources = { metal: 1_000, crystal: 1_000, deuterium: 1_000, darkMatter: 0, energy: 0 }
-  const offer: TradeOffer = {
-    id: 'smoke-trade-1',
-    npcId: npc.id,
-    npcName: npc.name,
-    timestamp: messageTime,
-    offeredResources: { type: 'metal', amount: 500 },
-    requestedResources: { type: 'crystal', amount: 200 },
-    expiresAt: messageTime + 60_000,
-    status: 'pending',
-    read: false
-  }
-  player.tradeOffers = [offer]
-  const acceptedTrade = applyCommand(world, ctx, {
-    type: 'diplomacy.respond',
-    kind: 'trade',
-    action: 'accept',
-    id: offer.id
-  })
-  if (!acceptedTrade.ok || player.tradeOffers.length !== 0) fail('场景 C：接受贸易命令未移除提议')
-  if (home.resources.metal !== 1_500 || home.resources.crystal !== 800) fail('场景 C：接受贸易命令资源结算错误')
-
-  const invite: JointAttackInvite = {
-    id: 'smoke-joint-1',
-    fromNpcId: npc.id,
-    fromNpcName: npc.name,
-    timestamp: messageTime,
-    targetNpcId: 'npc_target',
-    targetNpcName: 'Target NPC',
-    targetPlanetId: 'planet_target',
-    targetPosition: { galaxy: 1, system: 1, position: 1 },
-    npcFleetCommitment: { lightFighter: 1 },
-    expectedLootRatio: 0.5,
-    expiresAt: messageTime + 60_000,
-    status: 'pending',
-    read: false
-  }
-  const reputationBefore = npc.relations[player.id].reputation
-  player.jointAttackInvites = [invite]
-  const acceptedJoint = applyCommand(world, ctx, {
-    type: 'diplomacy.respond',
-    kind: 'jointAttack',
-    action: 'accept',
-    id: invite.id
-  })
-  if (!acceptedJoint.ok || player.jointAttackInvites.length !== 0) fail('场景 C：接受联合攻击命令未移除邀请')
-  if (npc.relations[player.id].reputation !== Math.min(100, reputationBefore + 15)) {
-    fail('场景 C：接受联合攻击命令未提升好感度')
-  }
-
-  // 4.5) 战役对话的声望/分支也必须走命令层
-  const reputationBeforeChoice = npc.relations[player.id].reputation
-  const choiceResult = applyCommand(world, ctx, {
-    type: 'campaign.choice',
-    effect: 'reputation_up',
-    npcId: npc.id
-  })
-  if (!choiceResult.ok) fail(`场景 C：战役声望选项失败（${choiceResult.reason}）`)
-  if (npc.relations[player.id].reputation !== Math.min(100, reputationBeforeChoice + 10)) {
-    fail('场景 C：战役声望选项数值不正确')
-  }
-
+  // 4.4) 战役分支解锁必须走命令层
   const branchResult = applyCommand(world, ctx, {
     type: 'campaign.choice',
     effect: 'unlock_branch',
@@ -560,13 +450,10 @@ const runCommandScenario = async () => {
   // 5) 舰队派遣（扣除舰队与燃料）
   home.fleet.lightFighter = 10
   const deuteriumBefore = home.resources.deuterium
-  const target = Object.values(world.planets).find(planet => planet.ownerId && planet.ownerId !== player.id)
-  if (!target) fail('场景 C：未找到可攻击的 NPC 星球')
-
   const sent = applyCommand(world, ctx, {
     type: 'fleet.send',
     originPlanetId: home.id,
-    targetPosition: target!.position,
+    targetPosition: { ...rivalHome.position },
     missionType: MissionType.Attack,
     fleet: { lightFighter: 4 }
   })
@@ -627,20 +514,16 @@ const runOnlineApplyScenario = async () => {
     player: alice,
     players: [alice, bob],
     planets: {},
-    npcs: [],
     debrisFields: {},
     locale: 'zh-CN'
   })
-  generateNpcPlanets(world, 'Planet', 5)
 
   const ctx = createEngineContext({ t, emit: () => {} })
-  ensureNpcRegistry(world, ctx)
 
   // 客户端本地状态（模拟 Pinia 里的对象引用）
   const clientState = {
     player: gameLogic.initializePlayer('local', 'Local'),
     planets: {} as Record<string, Planet>,
-    npcs: [] as NPC[],
     debrisFields: {} as Record<string, DebrisField>
   }
 
@@ -650,8 +533,6 @@ const runOnlineApplyScenario = async () => {
 
   if (currentPlanetId !== 'alice_home') fail(`场景 D：快照应用后未选中母星（${currentPlanetId}）`)
   if (clientState.player.id !== 'alice') fail('场景 D：玩家没有切换到服务器玩家')
-  if (clientState.npcs.length === 0) fail('场景 D：NPC 列表为空')
-  if ((clientState.npcs[0].planets.length ?? 0) === 0) fail('场景 D：NPC 未携带公开星球视图')
 
   const bobView = clientState.planets['9:9:8']
   if (!bobView) fail('场景 D：看不到其他玩家的星球')
@@ -709,122 +590,9 @@ const runOnlineApplyScenario = async () => {
     fail(`场景 D：当前星球消失后未回退（${switched.currentPlanetId}）`)
   }
 
-  console.log(`场景 D（客户端同步）通过：可见星球 ${Object.keys(clientState.planets).length} 个，NPC ${clientState.npcs.length} 个`)
-}
-
-/**
- * 场景 E：NPC 多玩家化
- *
- * 验证服务端多人时 NPC 不会只盯着一个玩家：
- * - 敌对优先：NPC 只对 B 敌对时，即使 A 更近也会选 B；
- * - 距离兜底：双方都是中立时选最近的玩家；
- * - 行为落地：两端玩家都能收到 NPC 的侦查通知。
- */
-const runMultiPlayerNpcScenario = async () => {
-  const alice = gameLogic.initializePlayer('npc_test_alice', 'Alice')
-  const bob = gameLogic.initializePlayer('npc_test_bob', 'Bob')
-
-  const aliceHome = planetLogic.createInitialPlanet(alice.id, 'Alice Home')
-  aliceHome.id = 'alice_home_npc'
-  aliceHome.position = { galaxy: 1, system: 1, position: 1 }
-  alice.planets = [aliceHome]
-
-  const bobHome = planetLogic.createInitialPlanet(bob.id, 'Bob Home')
-  bobHome.id = 'bob_home_npc'
-  bobHome.position = { galaxy: 9, system: 9, position: 9 }
-  bob.planets = [bobHome]
-
-  // 双方都要脱离新手保护，否则 NPC 不会侦查/攻击
-  alice.points = 5000
-  bob.points = 5000
-
-  const world = createWorld({
-    player: alice,
-    players: [alice, bob],
-    planets: {},
-    npcs: [],
-    debrisFields: {},
-    locale: 'zh-CN'
-  })
-
-  // 4 个 NPC 靠近 Alice，4 个靠近 Bob
-  let index = 0
-  for (let i = 0; i < 4; i++) {
-    const planet = planetLogic.createNPCPlanet(index++, { galaxy: 1, system: 1, position: 2 + i }, 'Planet')
-    world.planets[`${planet.position.galaxy}:${planet.position.system}:${planet.position.position}`] = planet
-  }
-  for (let i = 0; i < 4; i++) {
-    const planet = planetLogic.createNPCPlanet(index++, { galaxy: 9, system: 9, position: 5 + i }, 'Planet')
-    world.planets[`${planet.position.galaxy}:${planet.position.system}:${planet.position.position}`] = planet
-  }
-
-  const ctx = createEngineContext({ t, emit: () => {} })
-  ensureNpcRegistry(world, ctx)
-  if (world.npcs.length !== 8) fail(`场景 E：NPC 注册表数量异常（${world.npcs.length}）`)
-
-  // 全部设为侵略型、与双方敌对、冷却清零
-  world.npcs.forEach(npc => {
-    npc.aiType = NPCAIType.Aggressive
-    npc.relations = npc.relations ?? {}
-    for (const player of [alice, bob]) {
-      npc.relations[player.id] = {
-        fromId: npc.id,
-        toId: player.id,
-        reputation: -80,
-        status: 'hostile' as const,
-        lastUpdated: Date.now(),
-        history: []
-      }
-    }
-    npc.lastSpyTime = 0
-    npc.lastAttackTime = 0
-  })
-
-  // —— 目标选择：敌对优先 + 距离兜底 ——
-  const aliceSideNpc = world.npcs.find(npc => npc.planets[0]?.position.galaxy === 1) ?? fail('场景 E：没找到靠近 Alice 的 NPC')
-
-  aliceSideNpc.relations![alice.id]!.status = 'neutral'
-  aliceSideNpc.relations![bob.id]!.status = 'hostile'
-  const hostileChoice = selectNPCBehaviorTarget(aliceSideNpc, [alice, bob])
-  if (hostileChoice?.id !== bob.id) {
-    fail(`场景 E：敌对优先失效（选中 ${hostileChoice?.id}）`)
-  }
-
-  aliceSideNpc.relations![alice.id]!.status = 'neutral'
-  aliceSideNpc.relations![bob.id]!.status = 'neutral'
-  const nearestChoice = selectNPCBehaviorTarget(aliceSideNpc, [alice, bob])
-  if (nearestChoice?.id !== alice.id) {
-    fail(`场景 E：距离兜底失效（选中 ${nearestChoice?.id}）`)
-  }
-
-  // 恢复双方敌对，驱动真实行为
-  world.npcs.forEach(npc => {
-    npc.relations![alice.id]!.status = 'hostile'
-    npc.relations![bob.id]!.status = 'hostile'
-    npc.lastSpyTime = 0
-  })
-
-  // 先跑一次成长，确保 NPC 有间谍探测器等基础配置
-  updateNpcGrowth(world, ctx, 5)
-
-  // 多轮行为决策：生成侦查/攻击任务
-  for (let i = 0; i < 8; i++) {
-    updateNpcBehavior(world, ctx, 5)
-  }
-
-  const generated = world.npcs.reduce((sum, npc) => sum + (npc.fleetMissions?.length ?? 0), 0)
-  if (generated === 0) fail('场景 E：NPC 没有产生任何舰队任务')
-
-  // 再推进一次时间，让任务到达并产生通知
-  await tickNpcPhase(world, ctx, Date.now() + 3_600_000, 5)
-
-  const aliceSpied = alice.spiedNotifications?.length ?? 0
-  const bobSpied = bob.spiedNotifications?.length ?? 0
-
-  if (aliceSpied === 0) fail('场景 E：Alice 没有收到任何 NPC 侦查（NPC 注意力分配失败）')
-  if (bobSpied === 0) fail('场景 E：Bob 没有收到任何 NPC 侦查（NPC 只盯着一个玩家）')
-
-  console.log(`场景 E（NPC 多玩家）通过：Alice 被侦查 ${aliceSpied} 次，Bob 被侦查 ${bobSpied} 次`)
+  console.log(
+    `场景 D（客户端同步）通过：可见星球 ${Object.keys(clientState.planets).length} 个，玩家档案 ${snapshotWire.players.length} 个`
+  )
 }
 
 /** 用纯函数计算积分，验证 publicLogic 在 Node 下可用 */

@@ -3,7 +3,7 @@
  *
  * 负责：
  * - 玩家登录 / 重连 / 断线
- * - 每秒推进世界（玩家阶段 → NPC 阶段 → 收尾阶段）
+ * - 每秒推进世界（玩家阶段 → 收尾阶段）
  * - 把客户端命令排队后交给 `applyCommand`（与单机同一套校验）
  * - 为每个连接生成增量补丁
  *
@@ -15,8 +15,7 @@ import { loadLocale } from '@/locales'
 import type { EngineContext, EngineEvent, TranslateFn, World } from '@/core/types'
 import { createEngineContext } from '@/core/types'
 import { allPlayers, createWorld, positionKey, replaceArray } from '@/core/world'
-import { tickNpcPhase, tickPlayerPhase, tickPlayerPostPhase } from '@/core/engine'
-import { ensureNpcRegistry } from '@/core/npc'
+import { tickPlayerPhase, tickPlayerPostPhase } from '@/core/engine'
 import { tickGatePhase } from '@/core/gatePhase'
 import { getWorldLayout, oreModifiersAt } from '@/core/galaxyContext'
 import { getPlanetProfile } from '@/logic/galaxyGen'
@@ -25,7 +24,6 @@ import type { GameCommand } from '@/core/commands'
 import { buildPatch, buildSnapshot, createPatchState, seedPatchState } from '@/core/protocol'
 import type { PatchState, ServerMessage, VisibilityMode, WorldSnapshot } from '@/core/protocol'
 import { createTranslator } from '@/core/i18n'
-import { generateNpcPlanets } from '@/core/generate'
 import * as gameLogic from '@/logic/gameLogic'
 import * as planetLogic from '@/logic/planetLogic'
 import { generatePlanetName } from '@/logic/nameGenerator'
@@ -69,7 +67,6 @@ export type JoinResult =
 export interface RoomOptions {
   visibility?: VisibilityMode
   defaultLocale?: Locale
-  npcCount?: number
   /** 新账号的新手保护期（小时），0 表示不保护 */
   protectionHours?: number
   /** 每个连接最多缓存多少条待发事件 */
@@ -104,7 +101,6 @@ export class Room {
 
   private lastTickAt = Date.now()
   private tick = 0
-  private npcCursor = 0
   /** 内置满级账号是否已检查 */
   private builtinAccountReady = false
   /** 周目 → 保持全速 tick 的截止 tick（冻结层降频用） */
@@ -131,7 +127,6 @@ export class Room {
     this.options = {
       visibility: options.visibility ?? 'public',
       defaultLocale: options.defaultLocale ?? state.locale,
-      npcCount: options.npcCount ?? 200,
       protectionHours: options.protectionHours ?? 24,
       maxEventsPerSession: options.maxEventsPerSession ?? 200,
       commandRateLimit: options.commandRateLimit ?? 30
@@ -142,7 +137,6 @@ export class Room {
       player: players[0] ?? gameLogic.initializePlayer('system', 'System'),
       players,
       planets: state.planets,
-      npcs: state.npcs,
       debrisFields: state.debrisFields,
       locale: state.locale,
       gameSpeed: state.gameSpeed,
@@ -449,12 +443,6 @@ export class Room {
     player.campaignProgress = initializeCampaignProgress(player)
     this.syncPlayers()
 
-    // 第一个玩家加入时立刻建立 NPC 注册表（否则要等第一个 tick 才有 NPC）
-    if (this.state.npcs.length === 0) {
-      this.world.player = player
-      ensureNpcRegistry(this.world, this.ctxFor(player, this.localeOf(player.id)))
-    }
-
     // 同一玩家重连：踢掉旧连接
     const existing = this.sessions.get(player.id)
     if (existing) {
@@ -655,30 +643,22 @@ export class Room {
           this.world.locale = this.localeOf(player.id)
           await tickPlayerPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), now)
           if (this.world.player.campaignProgress) {
-            checkAllActiveQuestsProgress(this.world.player, this.world.npcs, this.world)
+            checkAllActiveQuestsProgress(this.world.player, this.world)
           }
         }
 
-        // 阶段 2：NPC 世界（轮转「当前玩家」视角）
-        const ambient = cyclePlayers[this.npcCursor % cyclePlayers.length]
-        this.npcCursor += 1
-        this.world.player = ambient
-        this.world.locale = this.localeOf(ambient.id)
-        await tickNpcPhase(this.world, this.ctxFor(ambient, this.localeOf(ambient.id)), now, delta)
+        // 阶段 2：星门等世界级状态（NPC 已按工厂版 §14.2 下线）
         if (!this.world.gates && this.state.gates) this.world.gates = this.state.gates
         const captures = tickGatePhase(this.world, delta)
         if (this.world.gates) this.state.gates = this.world.gates
         this.announceCaptures(captures)
 
-        // 阶段 3：成就 / 战役 / 全局清理
-        for (let i = 0; i < cyclePlayers.length; i++) {
-          const player = cyclePlayers[i]
+        // 阶段 3：成就 / 战役
+        for (const player of cyclePlayers) {
           this.world.player = player
           this.world.locale = this.localeOf(player.id)
           this.world.achievementAccum = this.state.achievementAccum[player.id] ?? 0
-          tickPlayerPostPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), delta, {
-            cleanupEliminated: i === cyclePlayers.length - 1
-          })
+          tickPlayerPostPhase(this.world, this.ctxFor(player, this.localeOf(player.id)), delta)
           this.state.achievementAccum[player.id] = this.world.achievementAccum
         }
       }
@@ -698,7 +678,6 @@ export class Room {
       !patch.reports &&
       !patch.planets &&
       !patch.removedPlanets &&
-      !patch.npcs &&
       !patch.debrisFields &&
       !patch.players &&
       !patch.events
@@ -735,11 +714,6 @@ export class Room {
     return this.state.players[playerId]
   }
 
-  /** 仅用于测试/诊断：NPC 数量 */
-  npcCount(): number {
-    return this.state.npcs.length
-  }
-
   /** 仅用于测试/诊断：可见星系快照（绕过 socket） */
   snapshotFor(playerId: string): WorldSnapshot | null {
     const player = this.state.players[playerId]
@@ -755,11 +729,5 @@ export class Room {
   /** 仅用于测试/诊断：当前所有玩家 */
   players(): Player[] {
     return allPlayers(this.world)
-  }
-
-  /** 仅用于测试/诊断：补充 NPC 星球（例如测试环境想快速加满） */
-  ensureNpcPlanets(count: number, prefix = 'Planet'): void {
-    generateNpcPlanets(this.world, prefix, count)
-    this.dirty = true
   }
 }

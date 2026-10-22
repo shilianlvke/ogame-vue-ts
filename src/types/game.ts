@@ -359,8 +359,7 @@ export interface FleetMission {
   /** 当前处在第几段（0 起） */
   routeIndex?: number
   id: string
-  playerId: string // 玩家ID，如果是NPC任务则为NPC ID
-  npcId?: string // NPC ID（如果是NPC发起的任务）
+  playerId: string // 发起任务的玩家 ID
   isHostile?: boolean // 是否是敌对任务（用于警告显示）
   originPlanetId: string
   targetPosition: { galaxy: number; system: number; position: number }
@@ -374,9 +373,6 @@ export interface FleetMission {
   arrivalTime: number
   returnTime?: number
   status: 'outbound' | 'returning' | 'arrived'
-  // 外交系统字段
-  isGift?: boolean // 是否为赠送资源任务
-  giftTargetNpcId?: string // 赠送目标NPC ID
   // 探险系统字段
   expeditionZone?: ExpeditionZone // 探险区域类型
 }
@@ -452,12 +448,12 @@ export interface SpyReport {
   read?: boolean // 已读状态
 }
 
-// 被侦查通知（玩家被NPC侦查时收到）
+// 被侦查通知（联机 PvP 被其他玩家侦查时收到）
 export interface SpiedNotification {
   id: string
   timestamp: number
-  npcId: string // 侦查者NPC ID
-  npcName: string // 侦查者NPC名称
+  attackerId: string // 侦查者玩家 ID
+  attackerName: string // 侦查者名称
   targetPlanetId: string // 被侦查的星球ID
   targetPlanetName: string // 被侦查的星球名称
   detectionSuccess: boolean // 是否被发现
@@ -481,8 +477,8 @@ export interface NPCActivityNotification {
 // 即将到来的敌对舰队警告
 export interface IncomingFleetAlert {
   id: string // 对应的FleetMission ID
-  npcId: string // NPC ID
-  npcName: string // NPC名称
+  attackerId: string // 发起攻击/侦查的玩家 ID
+  attackerName: string // 发起者名称
   missionType: MissionType // 任务类型（spy/attack）
   targetPlanetId: string // 目标星球ID
   targetPlanetName: string // 目标星球名称
@@ -839,27 +835,29 @@ export interface Player {
   missileAttacks: MissileAttack[] // 导弹攻击任务
   battleReports: BattleResult[]
   spyReports: SpyReport[]
-  spiedNotifications: SpiedNotification[] // 被侦查通知
-  npcActivityNotifications: NPCActivityNotification[] // NPC活动通知（回收残骸等）
+  spiedNotifications: SpiedNotification[] // 被侦查通知（联机 PvP）
   missionReports: MissionReport[] // 任务报告（运输、殖民、回收等）
   incomingFleetAlerts: IncomingFleetAlert[] // 即将到来的敌对舰队警告
-  giftNotifications: GiftNotification[] // 礼物通知（等待接受/拒绝）
-  giftRejectedNotifications: GiftRejectedNotification[] // 礼物被拒绝通知
-  // NPC增强行为通知
-  tradeOffers?: TradeOffer[] // 中立NPC贸易提议
-  intelReports?: IntelReport[] // 友好NPC情报报告
-  jointAttackInvites?: JointAttackInvite[] // 友好NPC联合攻击邀请
-  aidNotifications?: AidNotification[] // 友好NPC资源援助通知
-  allyDefenseNotifications?: AllyDefenseNotification[] // 友好NPC协防通知
-  attitudeChangeNotifications?: AttitudeChangeNotification[] // NPC态度变化通知
+  /**
+   * @deprecated 旧 NPC 存档字段，仅用于读取旧存档迁移；
+   * NPC 系统已按 §14.2 下线，新存档不再写入这些字段。
+   */
+  npcActivityNotifications?: NPCActivityNotification[]
+  giftNotifications?: GiftNotification[]
+  giftRejectedNotifications?: GiftRejectedNotification[]
+  tradeOffers?: TradeOffer[]
+  intelReports?: IntelReport[]
+  jointAttackInvites?: JointAttackInvite[]
+  aidNotifications?: AidNotification[]
+  allyDefenseNotifications?: AllyDefenseNotification[]
+  attitudeChangeNotifications?: AttitudeChangeNotification[]
+  diplomaticReports?: DiplomaticReport[]
   playerTrades?: PlayerTradeOffer[] // 玩家间交易提议（收发双向同步）
   points: number // 总积分（每1000资源=1分）
   bonusPoints?: number // 奖励积分（战役、成就等奖励的积分，不会被重新计算覆盖）
   isGMEnabled?: boolean // GM模式开关（默认false，通过秘籍激活）
   lastVersionCheckTime?: number // 最后一次自动检查版本的时间戳（被动检测）
   lastManualUpdateCheck?: number // 最后一次手动检查更新的时间戳（主动检测）
-  // 外交系统字段（外交关系存储在 NPC.relations 中）
-  diplomaticReports?: DiplomaticReport[] // 外交变化报告
   // 新手引导字段
   tutorialProgress?: TutorialProgress // 新手引导进度
   // 隐私协议同意状态
@@ -900,6 +898,12 @@ export interface Player {
       namedBy?: string
       signalClaimed?: boolean
       wormholeUsed?: boolean
+      /** 贸易站最近一次刷新批次（6 小时 +1） */
+      tradeBucket?: number
+      /** 当前批次已购买的商品位（0~2） */
+      tradePurchased?: number[]
+      /** 巢穴是否已通关（一次性） */
+      lairCleared?: boolean
     }
   >
   /** 聊天记录（联机模式；仅保留最近若干条） */
@@ -917,25 +921,7 @@ export interface NotificationSettings {
   }
 }
 
-// 游戏状态
-export interface GameState {
-  player: Player
-  currentPlanetId: string
-  gameTime: number
-  isPaused: boolean
-  universe: Universe
-}
-
-// 宇宙
-export interface Universe {
-  galaxies: number
-  systems: number
-  positions: number
-  planets: Map<string, Planet> // key: "galaxy:system:position"
-  npcs: NPC[]
-}
-
-// NPC AI 类型
+// NPC AI 类型（旧存档兼容类型，保留供迁移读取）
 export const NPCAIType = {
   Aggressive: 'aggressive', // 侵略型 - 积极侦查和攻击玩家
   Defensive: 'defensive', // 防守型 - 只在被攻击时反击，优先发展防御
@@ -1019,8 +1005,7 @@ export const AchievementCategory = {
   Resource: 'resource',
   Building: 'building',
   Combat: 'combat',
-  Mission: 'mission',
-  Diplomacy: 'diplomacy'
+  Mission: 'mission'
 } as const
 export type AchievementCategory = (typeof AchievementCategory)[keyof typeof AchievementCategory]
 
@@ -1086,16 +1071,6 @@ export interface AchievementStats {
   recycledResources: number
   planetDestructions: number
   fuelConsumed: number
-
-  // 外交统计
-  friendlyNPCCount: number
-  hostileNPCCount: number
-  giftsSent: number
-  giftResourcesTotal: number
-  attackedByNPC: number
-  spiedByNPC: number
-  debrisRecycledByNPC: number
-  debrisResourcesLostToNPC: number
 }
 
 // 成就等级配置
@@ -1178,15 +1153,9 @@ export const ObjectiveType = {
   AccumulateResources: 'accumulateResources', // 积累资源
 
   // 战斗目标
-  DefeatNPC: 'defeatNPC', // 击败特定NPC
   WinBattles: 'winBattles', // 赢得N场战斗
   RecycleDebris: 'recycleDebris', // 回收残骸
   DestroyPlanet: 'destroyPlanet', // 摧毁星球
-
-  // 外交目标
-  ReachRelation: 'reachRelation', // 达到某关系等级
-  SendGift: 'sendGift', // 送礼
-  FormAlliance: 'formAlliance', // 结盟
 
   // 探索目标
   Colonize: 'colonize', // 殖民新星球
@@ -1197,8 +1166,7 @@ export const ObjectiveType = {
   CaptureGate: 'captureGate', // 占领星门数量
   CycleJump: 'cycleJump', // 完成周目跃迁次数
   Expedition: 'expedition', // 完成探险任务
-  DiscoverLocation: 'discoverLocation', // 发现特定位置
-  SpyTarget: 'spyTarget' // 侦查特定目标
+  DiscoverLocation: 'discoverLocation' // 发现特定位置
 } as const
 export type ObjectiveType = (typeof ObjectiveType)[keyof typeof ObjectiveType]
 
@@ -1226,7 +1194,7 @@ export interface QuestReward {
 // 剧情对话
 export interface StoryDialogue {
   id: string
-  speaker: 'narrator' | 'player' | 'npc' | 'mysterious'
+  speaker: 'narrator' | 'player' | 'mysterious'
   speakerNameKey?: string // 翻译键
   portrait?: string // 头像标识
   textKey: string // 翻译键
@@ -1237,9 +1205,7 @@ export interface StoryDialogue {
 export interface DialogueChoice {
   textKey: string // 翻译键
   nextDialogueId?: string
-  effect?: 'reputation_up' | 'reputation_down' | 'unlock_branch'
-  npcId?: string // 影响的NPC ID（用于声望变化）
-  value?: number // 效果数值（如声望变化量，默认为10）
+  effect?: 'unlock_branch'
   branchId?: string // 解锁的分支ID（用于unlock_branch效果）
 }
 

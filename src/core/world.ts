@@ -1,7 +1,7 @@
 /**
  * World 与宇宙地图的通用操作
  */
-import type { Planet, NPC, Player, DebrisField } from '@/types/game'
+import type { Planet, Player, DebrisField } from '@/types/game'
 import type { Locale } from '@/locales'
 import type { World } from './types'
 import * as gameLogic from '@/logic/gameLogic'
@@ -12,7 +12,6 @@ import { DEFAULT_LAYOUT_SEED } from '@/config/galaxyConfig'
 export const createWorld = (init: {
   player: Player
   planets: Record<string, Planet>
-  npcs: NPC[]
   debrisFields: Record<string, DebrisField>
   locale: Locale
   gameSpeed?: number
@@ -26,13 +25,10 @@ export const createWorld = (init: {
   layoutSeed: init.layoutSeed ?? DEFAULT_LAYOUT_SEED,
   players: init.players,
   planets: init.planets,
-  npcs: init.npcs,
   debrisFields: init.debrisFields,
   locale: init.locale,
   gameSpeed: init.gameSpeed ?? 1,
   battleToFinish: init.battleToFinish ?? false,
-  npcGrowthAccum: {},
-  npcBehaviorAccum: {},
   achievementAccum: 0
 })
 
@@ -150,35 +146,9 @@ export const removeIncomingFleetAlert = (world: World, missionId: string, owner:
 }
 
 /**
- * 把 NPC 星球数据同步到宇宙地图
- * （原 syncNPCPlanetToUniverse，解决 npcStore 与 universeStore 数据不同步）
- */
-export const syncNpcPlanetToUniverse = (world: World, npc: NPC): void => {
-  npc.planets.forEach(npcPlanet => {
-    const key = positionKey(npcPlanet.position)
-    const universePlanet = world.planets[key]
-    if (!universePlanet) return
-    universePlanet.resources = { ...npcPlanet.resources }
-    universePlanet.buildings = { ...npcPlanet.buildings }
-    universePlanet.fleet = { ...npcPlanet.fleet }
-    universePlanet.defense = { ...npcPlanet.defense }
-  })
-}
-
-/**
  * 就地替换数组内容
  * 关键：不能直接给 World 字段重新赋值，否则会切断与 Pinia state 的引用
  */
 export const replaceArray = <T>(target: T[], next: T[]): void => {
   target.splice(0, target.length, ...next)
-}
-
-/** 从宇宙地图中移除指定 NPC 的所有星球 */
-export const removeNpcPlanetsFromUniverse = (world: World, npc: NPC): void => {
-  npc.planets.forEach(planet => {
-    const key = positionKey(planet.position)
-    if (world.planets[key]) {
-      delete world.planets[key]
-    }
-  })
 }

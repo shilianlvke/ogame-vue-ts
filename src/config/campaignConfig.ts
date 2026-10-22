@@ -184,8 +184,8 @@ const chapter1Quests: CampaignQuestConfig[] = [
       },
       {
         id: 'obj_1_4_3',
-        type: ObjectiveType.SpyTarget,
-        descriptionKey: 'campaign.objectiveDescriptions.spyAnyNPC',
+        type: ObjectiveType.ScanSystem,
+        descriptionKey: 'campaign.objectiveDescriptions.scanSystem',
         target: 'any',
         required: 1
       }
@@ -214,8 +214,8 @@ const chapter1Quests: CampaignQuestConfig[] = [
     epilogueDialogues: [
       {
         id: 'quest_1_5_epilogue_1',
-        speaker: 'npc',
-        speakerNameKey: 'campaign.speakers.neighborNPC',
+        speaker: 'mysterious',
+        speakerNameKey: 'campaign.speakers.ancientVoice',
         textKey: 'campaign.dialogues.1_5.epilogue_1'
       },
       {
@@ -228,8 +228,8 @@ const chapter1Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_1_5_1',
-        type: ObjectiveType.SendGift,
-        descriptionKey: 'campaign.objectiveDescriptions.sendGiftToNPC',
+        type: ObjectiveType.CollectSignal,
+        descriptionKey: 'campaign.objectiveDescriptions.collectSignal',
         target: 'any',
         required: 1
       }
@@ -390,10 +390,6 @@ const chapter2Quests: CampaignQuestConfig[] = [
         textKey: 'campaign.dialogues.2_4.prologue_2',
         choices: [
           {
-            textKey: 'campaign.dialogues.2_4.choice_1',
-            effect: 'reputation_up'
-          },
-          {
             textKey: 'campaign.dialogues.2_4.choice_2',
             effect: 'unlock_branch'
           }
@@ -525,8 +521,8 @@ const chapter3Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_3_1_1',
-        type: ObjectiveType.SendGift,
-        descriptionKey: 'campaign.objectiveDescriptions.sendMultipleGifts',
+        type: ObjectiveType.CollectSignal,
+        descriptionKey: 'campaign.objectiveDescriptions.collectSignal',
         target: 'any',
         required: 3
       }
@@ -555,9 +551,9 @@ const chapter3Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_3_2_1',
-        type: ObjectiveType.ReachRelation,
-        descriptionKey: 'campaign.objectiveDescriptions.reachFriendlyRelation',
-        target: 'friendly',
+        type: ObjectiveType.CaptureGate,
+        descriptionKey: 'campaign.objectiveDescriptions.captureGate',
+        target: 'any',
         required: 1
       }
     ],
@@ -583,17 +579,17 @@ const chapter3Quests: CampaignQuestConfig[] = [
       },
       {
         id: 'quest_3_3_prologue_2',
-        speaker: 'npc',
-        speakerNameKey: 'campaign.speakers.allyNPC',
+        speaker: 'mysterious',
+        speakerNameKey: 'campaign.speakers.ancientVoice',
         textKey: 'campaign.dialogues.3_3.prologue_2'
       }
     ],
     objectives: [
       {
         id: 'obj_3_3_1',
-        type: ObjectiveType.SpyTarget,
-        descriptionKey: 'campaign.objectiveDescriptions.spyHostileNPC',
-        target: 'hostile',
+        type: ObjectiveType.ScanSystem,
+        descriptionKey: 'campaign.objectiveDescriptions.scanSystem',
+        target: 'any',
         required: 2
       }
     ],
@@ -622,8 +618,8 @@ const chapter3Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_3_4_1',
-        type: ObjectiveType.FormAlliance,
-        descriptionKey: 'campaign.objectiveDescriptions.formAlliance',
+        type: ObjectiveType.NameSystem,
+        descriptionKey: 'campaign.objectiveDescriptions.nameSystem',
         target: 'any',
         required: 1
       }
@@ -738,10 +734,10 @@ const chapter4Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_4_2_1',
-        type: ObjectiveType.SpyTarget,
-        descriptionKey: 'campaign.objectiveDescriptions.spyEnemyPlanets',
-        target: 'hostile',
-        required: 5
+        type: ObjectiveType.WinBattles,
+        descriptionKey: 'campaign.objectiveDescriptions.winBattles',
+        target: 'attack',
+        required: 1
       }
     ],
     rewards: {
@@ -974,9 +970,9 @@ const chapter5Quests: CampaignQuestConfig[] = [
     objectives: [
       {
         id: 'obj_5_3_1',
-        type: ObjectiveType.DefeatNPC,
-        descriptionKey: 'campaign.objectiveDescriptions.defeatBoss',
-        target: 'boss',
+        type: ObjectiveType.WinBattles,
+        descriptionKey: 'campaign.objectiveDescriptions.winBattles',
+        target: 'any',
         required: 1
       }
     ],
