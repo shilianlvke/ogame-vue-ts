@@ -40,6 +40,22 @@ import { QUEST_MAP } from '@/config/factory/campaign'
 import { applyReward, isQuestComplete, type CampaignContext } from '@/logic/factory/campaign'
 import { ACHIEVEMENT_MAP } from '@/config/factory/achievements'
 import { createAchievementStats, evaluateAchievements, totalMaterials, type AchievementStats } from '@/logic/factory/achievements'
+import {
+  addRep,
+  blueprintPrice,
+  BLUEPRINT_TOTAL,
+  COUNCIL_REP_PER_DARK_MATTER,
+  createEvent,
+  EVENT_COOLDOWN_SECONDS,
+  EVENT_MAX_ACTIVE,
+  FACTION_OTHERS,
+  halfRep,
+  hasCombatShip,
+  REP_BONUS_DIVISOR,
+  type FactionId,
+  type FreeFleetEvent,
+  type FreeFleetEventType
+} from '@/logic/factory/factions'
 import type { LaunchSelection } from '@/types/factory'
 import type { OrePreset } from '@/config/factory/balance'
 
@@ -72,6 +88,14 @@ interface FactoryState {
   achievements: string[]
   /** 成就累计统计 */
   achStats: AchievementStats
+  /** 派系声望（除矿业公会外的三条，矿业公会存于 market.minersGuildRep） */
+  factionRep: Partial<Record<FactionId, number>>
+  /** 已购买深核议会蓝图份数 */
+  blueprintsPurchased: number
+  /** 自由舰队活跃事件 */
+  freeFleetEvents: FreeFleetEvent[]
+  /** 自由舰队领取冷却截止（世界秒） */
+  eventCooldownUntil: number
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -88,7 +112,11 @@ export const useFactoryStore = defineStore('factory', {
     campaignClaimed: [],
     darkMatter: 0,
     achievements: [],
-    achStats: createAchievementStats()
+    achStats: createAchievementStats(),
+    factionRep: {},
+    blueprintsPurchased: 0,
+    freeFleetEvents: [],
+    eventCooldownUntil: 0
   }),
   getters: {
     /** 引擎上下文 */
@@ -139,6 +167,10 @@ export const useFactoryStore = defineStore('factory', {
       this.darkMatter = 0
       this.achievements = []
       this.achStats = createAchievementStats()
+      this.factionRep = {}
+      this.blueprintsPurchased = 0
+      this.freeFleetEvents = []
+      this.eventCooldownUntil = 0
       productionWindow.reset()
     },
 
@@ -394,6 +426,80 @@ export const useFactoryStore = defineStore('factory', {
       return true
     },
 
+    /** 读取派系声望（矿业公会存于市场状态） */
+    repOf(id: FactionId): number {
+      if (id === 'minersGuild') return this.market.minersGuildRep
+      return this.factionRep[id] ?? 0
+    },
+
+    /** 增减派系声望 */
+    addFactionRep(id: FactionId, delta: number) {
+      if (id === 'minersGuild') {
+        this.market.minersGuildRep = addRep(this.market.minersGuildRep, delta)
+      } else {
+        this.factionRep[id] = addRep(this.factionRep[id] ?? 0, delta)
+      }
+    },
+
+    /** 购买破损蓝图（深核议会） */
+    buyBlueprint(): { ok: boolean; price?: number; reason?: string } {
+      const price = blueprintPrice(this.repOf('deepCouncil'))
+      if (this.blueprintsPurchased >= BLUEPRINT_TOTAL) return { ok: false, reason: '蓝图已售罄' }
+      if (this.darkMatter < price) return { ok: false, reason: '暗物质不足' }
+      this.darkMatter -= price
+      this.blueprintsPurchased += 1
+      this.factory.stock.damagedBlueprint = (this.factory.stock.damagedBlueprint ?? 0) + 1
+      this.addFactionRep('deepCouncil', Math.floor(price / COUNCIL_REP_PER_DARK_MATTER))
+      return { ok: true, price }
+    },
+
+    /** 使用破损蓝图：立即完成一项前置已满足且未完成的科技 */
+    useBlueprint(techId: TechId): boolean {
+      if ((this.factory.stock.damagedBlueprint ?? 0) < 1) return false
+      const tech = TECH_MAP[techId]
+      if (!tech || this.factory.techs.includes(techId)) return false
+      if (!tech.requires.every(r => this.factory.techs.includes(r))) return false
+      this.factory.stock.damagedBlueprint = (this.factory.stock.damagedBlueprint ?? 0) - 1
+      this.factory.techs.push(techId)
+      return true
+    },
+
+    /** 领取自由舰队事件 */
+    startEvent(type: FreeFleetEventType): { ok: boolean; reason?: string } {
+      if (this.freeFleetEvents.length >= EVENT_MAX_ACTIVE) return { ok: false, reason: '同时最多 3 个事件' }
+      if (this.lastTickAt < this.eventCooldownUntil) return { ok: false, reason: '领取冷却中' }
+      if ((type === 'caravan' || type === 'raid') && !hasCombatShip(this.ships)) return { ok: false, reason: '需要战斗舰' }
+      this.eventCooldownUntil = this.lastTickAt + EVENT_COOLDOWN_SECONDS
+      const ev = createEvent(type, this.lastTickAt)
+      if (type === 'raid') {
+        this.grantEventReward(ev)
+        return { ok: true }
+      }
+      this.freeFleetEvents.push(ev)
+      return { ok: true }
+    },
+
+    /** 领取已完成的自由舰队事件奖励 */
+    claimEvent(id: string): boolean {
+      const idx = this.freeFleetEvents.findIndex(e => e.id === id)
+      if (idx < 0) return false
+      const ev = this.freeFleetEvents[idx]!
+      if (this.lastTickAt < ev.doneAt) return false
+      this.freeFleetEvents.splice(idx, 1)
+      this.grantEventReward(ev)
+      return true
+    },
+
+    /** 发放事件报酬并结算自由舰队声望 */
+    grantEventReward(ev: FreeFleetEvent) {
+      const bonus = 1 + this.repOf('freeFleet') / REP_BONUS_DIVISOR
+      for (const [k, v] of Object.entries(ev.reward)) {
+        const id = k as MaterialId
+        this.factory.stock[id] = (this.factory.stock[id] ?? 0) + Math.round((v as number) * bonus)
+      }
+      this.addFactionRep('freeFleet', ev.repDelta)
+    },
+
     /**
      * 发射火箭：需火箭 ×1 + 种子舱 ×1，其余载荷可选。
      * 载荷携带判定后按周目重置表处理，周目 +1。
@@ -423,6 +529,10 @@ export const useFactoryStore = defineStore('factory', {
       this.outposts = []
       this.wave = { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null }
       this.campaignClaimed = []
+      this.freeFleetEvents = []
+      this.eventCooldownUntil = 0
+      // 派系声望减半（矿业公会在 resetMarket 内处理）
+      for (const id of FACTION_OTHERS) this.factionRep[id] = halfRep(this.factionRep[id] ?? 0)
       this.cycle.cycle = next
       this.cycle.launchCount += 1
       productionWindow.reset()
@@ -478,7 +588,8 @@ export const useFactoryStore = defineStore('factory', {
       const today = new Date().toISOString().slice(0, 10)
       const dailyBonus = won && clear === 0 && this.wave.dailyKey !== today
       if (won) {
-        const factor = rewardFactor(clear, dailyBonus) * autoFactor
+        const rustBonus = 1 + this.repOf('rustSwarm') / REP_BONUS_DIVISOR
+        const factor = rewardFactor(clear, dailyBonus) * autoFactor * rustBonus
         const drops = baseDrops(n, this.preset)
         const applied = applyDrops(this.factory, drops, factor)
         this.wave.clearCounts[n] = clear + 1
@@ -487,6 +598,8 @@ export const useFactoryStore = defineStore('factory', {
         if (clear >= 1) this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
         // 零损失：通过精英波且防线未受损
         if (isElite(n) && battle.progress === 0) this.achStats.zeroLoss = true
+        // 锈群声望：波次首通 +1
+        if (clear === 0) this.addFactionRep('rustSwarm', 1)
       } else {
         this.wave.lastResult = { wave: n, won: false, drops: null }
         this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
@@ -550,6 +663,10 @@ export const useFactoryStore = defineStore('factory', {
       if (typeof this.darkMatter !== 'number') this.darkMatter = 0
       if (!Array.isArray(this.achievements)) this.achievements = []
       if (!this.achStats || typeof this.achStats.salvagedWreck !== 'number') this.achStats = createAchievementStats()
+      if (!this.factionRep || typeof this.factionRep !== 'object') this.factionRep = {}
+      if (typeof this.blueprintsPurchased !== 'number') this.blueprintsPurchased = 0
+      if (!Array.isArray(this.freeFleetEvents)) this.freeFleetEvents = []
+      if (typeof this.eventCooldownUntil !== 'number') this.eventCooldownUntil = 0
     }
   },
   persist: {

@@ -60,6 +60,9 @@
     <!-- 成就 -->
     <FactoryAchievements />
 
+    <!-- 派系 -->
+    <FactoryFactions />
+
     <!-- 建筑分组 -->
     <div v-for="group in groups" :key="group.name" class="mb-5">
       <div class="mb-2 flex items-center gap-2">
@@ -124,6 +127,7 @@
   import FactoryDiagnostics from '@/components/factory/FactoryDiagnostics.vue'
   import FactoryCampaign from '@/components/factory/FactoryCampaign.vue'
   import FactoryAchievements from '@/components/factory/FactoryAchievements.vue'
+  import FactoryFactions from '@/components/factory/FactoryFactions.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS, BUILDING_GROUP } from '@/config/factory/buildings'
   import { TECH_MAP } from '@/config/factory/techs'
