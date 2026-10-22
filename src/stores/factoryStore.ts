@@ -16,9 +16,18 @@ import {
   upgradeBuilding,
   type FactoryContext
 } from '@/logic/factory/engine'
-import { ORE_PRESETS } from '@/config/factory/balance'
+import { ORE_PRESETS, WAVE_COOLDOWN_MINUTES } from '@/config/factory/balance'
+  import { applyDrops, baseDrops, createBattle, maxWave, rewardFactor, stepBattle, waveHp, type ActiveBattle, type WaveDrops } from '@/logic/factory/waves'
   import { INFINITE_RESEARCH, TECH_MAP } from '@/config/factory/techs'
 import type { OrePreset } from '@/config/factory/balance'
+
+interface WaveState {
+  clearCounts: Record<number, number>
+  cooldownUntil: Record<number, number>
+  dailyKey: string
+  battle: ActiveBattle | null
+  lastResult: { wave: number; won: boolean; drops: WaveDrops | null } | null
+}
 
 interface FactoryState {
   factory: PlanetFactory
@@ -27,6 +36,7 @@ interface FactoryState {
   lastTickAt: number
   /** 自动结算开关 */
   running: boolean
+  wave: WaveState
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -34,7 +44,8 @@ export const useFactoryStore = defineStore('factory', {
     factory: createFactoryState('standard'),
     preset: 'standard',
     lastTickAt: 0,
-    running: true
+    running: true,
+    wave: { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null }
   }),
   getters: {
     /** 引擎上下文 */
@@ -65,8 +76,13 @@ export const useFactoryStore = defineStore('factory', {
         techs: this.factory.techs,
         infinite: this.factory.infiniteResearch
       }
-      tickFactory(this.factory, ctx, Math.min(seconds, 60))
-      this.lastTickAt += Math.min(seconds, 60)
+      const step = Math.min(seconds, 60)
+      tickFactory(this.factory, ctx, step)
+      this.lastTickAt += step
+      if (this.wave.battle && !this.wave.battle.finished) {
+        stepBattle(this.factory, this.wave.battle, step)
+        if (this.wave.battle.finished) this.settleWave()
+      }
     },
 
     build(type: BuildingId, level = 1) {
@@ -116,6 +132,78 @@ export const useFactoryStore = defineStore('factory', {
       const inst = this.factory.buildings.find(b => b.id === instanceId)
       if (!inst) return
       inst.coalMode = !inst.coalMode
+    },
+
+    /** 可挑战的最高波次 */
+    waveCap(): number {
+      return maxWave(this.factory)
+    },
+
+    /** 指定波次的基础 HP（扰动 1、周目 1） */
+    previewHp(n: number): number {
+      return waveHp(n, 1, 1)
+    },
+
+    waveCooldownLeft(n: number): number {
+      return Math.max(0, (this.wave.cooldownUntil[n] ?? 0) - Date.now())
+    },
+
+    /** 发起波次，观看模式 */
+    startWave(n: number, overload = false): boolean {
+      if (this.wave.battle && !this.wave.battle.finished) return false
+      if (n > this.waveCap()) return false
+      if (this.waveCooldownLeft(n) > 0) return false
+      this.wave.battle = createBattle(this.factory, n, 1, overload)
+      this.wave.lastResult = null
+      return true
+    },
+
+    /** 自动模式：立即结算，奖励 80% */
+    autoWave(n: number): boolean {
+      if (!this.startWave(n, false)) return false
+      const battle = this.wave.battle
+      if (!battle) return false
+      let guard = 0
+      while (!battle.finished && guard < 100000) {
+        stepBattle(this.factory, battle, 1)
+        guard++
+      }
+      if (!battle.finished) return false
+      this.settleWave(0.8)
+      return true
+    },
+
+    /** 结算波次：掉落按首通/重复系数，失败与重复进入冷却 */
+    settleWave(autoFactor = 1) {
+      const battle = this.wave.battle
+      if (!battle || !battle.finished) return
+      const n = battle.wave
+      const won = battle.won
+      const clear = this.wave.clearCounts[n] ?? 0
+      const today = new Date().toISOString().slice(0, 10)
+      const dailyBonus = won && clear === 0 && this.wave.dailyKey !== today
+      if (won) {
+        const factor = rewardFactor(clear, dailyBonus) * autoFactor
+        const drops = baseDrops(n, this.preset)
+        const applied = applyDrops(this.factory, drops, factor)
+        this.wave.clearCounts[n] = clear + 1
+        this.wave.lastResult = { wave: n, won: true, drops: applied }
+        if (dailyBonus) this.wave.dailyKey = today
+        if (clear >= 1) this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
+      } else {
+        this.wave.lastResult = { wave: n, won: false, drops: null }
+        this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
+      }
+      this.wave.battle = null
+    },
+
+    /** 放弃当前战斗，按失败结算 */
+    abandonWave() {
+      const battle = this.wave.battle
+      if (!battle) return
+      battle.finished = true
+      battle.won = false
+      this.settleWave()
     },
 
     /** 开始研究：绑定到第一个空闲实验室槽位 */

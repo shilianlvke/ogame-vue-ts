@@ -101,6 +101,7 @@ export default {
     buildings: 'Здания',
     factory: 'Производство',
     tech: 'Технологии',
+    combat: 'Бой',
     research: 'Исследования',
     shipyard: 'Верфь',
     defense: 'Оборона',

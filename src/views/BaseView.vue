@@ -1,13 +1,13 @@
 <template>
   <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
-    <!-- 六段式滑槽切换：生产 / 建筑 / 研究 / 科技 / 船坞 / 防御 -->
+    <!-- 七段式滑槽切换：生产 / 建筑 / 研究 / 科技 / 船坞 / 防御 / 前线 -->
     <div
-      class="relative mb-4 grid h-9 w-full shrink-0 grid-cols-6 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
+      class="relative mb-4 grid h-9 w-full shrink-0 grid-cols-7 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
       role="tablist"
       :aria-label="t('nav.base')"
     >
       <span
-        class="pointer-events-none absolute inset-y-[3px] left-[3px] w-[calc((100%-6px)/6)] rounded-md border border-border bg-background shadow-md transition-transform duration-300 ease-out"
+        class="pointer-events-none absolute inset-y-[3px] left-[3px] w-[calc((100%-6px)/7)] rounded-md border border-border bg-background shadow-md transition-transform duration-300 ease-out"
         :style="{ transform: `translateX(${activeIndex * 100}%)` }"
         aria-hidden="true"
       />
@@ -40,16 +40,17 @@
 <script setup lang="ts">
   import { computed, type Component } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Building2, Factory, FlaskConical, Ship, Shield } from 'lucide-vue-next'
+  import { Building2, Factory, FlaskConical, Ship, Shield, Swords } from 'lucide-vue-next'
   import FactoryView from '@/views/FactoryView.vue'
   import FactoryTechView from '@/views/FactoryTechView.vue'
+  import FactoryCombatView from '@/views/FactoryCombatView.vue'
   import BuildingsView from '@/views/BuildingsView.vue'
   import ResearchView from '@/views/ResearchView.vue'
   import ShipyardView from '@/views/ShipyardView.vue'
   import DefenseView from '@/views/DefenseView.vue'
   import { useI18n } from '@/composables/useI18n'
 
-  type BaseTab = 'factory' | 'buildings' | 'research' | 'tech' | 'shipyard' | 'defense'
+  type BaseTab = 'factory' | 'buildings' | 'research' | 'tech' | 'shipyard' | 'defense' | 'combat'
 
   interface TabDefinition {
     key: BaseTab
@@ -64,7 +65,8 @@
     { key: 'research', labelKey: 'nav.research', icon: FlaskConical, component: ResearchView },
     { key: 'tech', labelKey: 'nav.tech', icon: FlaskConical, component: FactoryTechView },
     { key: 'shipyard', labelKey: 'nav.shipyard', icon: Ship, component: ShipyardView },
-    { key: 'defense', labelKey: 'nav.defense', icon: Shield, component: DefenseView }
+    { key: 'defense', labelKey: 'nav.defense', icon: Shield, component: DefenseView },
+    { key: 'combat', labelKey: 'nav.combat', icon: Swords, component: FactoryCombatView }
   ]
 
   const route = useRoute()

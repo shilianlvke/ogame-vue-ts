@@ -100,6 +100,7 @@ export default {
     buildings: '建物',
     factory: '生産',
     tech: '科技',
+    combat: '前線',
     research: '研究',
     shipyard: '造船所',
     defense: '防衛',

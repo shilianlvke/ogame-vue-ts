@@ -100,6 +100,7 @@ export default {
     buildings: 'Gebäude',
     factory: 'Produktion',
     tech: 'Technik',
+    combat: 'Kampf',
     research: 'Forschung',
     shipyard: 'Raumschiffwerft',
     defense: 'Verteidigung',

@@ -103,3 +103,37 @@ function ctx(now = 0): FactoryContext {
 }
 
 console.log('工厂引擎冒烟通过：自举链路、电力满足率、研究推进、库存上限')
+
+// ---------- 5. 波次：炮塔输出与首通掉落 ----------
+{
+  const { createBattle, stepBattle, baseDrops, rewardFactor, waveHp, maxWave, disturbanceLevel } = await import('@/logic/factory/waves')
+  const state = createFactoryState('standard')
+  state.techs.push('basicMilitary')
+  state.stock.ironPlate = 1000
+  state.stock.copperPlate = 1000
+  const turret = addBuilding(state, 'turret', 4)!
+  assert.ok(turret, '炮塔应当可以建造')
+  state.stock.magazine = 1000
+
+  const hp1 = waveHp(1, 1, 1)
+  assert.equal(hp1, 3240, `第 1 波基础 HP 应为 3240，实际 ${hp1}`)
+  assert.ok(disturbanceLevel(state) >= 1, '扰动等级至少为 1')
+  assert.ok(maxWave(state) >= 5, '扰动 1 时可挑战第 5 波')
+
+  const battle = createBattle(state, 1, 1)
+  let guard = 0
+  while (!battle.finished && guard < 10000) {
+    stepBattle(state, battle, 1)
+    guard++
+  }
+  assert.ok(battle.finished && battle.won, '第 1 波应当胜利')
+  assert.ok((state.stock.magazine ?? 0) < 1000, '应当消耗弹药')
+
+  const drops = baseDrops(1, 'standard')
+  assert.ok(drops.rustAlloy >= 4 && drops.rustAlloy <= 8, '锈蚀合金 4~8')
+  assert.equal(drops.neuralCord, 0, '普通波不掉神经索')
+  assert.equal(rewardFactor(0, true), 1.5, '每日首通系数 150%')
+  assert.equal(rewardFactor(3, false), 0.1, '第四次起 10%')
+}
+
+console.log('工厂引擎冒烟通过：自举链路、电力满足率、研究推进、库存上限、波次结算')
