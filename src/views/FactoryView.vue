@@ -61,7 +61,7 @@
         <Card v-for="b in group.items" :key="b.id" :class="locked(b.id) ? 'opacity-70' : ''">
           <CardHeader class="pb-3">
             <div class="flex items-start justify-between gap-2">
-              <CardTitle class="text-sm sm:text-base">{{ b.name }}</CardTitle>
+              <CardTitle class="flex items-center gap-1.5 text-sm sm:text-base"><FactoryIcon :id="b.id" size="md" class="text-foreground" />{{ b.name }}</CardTitle>
               <div class="flex shrink-0 items-center gap-1">
                 <Badge v-if="locked(b.id)" variant="outline" class="gap-1 text-[10px]">
                   <Lock class="h-3 w-3" />{{ techName(b.unlockedBy) }}
@@ -110,6 +110,7 @@
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { Progress } from '@/components/ui/progress'
   import MaterialToken from '@/components/factory/MaterialToken.vue'
+  import FactoryIcon from '@/components/factory/FactoryIcon.vue'
   import InstancePanel from '@/components/factory/InstancePanel.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS, BUILDING_GROUP } from '@/config/factory/buildings'

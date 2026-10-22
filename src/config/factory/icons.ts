@@ -1,71 +1,7 @@
-import {
-  Battery,
-  Blocks,
-  Box,
-  Boxes,
-  Bug,
-  Cable,
-  Cog,
-  Cpu,
-  Crosshair,
-  Droplet,
-  Fan,
-  Flame,
-  FlaskConical,
-  Frame,
-  Gem,
-  Hexagon,
-  Layers,
-  Minus,
-  Radiation,
-  Rocket,
-  Route,
-  Scroll,
-  Shield,
-  Sun,
-  Target,
-  Triangle,
-  Wind
-} from 'lucide-vue-next'
-import type { Component } from 'vue'
-
 /**
- * 材料图标。全部使用 lucide 线性图标，与项目现有图标风格一致。
- * 键名对应 MaterialDef.icon。
+ * 工厂图标。SVG 位于 public/svg/factory/，来源与协议见同目录 ATTRIBUTION.md。
+ * 渲染方式为 CSS mask，颜色由 text-* 类决定，与项目现有线性图标观感一致。
  */
-export const MATERIAL_ICONS: Record<string, Component> = {
-  gem: Gem,
-  plate: Layers,
-  brick: Blocks,
-  flame: Flame,
-  gear: Cog,
-  cable: Cable,
-  cpu: Cpu,
-  pipe: Route,
-  stick: Minus,
-  wind: Wind,
-  droplet: Droplet,
-  box: Box,
-  engine: Fan,
-  battery: Battery,
-  module: Boxes,
-  frame: Frame,
-  rocket: Rocket,
-  sun: Sun,
-  radiation: Radiation,
-  flask: FlaskConical,
-  ammo: Target,
-  wall: Blocks,
-  crosshair: Crosshair,
-  shield: Shield,
-  bug: Bug,
-  scroll: Scroll,
-  shard: Triangle,
-  core: Hexagon,
-  wreck: Bug
-}
-
-/** 材料按等级取色，保持全局一套配色 */
 export const TIER_COLOR: Record<string, string> = {
   T0: 'text-muted-foreground',
   T1: 'text-muted-foreground',
@@ -79,3 +15,15 @@ export const TIER_COLOR: Record<string, string> = {
   T9: 'text-sky-600 dark:text-sky-400',
   T10: 'text-orange-600 dark:text-orange-400'
 }
+
+/** 已提供的图标 id，其余回退到占位图 */
+const ICON_IDS = new Set(['ironOre', 'copperOre', 'coal', 'stone', 'crudeOil', 'water', 'ironPlate', 'copperPlate', 'steel', 'stoneBrick', 'solidFuel', 'ironGear', 'copperCable', 'circuit', 'pipe', 'ironStick', 'petroleumGas', 'heavyOil', 'lightOil', 'plastic', 'sulfur', 'sulfuricAcid', 'advancedCircuit', 'processingUnit', 'engineUnit', 'electricEngine', 'battery', 'explosives', 'lubricant', 'speedModule', 'productivityModule', 'efficiencyModule', 'lowDensityStructure', 'rocketFuel', 'rocketControlUnit', 'rocketPart', 'solarPanel', 'accumulator', 'nuclearFuelCell', 'uraniumOre', 'uranium238', 'uranium235', 'automationPack', 'logisticPack', 'chemicalPack', 'militaryPack', 'productionPack', 'utilityPack', 'magazine', 'piercingMagazine', 'artilleryShell', 'wallSegment', 'hullFrame', 'thrusterAssembly', 'weaponAssembly', 'shieldAssembly', 'rustAlloy', 'neuralCord', 'damagedBlueprint', 'cycleShard', 'rustCore', 'rustWreck', 'mine', 'waterPump', 'oilWell', 'stoneFurnace', 'electricFurnace', 'assembler', 'chemicalPlant', 'oilRefinery', 'centrifuge', 'salvager', 'boiler', 'solarArray', 'accumulatorBank', 'nuclearReactor', 'lab', 'turret', 'wall', 'radar', 'warehouse', 'logisticsTower', 'rocketSilo', 'ventValve'])
+
+const BASE = import.meta.env.BASE_URL
+
+/** 取得图标地址；没有对应图标时返回占位图 */
+export function factoryIcon(id: string): string {
+  return ICON_IDS.has(id) ? `${BASE}svg/factory/${id}.svg` : `${BASE}svg/factory/placeholder.svg`
+}
+
+export const PLACEHOLDER_ICON = `${BASE}svg/factory/placeholder.svg`

@@ -3,11 +3,12 @@
  * 运行：pnpm run smoke:factory
  */
 import assert from 'node:assert/strict'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { MATERIALS, MATERIAL_IDS, FLUIDS } from '@/config/factory/materials'
 import { RECIPES, DEFAULT_RECIPES } from '@/config/factory/recipes'
 import { BUILDINGS, BUILDING_IDS, DEFAULT_BUILDINGS } from '@/config/factory/buildings'
 import { TECHS, TECH_MAP, LAYER_PACKS } from '@/config/factory/techs'
-import { MATERIAL_ICONS } from '@/config/factory/icons'
 
 const fail: string[] = []
 const check = (cond: boolean, msg: string) => {
@@ -19,7 +20,10 @@ check(MATERIAL_IDS.length === 62, `材料应为 62 种，实际 ${MATERIAL_IDS.l
 for (const id of MATERIAL_IDS) {
   const def = MATERIALS[id]
   check(Boolean(def), `材料 ${id} 缺少定义`)
-  check(Boolean(MATERIAL_ICONS[def.icon]), `材料 ${def.name} 的图标 ${def.icon} 未注册`)
+  check(existsSync(join('public/svg/factory', `${id}.svg`)), `材料 ${def.name} 缺少图标文件 ${id}.svg`)
+}
+for (const id of BUILDING_IDS) {
+  check(existsSync(join('public/svg/factory', `${id}.svg`)), `建筑 ${BUILDINGS[id].name} 缺少图标文件 ${id}.svg`)
 }
 const fluidCount = FLUIDS.length
 check(fluidCount === 7, `流体应为 7 种，实际 ${fluidCount}`)

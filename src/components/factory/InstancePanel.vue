@@ -4,6 +4,7 @@
       <template #header>
         <DialogHeader>
           <DialogTitle class="flex flex-wrap items-center gap-2">
+            <FactoryIcon :id="instance.type" size="md" class="text-foreground" />
             {{ def.name }}
             <Badge variant="secondary">Lv {{ instance.level }}</Badge>
             <Badge v-if="isMiner" variant="outline">{{ instance.coalMode ? '燃煤' : '电驱' }}</Badge>
@@ -145,6 +146,7 @@
   import { Dialog, DialogDescription, DialogHeader, DialogTitle, ScrollableDialogContent } from '@/components/ui/dialog'
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
   import MaterialToken from '@/components/factory/MaterialToken.vue'
+  import FactoryIcon from '@/components/factory/FactoryIcon.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS } from '@/config/factory/buildings'
   import { MATERIALS, MINEABLE } from '@/config/factory/materials'

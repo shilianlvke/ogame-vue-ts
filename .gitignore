@@ -57,3 +57,4 @@ desktop.ini
 *.orig
 
 .workbuddy/
+.icon-tmp/

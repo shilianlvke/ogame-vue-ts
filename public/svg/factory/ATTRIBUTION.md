@@ -1,0 +1,93 @@
+# 工厂图标来源
+
+本目录下的 SVG 图标来自 [game-icons.net](https://game-icons.net/)，采用 **CC BY 3.0** 协议：
+允许商用与修改，要求保留署名。
+
+替换图标时保持文件名不变即可；缺失的图标回退到 `placeholder.svg`。
+
+| 文件名 | 作者 | 原始图标 |
+|---|---|---|
+| ironOre | faithtoken | minerals |
+| copperOre | lorc | mineral-heart |
+| coal | delapouite | coal-pile |
+| stone | delapouite | stone-pile |
+| crudeOil | delapouite | oil-rig |
+| water | badges | water |
+| ironPlate | delapouite | metal-plate |
+| copperPlate | delapouite | melting-metal |
+| steel | badges | anvil |
+| stoneBrick | delapouite | clay-brick |
+| solidFuel | delapouite | coal-wagon |
+| ironGear | badges | cog |
+| copperCable | delapouite | wire-coil |
+| circuit | lorc | circuitry |
+| pipe | delapouite | pipes |
+| ironStick | delapouite | wood-stick |
+| petroleumGas | lorc | poison-gas |
+| heavyOil | delapouite | barrel |
+| lightOil | delapouite | barrel-leak |
+| plastic | lorc | chemical-drop |
+| sulfur | lorc | powder |
+| sulfuricAcid | sbed | acid |
+| advancedCircuit | lorc | microchip |
+| processingUnit | lorc | processor |
+| engineUnit | delapouite | boat-engine |
+| electricEngine | delapouite | turbine |
+| battery | delapouite | car-battery |
+| explosives | darkzaitzev | smoke-bomb |
+| lubricant | delapouite | oil-can |
+| speedModule | delapouite | upgrade |
+| productivityModule | delapouite | team-upgrade |
+| efficiencyModule | delapouite | green-power |
+| lowDensityStructure | delapouite | wood-frame |
+| rocketFuel | delapouite | fuel-tank |
+| rocketControlUnit | delapouite | cpu |
+| rocketPart | lorc | rocket |
+| solarPanel | skoll | solar-power |
+| accumulator | delapouite | energy-tank |
+| nuclearFuelCell | badges | radioactive |
+| uraniumOre | badges | radioactive |
+| uranium238 | delapouite | nuclear-waste |
+| uranium235 | sbed | nuclear |
+| automationPack | badges | flask |
+| logisticPack | lorc | round-bottom-flask |
+| chemicalPack | lorc | bubbling-flask |
+| militaryPack | lorc | fizzing-flask |
+| productionPack | lorc | test-tubes |
+| utilityPack | sbed | vial |
+| magazine | lorc | bullets |
+| piercingMagazine | delapouite | heavy-bullets |
+| artilleryShell | lorc | cannon-ball |
+| wallSegment | delapouite | brick-wall |
+| hullFrame | cathelineau | iron-hulled-warship |
+| thrusterAssembly | delapouite | rocket-thruster |
+| weaponAssembly | lorc | cannon |
+| shieldAssembly | badges | shield |
+| rustAlloy | delapouite | rusty-sword |
+| neuralCord | lorc | spinal-coil |
+| damagedBlueprint | seregacthtuf | armor-blueprint |
+| cycleShard | lorc | crystal-cluster |
+| rustCore | delapouite | atom-core |
+| rustWreck | delapouite | ship-wreck |
+| mine | delapouite | miner |
+| waterPump | delapouite | manual-water-pump |
+| oilWell | delapouite | oil-rig |
+| stoneFurnace | delapouite | furnace |
+| electricFurnace | delapouite | melting-metal |
+| assembler | delapouite | factory-arm |
+| chemicalPlant | lorc | chemical-tank |
+| oilRefinery | delapouite | refinery |
+| centrifuge | lorc | vortex |
+| salvager | lorc | circular-sawblade |
+| boiler | delapouite | steam |
+| solarArray | delapouite | solar-time |
+| accumulatorBank | priorblue | battery-100 |
+| nuclearReactor | sbed | reactor |
+| lab | lord-berandas | microscope |
+| turret | sbed | turret |
+| wall | delapouite | stone-wall |
+| radar | lorc | radar-dish |
+| warehouse | delapouite | warehouse |
+| logisticsTower | lorc | cargo-crane |
+| rocketSilo | delapouite | round-silo |
+| ventValve | delapouite | valve |
