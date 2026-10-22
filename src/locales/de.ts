@@ -98,6 +98,7 @@ export default {
     overview: 'Übersicht',
     base: 'Basis',
     buildings: 'Gebäude',
+    factory: 'Produktion',
     research: 'Forschung',
     shipyard: 'Raumschiffwerft',
     defense: 'Verteidigung',

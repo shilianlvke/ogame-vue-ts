@@ -98,6 +98,7 @@ export default {
     overview: '概要',
     base: '基地',
     buildings: '建物',
+    factory: '生産',
     research: '研究',
     shipyard: '造船所',
     defense: '防衛',

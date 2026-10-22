@@ -97,6 +97,7 @@ export default {
     overview: 'Resumen',
     base: 'Base',
     buildings: 'Edificios',
+    factory: 'Producción',
     research: 'Investigación',
     shipyard: 'Astillero',
     defense: 'Defensa',

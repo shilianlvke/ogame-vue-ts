@@ -1,13 +1,13 @@
 <template>
   <div class="container mx-auto flex h-[calc(100svh-3.75rem)] flex-col overflow-hidden p-4 sm:p-6">
-    <!-- 四段式滑槽切换：建筑 / 研究 / 船坞 / 防御 -->
+    <!-- 五段式滑槽切换：生产 / 建筑 / 研究 / 船坞 / 防御 -->
     <div
-      class="relative mb-4 grid h-9 w-full shrink-0 grid-cols-4 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
+      class="relative mb-4 grid h-9 w-full shrink-0 grid-cols-5 rounded-lg bg-muted p-[3px] text-muted-foreground sm:mb-6"
       role="tablist"
       :aria-label="t('nav.base')"
     >
       <span
-        class="pointer-events-none absolute inset-y-[3px] left-[3px] w-[calc((100%-6px)/4)] rounded-md border border-border bg-background shadow-md transition-transform duration-300 ease-out"
+        class="pointer-events-none absolute inset-y-[3px] left-[3px] w-[calc((100%-6px)/5)] rounded-md border border-border bg-background shadow-md transition-transform duration-300 ease-out"
         :style="{ transform: `translateX(${activeIndex * 100}%)` }"
         aria-hidden="true"
       />
@@ -40,14 +40,15 @@
 <script setup lang="ts">
   import { computed, type Component } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Building2, FlaskConical, Ship, Shield } from 'lucide-vue-next'
+  import { Building2, Factory, FlaskConical, Ship, Shield } from 'lucide-vue-next'
+  import FactoryView from '@/views/FactoryView.vue'
   import BuildingsView from '@/views/BuildingsView.vue'
   import ResearchView from '@/views/ResearchView.vue'
   import ShipyardView from '@/views/ShipyardView.vue'
   import DefenseView from '@/views/DefenseView.vue'
   import { useI18n } from '@/composables/useI18n'
 
-  type BaseTab = 'buildings' | 'research' | 'shipyard' | 'defense'
+  type BaseTab = 'factory' | 'buildings' | 'research' | 'shipyard' | 'defense'
 
   interface TabDefinition {
     key: BaseTab
@@ -57,6 +58,7 @@
   }
 
   const tabs: TabDefinition[] = [
+    { key: 'factory', labelKey: 'nav.factory', icon: Factory, component: FactoryView },
     { key: 'buildings', labelKey: 'nav.buildings', icon: Building2, component: BuildingsView },
     { key: 'research', labelKey: 'nav.research', icon: FlaskConical, component: ResearchView },
     { key: 'shipyard', labelKey: 'nav.shipyard', icon: Ship, component: ShipyardView },
@@ -68,8 +70,8 @@
   const { t } = useI18n()
 
   const activeTab = computed<BaseTab>(() => {
-    const value = String(route.query.tab ?? 'buildings')
-    return tabs.some(tab => tab.key === value) ? (value as BaseTab) : 'buildings'
+    const value = String(route.query.tab ?? 'factory')
+    return tabs.some(tab => tab.key === value) ? (value as BaseTab) : 'factory'
   })
 
   const activeIndex = computed(() => tabs.findIndex(tab => tab.key === activeTab.value))

@@ -105,6 +105,7 @@ export default {
     overview: '总览',
     base: '基地',
     buildings: '建筑',
+    factory: '生产',
     research: '研究',
     shipyard: '船坞',
     defense: '防御',

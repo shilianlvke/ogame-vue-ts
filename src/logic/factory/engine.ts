@@ -249,18 +249,29 @@ export function setOreSlot(state: PlanetFactory, instanceId: string, slotIndex: 
   return true
 }
 
-/** 批量把某配方的槽位分配到指定数量 */
+/** 批量把某配方的槽位分配到指定数量，不影响其他配方已占用的槽位 */
 export function assignRecipe(state: PlanetFactory, instanceId: string, recipeId: string, count: number): void {
   const inst = state.buildings.find(b => b.id === instanceId)
   if (!inst) return
-  let placed = 0
-  for (let i = 0; i < inst.slots.length; i++) {
-    const cur = inst.slots[i]!
-    if (placed < count) {
-      if (cur.recipeId !== recipeId) setSlot(state, instanceId, i, recipeId)
-      placed++
-    } else if (cur.recipeId === recipeId) {
-      setSlot(state, instanceId, i, null)
+  const target = Math.max(0, Math.min(count, inst.slots.length))
+  const owned = inst.slots.filter(s => s.recipeId === recipeId).length
+
+  if (target > owned) {
+    let need = target - owned
+    for (let i = 0; i < inst.slots.length && need > 0; i++) {
+      const cur = inst.slots[i]!
+      if (cur.recipeId === null) {
+        setSlot(state, instanceId, i, recipeId)
+        need--
+      }
+    }
+  } else if (target < owned) {
+    let drop = owned - target
+    for (let i = inst.slots.length - 1; i >= 0 && drop > 0; i--) {
+      if (inst.slots[i]!.recipeId === recipeId) {
+        setSlot(state, instanceId, i, null)
+        drop--
+      }
     }
   }
 }
