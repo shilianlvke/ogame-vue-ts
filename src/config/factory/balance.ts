@@ -120,9 +120,9 @@ export const ORE_PRESETS: Record<OrePreset, OrePresetDef> = {
 
 /** 初始赠予 */
 export const INITIAL_STOCK: Partial<Record<MaterialId, number>> = {
-  coal: 200,
+  coal: 400,
   ironOre: 100,
-  stone: 50,
+  stone: 120,
   ironPlate: 40
 }
 

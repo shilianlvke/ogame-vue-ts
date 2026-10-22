@@ -21,7 +21,7 @@ function ctx(now = 0): FactoryContext {
 {
   const state = createFactoryState('standard')
   const coal = state.stock.coal ?? 0
-  assert.equal(coal, 200, '初始煤应为 200')
+  assert.equal(coal, 400, '初始煤应为 400')
 
   const mine = addBuilding(state, 'mine')!
   assert.ok(mine, '矿井应当可以建造')
