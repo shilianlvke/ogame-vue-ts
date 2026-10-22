@@ -111,6 +111,7 @@
     </div>
 
     <InstancePanel v-model:open="panelOpen" :instance-id="activeId" />
+    <OfflineReportDialog />
   </div>
 </template>
 
@@ -128,6 +129,7 @@
   import FactoryCampaign from '@/components/factory/FactoryCampaign.vue'
   import FactoryAchievements from '@/components/factory/FactoryAchievements.vue'
   import FactoryFactions from '@/components/factory/FactoryFactions.vue'
+  import OfflineReportDialog from '@/components/factory/OfflineReportDialog.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS, BUILDING_GROUP } from '@/config/factory/buildings'
   import { TECH_MAP } from '@/config/factory/techs'
@@ -197,9 +199,12 @@
   let timer: ReturnType<typeof setInterval> | null = null
   onMounted(() => {
     store.normalize()
+    store.checkOffline()
+    store.touchActivity()
     timer = setInterval(() => store.advance(1), 1000)
   })
   onUnmounted(() => {
     if (timer) clearInterval(timer)
+    store.touchActivity()
   })
 </script>

@@ -9,7 +9,7 @@
   },
   "private": true,
   "version": "2.0.0",
-  "buildDate": "2026/10/22 20:28:19",
+  "buildDate": "2026/10/22 20:35:59",
   "type": "module",
   "scripts": {
     "dev": "vite --port 25121",
@@ -33,7 +33,9 @@
     "smoke:factory-cycle": "cross-env SMOKE_ENTRY=scripts/factory-cycle-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
     "smoke:factory-campaign": "cross-env SMOKE_ENTRY=scripts/factory-campaign-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
     "smoke:factory-achievements": "cross-env SMOKE_ENTRY=scripts/factory-achievements-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
-    "smoke:factory-factions": "cross-env SMOKE_ENTRY=scripts/factory-factions-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js"
+    "smoke:factory-factions": "cross-env SMOKE_ENTRY=scripts/factory-factions-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
+    "smoke:factory-offline": "cross-env SMOKE_ENTRY=scripts/factory-offline-smoke.ts vite build --config scripts/vite.smoke.config.ts && node scripts/.smoke-out/smoke.js",
+    "test:factory": "pnpm run typecheck && pnpm run check:i18n && pnpm run smoke:factory && pnpm run smoke:factory-engine && pnpm run smoke:factory-market && pnpm run smoke:factory-cycle && pnpm run smoke:factory-campaign && pnpm run smoke:factory-achievements && pnpm run smoke:factory-factions && pnpm run smoke:factory-offline"
   },
   "dependencies": {
     "ws": "^8.22.0"

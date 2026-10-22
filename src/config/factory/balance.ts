@@ -53,6 +53,9 @@ export const RESEARCH_UNITS_PER_SLOT = 1
 /** 离线结算 */
 export const OFFLINE_MAX_HOURS = 12
 export const OFFLINE_STEP_SECONDS = 60
+/** 暗物质延长离线结算：每 100 暗物质延长 12 小时（规划书 §6.8 未给数值，此处自定） */
+export const OFFLINE_EXTEND_DARK_MATTER = 100
+export const OFFLINE_EXTEND_HOURS = 12
 
 /** 波次 */
 export const WAVE_BASE_HP = 3000

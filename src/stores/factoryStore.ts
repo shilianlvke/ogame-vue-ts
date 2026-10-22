@@ -58,6 +58,8 @@ import {
 } from '@/logic/factory/factions'
 import type { LaunchSelection } from '@/types/factory'
 import type { OrePreset } from '@/config/factory/balance'
+import { OFFLINE_EXTEND_DARK_MATTER } from '@/config/factory/balance'
+import { diffReport, offlineCapSeconds, snapshot, type OfflineReport } from '@/logic/factory/offline'
 
 interface WaveState {
   clearCounts: Record<number, number>
@@ -96,6 +98,10 @@ interface FactoryState {
   freeFleetEvents: FreeFleetEvent[]
   /** 自由舰队领取冷却截止（世界秒） */
   eventCooldownUntil: number
+  /** 最后活跃真实时间戳（毫秒），用于离线检测 */
+  lastActiveAt: number
+  /** 检测到的离线秒数（待结算），null = 无待结算 */
+  offlineSeconds: number | null
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -116,7 +122,9 @@ export const useFactoryStore = defineStore('factory', {
     factionRep: {},
     blueprintsPurchased: 0,
     freeFleetEvents: [],
-    eventCooldownUntil: 0
+    eventCooldownUntil: 0,
+    lastActiveAt: 0,
+    offlineSeconds: null
   }),
   getters: {
     /** 引擎上下文 */
@@ -171,6 +179,8 @@ export const useFactoryStore = defineStore('factory', {
       this.blueprintsPurchased = 0
       this.freeFleetEvents = []
       this.eventCooldownUntil = 0
+      this.lastActiveAt = 0
+      this.offlineSeconds = null
       productionWindow.reset()
     },
 
@@ -500,6 +510,62 @@ export const useFactoryStore = defineStore('factory', {
       this.addFactionRep('freeFleet', ev.repDelta)
     },
 
+    /** 记录活动时间戳 */
+    touchActivity() {
+      this.lastActiveAt = Date.now()
+    },
+
+    /** 检测离线时长，返回待结算秒数（< 60 秒不结算） */
+    checkOffline(): number | null {
+      const now = Date.now()
+      const last = this.lastActiveAt || now
+      const elapsed = Math.floor((now - last) / 1000)
+      if (elapsed < 60) {
+        this.lastActiveAt = now
+        return null
+      }
+      this.offlineSeconds = elapsed
+      return elapsed
+    },
+
+    /** 执行离线结算，返回报告 */
+    applyOffline(extendHours = 0): OfflineReport | null {
+      const elapsed = this.offlineSeconds
+      if (elapsed == null) return null
+      const total = Math.min(elapsed, offlineCapSeconds(extendHours))
+      const before = snapshot(this.factory, this.market)
+      const wasRunning = this.running
+      this.running = true
+      let left = total
+      while (left > 0) {
+        this.advance(Math.min(60, left))
+        left -= 60
+      }
+      this.running = wasRunning
+      const after = snapshot(this.factory, this.market)
+      this.lastActiveAt = Date.now()
+      this.offlineSeconds = null
+      return diffReport(before, after, total)
+    },
+
+    /** 放弃离线结算弹窗 */
+    dismissOffline() {
+      this.offlineSeconds = null
+      this.lastActiveAt = Date.now()
+    },
+
+    /** 暗物质延长离线结算：消耗暗物质并返回可延长的时长 */
+    canExtendOffline(): boolean {
+      return this.darkMatter >= OFFLINE_EXTEND_DARK_MATTER && (this.offlineSeconds ?? 0) > offlineCapSeconds(0)
+    },
+
+    /** 用暗物质延长离线结算（在 applyOffline 前调用，消耗暗物质） */
+    payOfflineExtend(): boolean {
+      if (!this.canExtendOffline()) return false
+      this.darkMatter -= OFFLINE_EXTEND_DARK_MATTER
+      return true
+    },
+
     /**
      * 发射火箭：需火箭 ×1 + 种子舱 ×1，其余载荷可选。
      * 载荷携带判定后按周目重置表处理，周目 +1。
@@ -667,6 +733,7 @@ export const useFactoryStore = defineStore('factory', {
       if (typeof this.blueprintsPurchased !== 'number') this.blueprintsPurchased = 0
       if (!Array.isArray(this.freeFleetEvents)) this.freeFleetEvents = []
       if (typeof this.eventCooldownUntil !== 'number') this.eventCooldownUntil = 0
+      if (typeof this.lastActiveAt !== 'number') this.lastActiveAt = 0
     }
   },
   persist: {
