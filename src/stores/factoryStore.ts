@@ -34,6 +34,8 @@ import {
   type OrderSide
 } from '@/logic/factory/market'
 import { productionWindow } from '@/logic/factory/diagnostics'
+import { createCycleState, nextCycle, resetFactory, resetMarket, type CycleState } from '@/logic/factory/cycle'
+import type { LaunchSelection } from '@/types/factory'
 import type { OrePreset } from '@/config/factory/balance'
 
 interface WaveState {
@@ -55,6 +57,8 @@ interface FactoryState {
   ships: Record<string, number>
   outposts: Outpost[]
   market: MarketState
+  /** 周目与发射次数，跨周目累加 */
+  cycle: CycleState
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -66,7 +70,8 @@ export const useFactoryStore = defineStore('factory', {
     wave: { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null },
     ships: {},
     outposts: [],
-    market: createMarketState(0)
+    market: createMarketState(0),
+    cycle: createCycleState()
   }),
   getters: {
     /** 引擎上下文 */
@@ -100,6 +105,7 @@ export const useFactoryStore = defineStore('factory', {
       this.ships = {}
       this.outposts = []
       this.market = createMarketState(0)
+      this.cycle = createCycleState()
       productionWindow.reset()
     },
 
@@ -283,14 +289,46 @@ export const useFactoryStore = defineStore('factory', {
       return cancelAllMarketOrders(this.market, this.factory)
     },
 
+    /**
+     * 发射火箭：需火箭 ×1 + 种子舱 ×1，其余载荷可选。
+     * 载荷携带判定后按周目重置表处理，周目 +1。
+     */
+    launchRocket(selection: LaunchSelection): { ok: boolean; reason?: string } {
+      const factory = this.factory
+      if ((factory.rockets ?? 0) < 1) return { ok: false, reason: '缺少火箭，需在发射井装配' }
+      if ((factory.payloads.seedPod ?? 0) < 1) return { ok: false, reason: '缺少种子舱' }
+      const carryDataCore = Boolean(selection.tech) && factory.techs.includes(selection.tech!) && (factory.payloads.dataCore ?? 0) >= 1
+      const carryIndustrial =
+        Boolean(selection.buildingInstanceId) &&
+        factory.buildings.some(b => b.id === selection.buildingInstanceId) &&
+        (factory.payloads.industrialSeed ?? 0) >= 1
+      const carryCargoPod = (factory.payloads.cargoPod ?? 0) >= 1
+      // 星图阵列：已发现星系尚未接入工厂存档，暂为占位
+      // 市场挂单撤回 + 声望减半
+      resetMarket(this.market, factory)
+      // 母星工厂重置（载荷全部清空，发射时已消耗）
+      const next = nextCycle(this.cycle.cycle)
+      this.factory = resetFactory(factory, this.preset, next, carryCargoPod, {
+        tech: carryDataCore ? selection.tech : undefined,
+        buildingInstanceId: carryIndustrial ? selection.buildingInstanceId : undefined
+      })
+      // 前哨与航线拆除、波次记录清零
+      this.outposts = []
+      this.wave = { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null }
+      this.cycle.cycle = next
+      this.cycle.launchCount += 1
+      productionWindow.reset()
+      return { ok: true }
+    },
+
     /** 可挑战的最高波次 */
     waveCap(): number {
       return maxWave(this.factory)
     },
 
-    /** 指定波次的基础 HP（扰动 1、周目 1） */
+    /** 指定波次的基础 HP（扰动 1、当前周目） */
     previewHp(n: number): number {
-      return waveHp(n, 1, 1)
+      return waveHp(n, 1, this.cycle.cycle)
     },
 
     waveCooldownLeft(n: number): number {
@@ -302,7 +340,7 @@ export const useFactoryStore = defineStore('factory', {
       if (this.wave.battle && !this.wave.battle.finished) return false
       if (n > this.waveCap()) return false
       if (this.waveCooldownLeft(n) > 0) return false
-      this.wave.battle = createBattle(this.factory, n, 1, overload)
+      this.wave.battle = createBattle(this.factory, n, this.cycle.cycle, overload)
       this.wave.lastResult = null
       return true
     },
@@ -397,6 +435,7 @@ export const useFactoryStore = defineStore('factory', {
         this.market = createMarketState(this.lastTickAt)
       }
       if (!Array.isArray(this.market.log)) this.market.log = []
+      if (!this.cycle || typeof this.cycle.cycle !== 'number') this.cycle = createCycleState()
     }
   },
   persist: {

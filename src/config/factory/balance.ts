@@ -154,6 +154,16 @@ export const SHIP_COSTS: Record<string, ShipCostDef> = {
 
 /** 火箭 */
 export const ROCKET_PARTS = 100
+/** 发射井每个槽位装配 1 枚火箭的耗时（秒） */
+export const ROCKET_ASSEMBLY_SECONDS = 60
+/** 周目上限，第 12 周目通关后回到第 1 周目 */
+export const CYCLE_MAX = 12
+/** 物资舱折算的初始材料总量（4 种基础矿均分） */
+export const CARGO_POD_INITIAL_MATERIAL = 10000
+/** 周目难度：锈群 HP 系数 */
+export const CYCLE_HP_FACTOR = 0.15
+/** 周目难度：稀有矿脉储量系数 */
+export const CYCLE_RARE_ORE_FACTOR = 0.1
 
 /** 前哨运输 */
 export const TRANSPORT_SPEED = 1000

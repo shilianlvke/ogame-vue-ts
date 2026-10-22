@@ -314,4 +314,14 @@ export interface PlanetFactory {
   suit?: SuitTier
   /** 蓄电器储能，MJ */
   storedEnergy?: number
+  /** 已装配完成的火箭，待发射 */
+  rockets?: number
+}
+
+/** 发射时的载荷选择 */
+export interface LaunchSelection {
+  /** 数据核心继承的科技 */
+  tech?: TechId
+  /** 工业种子保留的建筑实例 id */
+  buildingInstanceId?: string
 }

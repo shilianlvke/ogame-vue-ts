@@ -102,6 +102,7 @@ export default {
     tech: 'Technik',
     combat: 'Kampf',
     outpost: 'Außenposten',
+    launch: 'Start',
     market: 'Markt',
     research: 'Forschung',
     shipyard: 'Raumschiffwerft',

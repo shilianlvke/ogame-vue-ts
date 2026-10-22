@@ -38,7 +38,9 @@ import {
   UPGRADE_MULTIPLIER,
   UPGRADE_MULTIPLIER_POWER,
   UPGRADE_MULTIPLIER_SILO,
-  DEMOLISH_REFUND
+  DEMOLISH_REFUND,
+  ROCKET_PARTS,
+  ROCKET_ASSEMBLY_SECONDS
 } from '@/config/factory'
 import { MATERIALS, MINEABLE } from '@/config/factory/materials'
 import { RECIPE_MAP, RECIPES } from '@/config/factory/recipes'
@@ -87,7 +89,8 @@ export function createFactoryState(preset: keyof typeof ORE_PRESETS = 'standard'
     powerRatio: 1,
     lifetimeProduced: 0,
     researchProgress: {},
-    priority: {}
+    priority: {},
+    rockets: 0
   }
 }
 
@@ -100,7 +103,8 @@ export function normalizeFactoryState(state: PlanetFactory): PlanetFactory {
     oreReserveMax: state.oreReserveMax ?? { ...(state.oreReserve ?? {}) },
     researchProgress: state.researchProgress ?? {},
     priority: state.priority ?? {},
-    infiniteResearch: { ...INITIAL_INFINITE, ...(state.infiniteResearch ?? {}) }
+    infiniteResearch: { ...INITIAL_INFINITE, ...(state.infiniteResearch ?? {}) },
+    rockets: state.rockets ?? 0
   }
 }
 
@@ -583,11 +587,36 @@ export function tickFactory(state: PlanetFactory, ctx: FactoryContext, dt = 1): 
     }
   }
 
+  // 5.5 发射井：每个槽位并行装配火箭（火箭部件 ×100 → 火箭 ×1）
+  for (const inst of state.buildings) {
+    if (!inst.enabled || inst.type !== 'rocketSilo') continue
+    const speed = (BUILDINGS.rocketSilo.speed ?? 1) * ratio
+    for (const slot of inst.slots) {
+      if ((state.stock.rocketPart ?? 0) < ROCKET_PARTS) {
+        slot.status = 'starved'
+        slot.progress = 0
+        continue
+      }
+      slot.progress += (speed * dt) / ROCKET_ASSEMBLY_SECONDS
+      while (slot.progress >= 1) {
+        if ((state.stock.rocketPart ?? 0) < ROCKET_PARTS) {
+          slot.progress = 0
+          slot.status = 'starved'
+          break
+        }
+        state.stock.rocketPart = (state.stock.rocketPart ?? 0) - ROCKET_PARTS
+        state.rockets = (state.rockets ?? 0) + 1
+        consumed.rocketPart = (consumed.rocketPart ?? 0) + ROCKET_PARTS
+        slot.progress -= 1
+        slot.status = 'running'
+      }
+    }
+  }
+
   // 累计产量
   let total = 0
   for (const v of Object.values(produced)) total += v ?? 0
   state.lifetimeProduced += total / 10000
-
   return { powerRatio: ratio, produced, consumed, researched }
 }
 
