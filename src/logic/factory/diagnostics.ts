@@ -30,18 +30,20 @@ export function activeSlotsOfRecipe(state: PlanetFactory, recipeId: string): num
   return n
 }
 
-/** 最近 60 秒产出滚动窗口，按主产出材料归因到配方 */
+/** 最近 60 秒产出滚动窗口，按主产出材料归因到配方，同时保留材料级总量 */
 export class ProductionWindow {
-  private entries: { seconds: number; perRecipe: Record<string, number> }[] = []
+  private entries: { seconds: number; perRecipe: Record<string, number>; perMaterial: Record<string, number> }[] = []
   private totalSeconds = 0
   readonly span = 60
 
   add(state: PlanetFactory, report: TickReport, dt: number) {
     const perRecipe: Record<string, number> = {}
+    const perMaterial: Record<string, number> = {}
     for (const [material, amount] of Object.entries(report.produced)) {
       const id = material as MaterialId
       const amountN = amount ?? 0
       if (amountN <= 0) continue
+      perMaterial[id] = amountN
       // 以该材料为主产出的配方，按活跃槽位数分摊产量
       const producers = RECIPES.filter(r => MAIN_OUTPUT[r.id] === id && activeSlotsOfRecipe(state, r.id) > 0)
       if (!producers.length) continue
@@ -51,7 +53,7 @@ export class ProductionWindow {
         perRecipe[r.id] = (perRecipe[r.id] ?? 0) + (activeSlotsOfRecipe(state, r.id) * amountN) / total
       }
     }
-    this.entries.push({ seconds: dt, perRecipe })
+    this.entries.push({ seconds: dt, perRecipe, perMaterial })
     this.totalSeconds += dt
     while (this.totalSeconds > this.span && this.entries.length) {
       const head = this.entries.shift()!
@@ -59,10 +61,17 @@ export class ProductionWindow {
     }
   }
 
-  /** 最近 60 秒平均秒产 */
+  /** 最近 60 秒配方主产出平均秒产 */
   rateOf(recipeId: string): number {
     let total = 0
     for (const e of this.entries) total += e.perRecipe[recipeId] ?? 0
+    return total / this.span
+  }
+
+  /** 最近 60 秒材料平均秒产（含流体与采掘矿，供任务产能目标使用） */
+  materialRate(material: MaterialId): number {
+    let total = 0
+    for (const e of this.entries) total += e.perMaterial[material] ?? 0
     return total / this.span
   }
 

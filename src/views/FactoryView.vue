@@ -51,6 +51,9 @@
       </Card>
     </div>
 
+    <!-- 战役任务 -->
+    <FactoryCampaign />
+
     <!-- 诊断面板 -->
     <FactoryDiagnostics />
 
@@ -116,6 +119,7 @@
   import FactoryIcon from '@/components/factory/FactoryIcon.vue'
   import InstancePanel from '@/components/factory/InstancePanel.vue'
   import FactoryDiagnostics from '@/components/factory/FactoryDiagnostics.vue'
+  import FactoryCampaign from '@/components/factory/FactoryCampaign.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS, BUILDING_GROUP } from '@/config/factory/buildings'
   import { TECH_MAP } from '@/config/factory/techs'

@@ -11,6 +11,7 @@ export * from './recipes'
 export * from './techs'
 export * from './icons'
 export * from './market'
+export * from './campaign'
 
 /** 建筑槽位数：等级即槽位数，上限 16 */
 export function slotsOfLevel(level: number): number {

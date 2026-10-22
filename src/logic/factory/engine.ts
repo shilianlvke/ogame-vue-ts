@@ -90,7 +90,10 @@ export function createFactoryState(preset: keyof typeof ORE_PRESETS = 'standard'
     lifetimeProduced: 0,
     researchProgress: {},
     priority: {},
-    rockets: 0
+    rockets: 0,
+    unlockedRecipes: [],
+    recipeBonus: {},
+    moduleSlotBonus: 0
   }
 }
 
@@ -104,7 +107,10 @@ export function normalizeFactoryState(state: PlanetFactory): PlanetFactory {
     researchProgress: state.researchProgress ?? {},
     priority: state.priority ?? {},
     infiniteResearch: { ...INITIAL_INFINITE, ...(state.infiniteResearch ?? {}) },
-    rockets: state.rockets ?? 0
+    rockets: state.rockets ?? 0,
+    unlockedRecipes: state.unlockedRecipes ?? [],
+    recipeBonus: state.recipeBonus ?? {},
+    moduleSlotBonus: state.moduleSlotBonus ?? 0
   }
 }
 
@@ -183,6 +189,34 @@ export function addBuilding(state: PlanetFactory, type: BuildingId, level = 1): 
   return instance
 }
 
+/** 免费追加一座建筑实例（任务奖励用，不扣成本，受全星球实例数上限约束） */
+export function grantBuilding(state: PlanetFactory, type: BuildingId, level = 1): boolean {
+  if (state.buildings.length >= MAX_INSTANCES) return false
+  const slots = Array.from({ length: slotsOf(level) }, emptySlot)
+  state.buildings.push({ id: nextId(), type, level, enabled: true, slots, modules: [] })
+  return true
+}
+
+/** 任务奖励：提升指定建筑等级（优先加到最高实例，无实例则新建），不扣成本 */
+export function upgradeBuildingFree(state: PlanetFactory, type: BuildingId, levels: number): void {
+  const list = state.buildings.filter(b => b.type === type).sort((a, b) => b.level - a.level)
+  const target = list[0]
+  if (!target) {
+    grantBuilding(state, type, Math.min(MAX_LEVEL, Math.max(1, levels + 1)))
+    return
+  }
+  target.level = Math.min(MAX_LEVEL, target.level + levels)
+  while (target.slots.length < slotsOf(target.level)) target.slots.push(emptySlot())
+}
+
+/** 配方是否已解锁：默认解锁、科技解锁或任务解锁 */
+export function isRecipeUnlocked(state: PlanetFactory, recipeId: string): boolean {
+  const recipe = RECIPE_MAP[recipeId]
+  if (!recipe) return false
+  if (!recipe.unlockedBy) return true
+  return state.techs.includes(recipe.unlockedBy) || (state.unlockedRecipes?.includes(recipeId) ?? false)
+}
+
 /** 升级实例，成本为增量（目标等级成本 - 当前等级成本） */
 export function upgradeBuilding(state: PlanetFactory, instanceId: string): boolean {
   const inst = state.buildings.find(b => b.id === instanceId)
@@ -230,7 +264,7 @@ export function setSlot(state: PlanetFactory, instanceId: string, slotIndex: num
     const def = BUILDINGS[inst.type]
     if (def.categories.length && !def.categories.includes(recipe.category)) return false
     if (!def.categories.length) return false
-    if (recipe.unlockedBy && !state.techs.includes(recipe.unlockedBy)) return false
+    if (!isRecipeUnlocked(state, recipeId)) return false
   }
   slot.recipeId = recipeId
   slot.progress = 0
@@ -286,7 +320,7 @@ export function setModuleCount(state: PlanetFactory, instanceId: string, type: M
   if (!inst) return false
   const def = BUILDINGS[inst.type]
   if (!def.moduleSlots) return false
-  const capacity = Math.floor(inst.level / 4) + (state.techs.includes('robotLogistics') ? 1 : 0)
+  const capacity = Math.floor(inst.level / 4) + (state.techs.includes('robotLogistics') ? 1 : 0) + (state.moduleSlotBonus ?? 0)
   const current = inst.modules.filter(m => m === type).length
   const target = Math.max(0, Math.min(capacity - (inst.modules.length - current), count))
   if (target === current) return true
@@ -374,13 +408,14 @@ function slotEnergy(inst: BuildingInstance, recipe: RecipeDef): number {
 }
 
 /** 槽位速度倍率（含模块与科技） */
-function slotSpeed(inst: BuildingInstance, recipe: RecipeDef, ctx: FactoryContext): number {
+function slotSpeed(inst: BuildingInstance, recipe: RecipeDef, ctx: FactoryContext, state: PlanetFactory): number {
   const def = BUILDINGS[inst.type]
   let speed = def.speed ?? 1
   if (inst.coalMode) speed *= def.coalSpeedFactor ?? 0.5
   speed *= 1 + inst.modules.filter(m => m === 'speed').length * MODULE_SPEED_BONUS
   if (recipe.category === 'smelt') speed *= 1 + 0.1 * (ctx.techs.includes('smeltingOptimization') ? 1 : 0) + 0.05 * ctx.infinite.smelting
   if (inst.type === 'assembler') speed *= 1 + 0.1 * (ctx.techs.includes('advancedAssembly') ? 1 : 0)
+  speed *= 1 + (state.recipeBonus?.[recipe.id] ?? 0)
   return speed
 }
 
@@ -537,7 +572,7 @@ export function tickFactory(state: PlanetFactory, ctx: FactoryContext, dt = 1): 
         }
         continue
       }
-      slot.progress += (slotSpeed(inst, recipe, ctx) * speedMult * dt) / recipe.time
+      slot.progress += (slotSpeed(inst, recipe, ctx, state) * speedMult * dt) / recipe.time
       if (slot.progress >= 1) {
         slot.progress = 1
         if (tryProduce(state, inst, slot, recipe, cap, produced, consumed)) {
@@ -721,7 +756,7 @@ export function simulateOffline(state: PlanetFactory, ctx: FactoryContext, secon
 export function availableRecipes(state: PlanetFactory, type: BuildingId): RecipeDef[] {
   const def = BUILDINGS[type]
   if (!def.categories.length) return []
-  return RECIPES.filter(r => def.categories.includes(r.category) && (!r.unlockedBy || state.techs.includes(r.unlockedBy)))
+  return RECIPES.filter(r => def.categories.includes(r.category) && isRecipeUnlocked(state, r.id))
 }
 
 /** 单类型的槽位总数上限检查 */

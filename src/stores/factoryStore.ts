@@ -35,6 +35,8 @@ import {
 } from '@/logic/factory/market'
 import { productionWindow } from '@/logic/factory/diagnostics'
 import { createCycleState, nextCycle, resetFactory, resetMarket, type CycleState } from '@/logic/factory/cycle'
+import { QUEST_MAP } from '@/config/factory/campaign'
+import { applyReward, isQuestComplete, type CampaignContext } from '@/logic/factory/campaign'
 import type { LaunchSelection } from '@/types/factory'
 import type { OrePreset } from '@/config/factory/balance'
 
@@ -59,6 +61,10 @@ interface FactoryState {
   market: MarketState
   /** 周目与发射次数，跨周目累加 */
   cycle: CycleState
+  /** 已领取任务奖励的任务 id */
+  campaignClaimed: string[]
+  /** 暗物质（账户字段，跨周目保留） */
+  darkMatter: number
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -71,7 +77,9 @@ export const useFactoryStore = defineStore('factory', {
     ships: {},
     outposts: [],
     market: createMarketState(0),
-    cycle: createCycleState()
+    cycle: createCycleState(),
+    campaignClaimed: [],
+    darkMatter: 0
   }),
   getters: {
     /** 引擎上下文 */
@@ -94,6 +102,18 @@ export const useFactoryStore = defineStore('factory', {
     /** 距下次撮合的秒数 */
     nextMatchIn(state): number {
       return Math.max(0, state.market.nextMatchAt - state.lastTickAt)
+    },
+    /** 战役目标判定上下文 */
+    campaignContext(state): CampaignContext {
+      return {
+        factory: state.factory,
+        clearCounts: state.wave.clearCounts,
+        outposts: state.outposts.length,
+        routeCapacity: state.outposts.reduce((a, o) => a + o.cargo, 0),
+        ships: state.ships,
+        cycle: state.cycle.cycle,
+        launchCount: state.cycle.launchCount
+      }
     }
   },
   actions: {
@@ -106,6 +126,8 @@ export const useFactoryStore = defineStore('factory', {
       this.outposts = []
       this.market = createMarketState(0)
       this.cycle = createCycleState()
+      this.campaignClaimed = []
+      this.darkMatter = 0
       productionWindow.reset()
     },
 
@@ -289,6 +311,18 @@ export const useFactoryStore = defineStore('factory', {
       return cancelAllMarketOrders(this.market, this.factory)
     },
 
+    /** 领取任务奖励：目标须已达成且未领取 */
+    claimReward(questId: string): boolean {
+      const quest = QUEST_MAP[questId]
+      if (!quest || this.campaignClaimed.includes(questId)) return false
+      if (!isQuestComplete(quest, this.campaignContext)) return false
+      const account = { ships: this.ships, darkMatter: this.darkMatter }
+      applyReward(quest.reward, this.factory, account)
+      this.darkMatter = account.darkMatter
+      this.campaignClaimed.push(questId)
+      return true
+    },
+
     /**
      * 发射火箭：需火箭 ×1 + 种子舱 ×1，其余载荷可选。
      * 载荷携带判定后按周目重置表处理，周目 +1。
@@ -312,9 +346,10 @@ export const useFactoryStore = defineStore('factory', {
         tech: carryDataCore ? selection.tech : undefined,
         buildingInstanceId: carryIndustrial ? selection.buildingInstanceId : undefined
       })
-      // 前哨与航线拆除、波次记录清零
+      // 前哨与航线拆除、波次记录清零、战役进度清零
       this.outposts = []
       this.wave = { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null }
+      this.campaignClaimed = []
       this.cycle.cycle = next
       this.cycle.launchCount += 1
       productionWindow.reset()
@@ -436,6 +471,8 @@ export const useFactoryStore = defineStore('factory', {
       }
       if (!Array.isArray(this.market.log)) this.market.log = []
       if (!this.cycle || typeof this.cycle.cycle !== 'number') this.cycle = createCycleState()
+      if (!Array.isArray(this.campaignClaimed)) this.campaignClaimed = []
+      if (typeof this.darkMatter !== 'number') this.darkMatter = 0
     }
   },
   persist: {

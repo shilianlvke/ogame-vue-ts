@@ -316,6 +316,12 @@ export interface PlanetFactory {
   storedEnergy?: number
   /** 已装配完成的火箭，待发射 */
   rockets?: number
+  /** 任务解锁的配方（与科技解锁先达成者为准） */
+  unlockedRecipes?: string[]
+  /** 任务奖励的配方产能加成（配方 id → 比例，0.1 = +10%） */
+  recipeBonus?: Record<string, number>
+  /** 任务奖励的全建筑模块槽位 +N */
+  moduleSlotBonus?: number
 }
 
 /** 发射时的载荷选择 */
@@ -324,4 +330,71 @@ export interface LaunchSelection {
   tech?: TechId
   /** 工业种子保留的建筑实例 id */
   buildingInstanceId?: string
+}
+
+// ==================== 战役任务系统 ====================
+
+/** 任务目标类型 */
+export type CampaignGoalType =
+  | 'produce' // 达到产能：指定材料产出速率 ≥ N/s（target = 材料 id，含流体与采掘矿）
+  | 'building' // 建成建筑：实例数 ≥ N（记法 矿井 ×1）
+  | 'buildingLevel' // 建筑合计等级 ≥ N（记法 电炉 ≥8）
+  | 'buildingTotal' // 全星球实例数 ≥ N
+  | 'material' // 持有材料 ≥ N
+  | 'payload' // 持有载荷 ≥ N（target = 载荷 id）
+  | 'ship' // 持有舰船 ≥ N（target = 舰船名）
+  | 'research' // 完成科技（target = 科技 id）
+  | 'wave' // 通过第 N 波（target = 波次号）
+  | 'outpost' // 前哨数量 ≥ N
+  | 'routeCapacity' // 全部前哨航线合计运力 ≥ N
+  | 'cycle' // 周目数 ≥ N
+  | 'launch' // 火箭发射成功 ≥ N
+
+export interface CampaignGoal {
+  type: CampaignGoalType
+  /** 目标主体：材料/建筑/科技/配方/舰船 id，或波次号 */
+  target?: string | number
+  /** 阈值：数量 / 合计等级 / 秒产 / 波次号 */
+  amount: number
+}
+
+export interface CampaignReward {
+  /** 材料 */
+  materials?: Partial<Record<MaterialId, number>>
+  /** 载荷 */
+  payloads?: Partial<Record<PayloadId, number>>
+  /** 装备 */
+  equipment?: Partial<Record<EquipmentId, number>>
+  /** 舰船（名称 → 数量） */
+  ships?: Partial<Record<string, number>>
+  /** 暗物质 */
+  darkMatter?: number
+  /** 追加建筑实例（类型 → 数量） */
+  buildings?: Partial<Record<BuildingId, number>>
+  /** 提升建筑等级（类型 → 等级数） */
+  buildingLevels?: Partial<Record<BuildingId, number>>
+  /** 解锁配方（任务解锁，与科技先达成者为准） */
+  unlockRecipes?: string[]
+  /** 配方产能加成（配方 id → 比例，0.1 = +10%） */
+  recipeBonus?: Partial<Record<string, number>>
+  /** 全建筑模块槽位 +N */
+  moduleSlotBonus?: number
+  /** 工程服解锁 */
+  suit?: SuitTier
+}
+
+export interface CampaignQuest {
+  /** 如 '1-1' */
+  id: string
+  chapter: number
+  name: string
+  main: CampaignGoal
+  sub: CampaignGoal[]
+  reward: CampaignReward
+}
+
+export interface CampaignChapter {
+  number: number
+  name: string
+  quests: CampaignQuest[]
 }
