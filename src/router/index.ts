@@ -30,7 +30,6 @@ const router = createRouter({
     { path: '/messages', name: 'messages', component: () => import('@/views/MessagesView.vue') },
     { path: '/galaxy', name: 'galaxy', component: () => import('@/views/GalaxyView.vue') },
     { path: '/starmap', redirect: '/galaxy' },
-    { path: '/diplomacy', name: 'diplomacy', component: () => import('@/views/DiplomacyView.vue') },
     // 玩家、排行、成就已并入总览页：保留旧地址跳转，避免书签失效
     { path: '/players', redirect: { path: '/overview', query: { chat: '1' } } },
     { path: '/achievements', redirect: '/overview' },

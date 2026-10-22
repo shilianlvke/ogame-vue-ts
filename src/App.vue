@@ -386,9 +386,6 @@
       <!-- 队列通知 -->
       <QueueNotifications />
 
-      <!-- 外交通知 -->
-      <DiplomaticNotifications />
-
       <!-- 敌方警报 -->
       <EnemyAlertNotifications ref="enemyAlertNotificationsRef" />
 
@@ -477,7 +474,6 @@
   import IncomingFleetAlerts from '@/components/notifications/IncomingFleetAlerts.vue'
   import LowEnergyWarning from '@/components/notifications/LowEnergyWarning.vue'
   import OreDepositWarning from '@/components/notifications/OreDepositWarning.vue'
-  import DiplomaticNotifications from '@/components/notifications/DiplomaticNotifications.vue'
   import EnemyAlertNotifications from '@/components/notifications/EnemyAlertNotifications.vue'
   import QueueNotifications from '@/components/notifications/QueueNotifications.vue'
   import {
@@ -532,7 +528,6 @@
     ChevronsUpDown,
     ChevronDown,
     ChevronUp,
-    Handshake,
     Pencil,
     Scroll
   } from 'lucide-vue-next'
@@ -630,7 +625,6 @@
     { name: computed(() => t('nav.officers')), path: '/officers', icon: Users },
     { name: computed(() => t('nav.simulator')), path: '/battle-simulator', icon: Swords },
     { name: computed(() => t('nav.galaxy')), path: '/galaxy', icon: Globe },
-    { name: computed(() => t('nav.diplomacy')), path: '/diplomacy', icon: Handshake },
     { name: computed(() => t('nav.campaign')), path: '/campaign', icon: Scroll },
     { name: computed(() => t('nav.messages')), path: '/messages', icon: Mail },
     { name: computed(() => t('nav.settings')), path: '/settings', icon: Settings },
