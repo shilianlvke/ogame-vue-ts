@@ -14,10 +14,11 @@ import {
   setSlot,
   tickFactory,
   upgradeBuilding,
-  type FactoryContext
+  type FactoryContext,
+  type TickReport
 } from '@/logic/factory/engine'
 import { ORE_PRESETS, WAVE_COOLDOWN_MINUTES } from '@/config/factory/balance'
-  import { applyDrops, baseDrops, createBattle, maxWave, rewardFactor, stepBattle, waveHp, type ActiveBattle, type WaveDrops } from '@/logic/factory/waves'
+  import { applyDrops, baseDrops, createBattle, isElite, maxWave, rewardFactor, stepBattle, waveHp, type ActiveBattle, type WaveDrops } from '@/logic/factory/waves'
   import { INFINITE_RESEARCH, TECH_MAP } from '@/config/factory/techs'
   import { SHIP_COSTS } from '@/config/factory/balance'
   import { createOutpost, MAX_OUTPOSTS, tickOutpostCapped, type Outpost } from '@/logic/factory/outposts'
@@ -37,6 +38,8 @@ import { productionWindow } from '@/logic/factory/diagnostics'
 import { createCycleState, nextCycle, resetFactory, resetMarket, type CycleState } from '@/logic/factory/cycle'
 import { QUEST_MAP } from '@/config/factory/campaign'
 import { applyReward, isQuestComplete, type CampaignContext } from '@/logic/factory/campaign'
+import { ACHIEVEMENT_MAP } from '@/config/factory/achievements'
+import { createAchievementStats, evaluateAchievements, totalMaterials, type AchievementStats } from '@/logic/factory/achievements'
 import type { LaunchSelection } from '@/types/factory'
 import type { OrePreset } from '@/config/factory/balance'
 
@@ -65,6 +68,10 @@ interface FactoryState {
   campaignClaimed: string[]
   /** 暗物质（账户字段，跨周目保留） */
   darkMatter: number
+  /** 已解锁成就 id */
+  achievements: string[]
+  /** 成就累计统计 */
+  achStats: AchievementStats
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -79,7 +86,9 @@ export const useFactoryStore = defineStore('factory', {
     market: createMarketState(0),
     cycle: createCycleState(),
     campaignClaimed: [],
-    darkMatter: 0
+    darkMatter: 0,
+    achievements: [],
+    achStats: createAchievementStats()
   }),
   getters: {
     /** 引擎上下文 */
@@ -128,6 +137,8 @@ export const useFactoryStore = defineStore('factory', {
       this.cycle = createCycleState()
       this.campaignClaimed = []
       this.darkMatter = 0
+      this.achievements = []
+      this.achStats = createAchievementStats()
       productionWindow.reset()
     },
 
@@ -145,8 +156,12 @@ export const useFactoryStore = defineStore('factory', {
       const report = tickFactory(this.factory, ctx, step)
       productionWindow.add(this.factory, report, step)
       this.lastTickAt += step
+      // 成就累计统计
+      this.trackAchievements(report, step)
       if (this.wave.battle && !this.wave.battle.finished) {
+        const beforeHp = this.wave.battle.hp
         stepBattle(this.factory, this.wave.battle, step)
+        this.achStats.rustHpKilled += Math.max(0, beforeHp - this.wave.battle.hp)
         if (this.wave.battle.finished) this.settleWave()
       }
       // 前哨运输结算
@@ -163,6 +178,62 @@ export const useFactoryStore = defineStore('factory', {
         expireOrders(this.market, this.factory, this.lastTickAt)
         matchMarket(this.market, this.factory, this.lastTickAt)
         this.market.nextMatchAt = this.lastTickAt + MARKET_MATCH_INTERVAL
+      }
+      this.checkAchievements()
+    },
+
+    /** 更新成就累计统计（每 tick） */
+    trackAchievements(report: TickReport, dt: number) {
+      // 第一步：建成过矿井
+      if (!this.achStats.builtMine && this.factory.buildings.some(b => b.type === 'mine')) {
+        this.achStats.builtMine = true
+      }
+      // 满负荷：全部已分配槽位连续无空转
+      const statuses: string[] = []
+      for (const b of this.factory.buildings) {
+        if (!b.enabled) continue
+        for (const s of b.slots) if (s.recipeId) statuses.push(s.status)
+      }
+      if (statuses.length > 0 && statuses.every(st => st === 'running')) {
+        this.achStats.fullLoadSeconds += dt
+      } else {
+        this.achStats.fullLoadSeconds = 0
+      }
+      // 断电：满足率 ≤ 20% 欠压后恢复
+      if (this.factory.powerRatio <= 0.2) {
+        this.achStats.undervoltSeen = true
+      } else if (this.achStats.undervoltSeen) {
+        this.achStats.powerOut = true
+      }
+      // 拆解工：累计消耗锈群残骸
+      this.achStats.salvagedWreck += report.consumed.rustWreck ?? 0
+      // 破产：全部归零记时，恢复后判
+      const total = totalMaterials(this.factory)
+      if (total <= 0) {
+        if (this.achStats.bankruptAt === 0) this.achStats.bankruptAt = this.lastTickAt
+      } else if (this.achStats.bankruptAt > 0 && this.lastTickAt - this.achStats.bankruptAt > 3600) {
+        this.achStats.bankruptAt = 0
+      }
+    },
+
+    /** 检查并发放新达成成就的奖励 */
+    checkAchievements() {
+      const ctx = {
+        factory: this.factory,
+        outposts: this.outposts,
+        cycle: this.cycle.cycle,
+        launchCount: this.cycle.launchCount,
+        now: this.lastTickAt
+      }
+      const met = evaluateAchievements(ctx, this.achStats)
+      for (const id of met) {
+        if (this.achievements.includes(id)) continue
+        const def = ACHIEVEMENT_MAP[id]
+        if (!def) continue
+        const account = { ships: this.ships, darkMatter: this.darkMatter }
+        applyReward(def.reward, this.factory, account)
+        this.darkMatter = account.darkMatter
+        this.achievements.push(id)
       }
     },
 
@@ -331,6 +402,8 @@ export const useFactoryStore = defineStore('factory', {
       const factory = this.factory
       if ((factory.rockets ?? 0) < 1) return { ok: false, reason: '缺少火箭，需在发射井装配' }
       if ((factory.payloads.seedPod ?? 0) < 1) return { ok: false, reason: '缺少种子舱' }
+      // 极简：建筑总数 ≤ 20 时发射
+      if (factory.buildings.length <= 20) this.achStats.minimalLaunch = true
       const carryDataCore = Boolean(selection.tech) && factory.techs.includes(selection.tech!) && (factory.payloads.dataCore ?? 0) >= 1
       const carryIndustrial =
         Boolean(selection.buildingInstanceId) &&
@@ -412,6 +485,8 @@ export const useFactoryStore = defineStore('factory', {
         this.wave.lastResult = { wave: n, won: true, drops: applied }
         if (dailyBonus) this.wave.dailyKey = today
         if (clear >= 1) this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
+        // 零损失：通过精英波且防线未受损
+        if (isElite(n) && battle.progress === 0) this.achStats.zeroLoss = true
       } else {
         this.wave.lastResult = { wave: n, won: false, drops: null }
         this.wave.cooldownUntil[n] = Date.now() + WAVE_COOLDOWN_MINUTES * 60 * 1000
@@ -473,6 +548,8 @@ export const useFactoryStore = defineStore('factory', {
       if (!this.cycle || typeof this.cycle.cycle !== 'number') this.cycle = createCycleState()
       if (!Array.isArray(this.campaignClaimed)) this.campaignClaimed = []
       if (typeof this.darkMatter !== 'number') this.darkMatter = 0
+      if (!Array.isArray(this.achievements)) this.achievements = []
+      if (!this.achStats || typeof this.achStats.salvagedWreck !== 'number') this.achStats = createAchievementStats()
     }
   },
   persist: {
