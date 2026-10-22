@@ -98,6 +98,7 @@ export default {
     base: 'Base',
     buildings: 'Edificios',
     factory: 'Producción',
+    tech: 'Tecnología',
     research: 'Investigación',
     shipyard: 'Astillero',
     defense: 'Defensa',

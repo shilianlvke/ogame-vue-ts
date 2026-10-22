@@ -99,6 +99,7 @@ export default {
     base: '기지',
     buildings: '건물',
     factory: '생산',
+    tech: '기술',
     research: '연구',
     shipyard: '조선소',
     defense: '방어',

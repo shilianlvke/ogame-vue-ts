@@ -100,6 +100,7 @@ export default {
     base: 'База',
     buildings: 'Здания',
     factory: 'Производство',
+    tech: 'Технологии',
     research: 'Исследования',
     shipyard: 'Верфь',
     defense: 'Оборона',

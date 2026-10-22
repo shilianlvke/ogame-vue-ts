@@ -105,6 +105,7 @@ export default {
     base: 'Base',
     buildings: 'Buildings',
     factory: 'Production',
+    tech: 'Tech',
     research: 'Research',
     shipyard: 'Shipyard',
     defense: 'Defense',
