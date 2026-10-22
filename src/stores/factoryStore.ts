@@ -21,6 +21,19 @@ import { ORE_PRESETS, WAVE_COOLDOWN_MINUTES } from '@/config/factory/balance'
   import { INFINITE_RESEARCH, TECH_MAP } from '@/config/factory/techs'
   import { SHIP_COSTS } from '@/config/factory/balance'
   import { createOutpost, MAX_OUTPOSTS, tickOutpostCapped, type Outpost } from '@/logic/factory/outposts'
+import { MARKET_MATCH_INTERVAL, marketFeeRate } from '@/config/factory/market'
+import {
+  cancelAllOrders as cancelAllMarketOrders,
+  cancelOrder as cancelMarketOrder,
+  createMarketState,
+  expireOrders,
+  matchMarket,
+  marketPrice,
+  placeOrder as placeMarketOrder,
+  type MarketState,
+  type OrderSide
+} from '@/logic/factory/market'
+import { productionWindow } from '@/logic/factory/diagnostics'
 import type { OrePreset } from '@/config/factory/balance'
 
 interface WaveState {
@@ -41,6 +54,7 @@ interface FactoryState {
   wave: WaveState
   ships: Record<string, number>
   outposts: Outpost[]
+  market: MarketState
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -51,7 +65,8 @@ export const useFactoryStore = defineStore('factory', {
     running: true,
     wave: { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null },
     ships: {},
-    outposts: []
+    outposts: [],
+    market: createMarketState(0)
   }),
   getters: {
     /** 引擎上下文 */
@@ -62,6 +77,18 @@ export const useFactoryStore = defineStore('factory', {
         techs: state.factory.techs,
         infinite: state.factory.infiniteResearch
       }
+    },
+    /** 当前手续费率，随矿业公会声望下降 */
+    feeRate(state): number {
+      return marketFeeRate(state.market.minersGuildRep)
+    },
+    /** 材料市场参考价 */
+    priceOf(state) {
+      return (id: MaterialId): number => marketPrice(state.market, id)
+    },
+    /** 距下次撮合的秒数 */
+    nextMatchIn(state): number {
+      return Math.max(0, state.market.nextMatchAt - state.lastTickAt)
     }
   },
   actions: {
@@ -72,6 +99,8 @@ export const useFactoryStore = defineStore('factory', {
       this.lastTickAt = 0
       this.ships = {}
       this.outposts = []
+      this.market = createMarketState(0)
+      productionWindow.reset()
     },
 
     /** 推进结算，秒 */
@@ -85,7 +114,8 @@ export const useFactoryStore = defineStore('factory', {
         infinite: this.factory.infiniteResearch
       }
       const step = Math.min(seconds, 60)
-      tickFactory(this.factory, ctx, step)
+      const report = tickFactory(this.factory, ctx, step)
+      productionWindow.add(this.factory, report, step)
       this.lastTickAt += step
       if (this.wave.battle && !this.wave.battle.finished) {
         stepBattle(this.factory, this.wave.battle, step)
@@ -99,6 +129,12 @@ export const useFactoryStore = defineStore('factory', {
           const cap = 5000 + this.factory.buildings.filter(b => b.type === 'warehouse' && b.enabled).reduce((a, b) => a + b.level, 0) * 5000
           this.factory.stock[op.ore] = Math.min(cap, cur + result.shipped)
         }
+      }
+      // 市场撮合：每 60 秒一次，先撤回过期挂单
+      if (this.lastTickAt >= this.market.nextMatchAt) {
+        expireOrders(this.market, this.factory, this.lastTickAt)
+        matchMarket(this.market, this.factory, this.lastTickAt)
+        this.market.nextMatchAt = this.lastTickAt + MARKET_MATCH_INTERVAL
       }
     },
 
@@ -232,6 +268,21 @@ export const useFactoryStore = defineStore('factory', {
       inst.coalMode = !inst.coalMode
     },
 
+    /** 市场挂单：卖单占用仓库，买单冻结星币 */
+    placeOrder(side: OrderSide, material: MaterialId, price: number, amount: number) {
+      return placeMarketOrder(this.market, this.factory, side, material, price, amount, this.lastTickAt)
+    },
+
+    /** 撤回挂单 */
+    cancelOrder(orderId: string) {
+      return cancelMarketOrder(this.market, this.factory, orderId)
+    },
+
+    /** 撤回全部挂单（周目重置时调用） */
+    cancelAllOrders() {
+      return cancelAllMarketOrders(this.market, this.factory)
+    },
+
     /** 可挑战的最高波次 */
     waveCap(): number {
       return maxWave(this.factory)
@@ -342,6 +393,10 @@ export const useFactoryStore = defineStore('factory', {
     /** 存档迁移 */
     normalize() {
       this.factory = normalizeFactoryState(this.factory)
+      if (!this.market || !Array.isArray(this.market.orders)) {
+        this.market = createMarketState(this.lastTickAt)
+      }
+      if (!Array.isArray(this.market.log)) this.market.log = []
     }
   },
   persist: {

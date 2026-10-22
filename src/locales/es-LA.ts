@@ -101,6 +101,7 @@ export default {
     tech: 'Tecnología',
     combat: 'Combate',
     outpost: 'Avanzada',
+    market: 'Mercado',
     research: 'Investigación',
     shipyard: 'Astillero',
     defense: 'Defensa',

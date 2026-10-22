@@ -108,6 +108,7 @@ export default {
     tech: 'Tech',
     combat: 'Combat',
     outpost: 'Outpost',
+    market: 'Market',
     research: 'Research',
     shipyard: 'Shipyard',
     defense: 'Defense',

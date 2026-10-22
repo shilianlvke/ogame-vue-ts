@@ -102,6 +102,7 @@ export default {
     tech: '기술',
     combat: '전투',
     outpost: '전초기지',
+    market: '시장',
     research: '연구',
     shipyard: '조선소',
     defense: '방어',

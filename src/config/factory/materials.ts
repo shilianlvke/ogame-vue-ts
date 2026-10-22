@@ -4,6 +4,7 @@ import type { MaterialDef, MaterialId, MaterialTier } from '@/types/factory'
  * 材料清单，共 62 种。
  * icon 取值见 config/factory/icons.ts 的 MATERIAL_ICONS。
  */
+
 export const MATERIALS: Record<MaterialId, MaterialDef> = {
   // T0 原料
   ironOre: { id: 'ironOre', name: '铁矿石', tier: 'T0', raw: true, icon: 'gem' },

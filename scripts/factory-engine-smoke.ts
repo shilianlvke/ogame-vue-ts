@@ -137,3 +137,43 @@ console.log('工厂引擎冒烟通过：自举链路、电力满足率、研究�
 }
 
 console.log('工厂引擎冒烟通过：自举链路、电力满足率、研究推进、库存上限、波次结算')
+
+// ---------- 6. 诊断面板：产能窗口、状态聚合与缺失项 ----------
+{
+  const { productionWindow, recipeDiagnostics, recipeMissing, recipeStatus } = await import('@/logic/factory/diagnostics')
+  // 状态聚合
+  assert.equal(recipeStatus([]), 'idle', '无槽位 = 无槽位')
+  assert.equal(recipeStatus(['running', 'running']), 'running', '全部运行 = 正常')
+  assert.equal(recipeStatus(['running', 'starved']), 'starved', '有断料 = 断料')
+  assert.equal(recipeStatus(['starved', 'blocked']), 'blocked', '堵塞优先于断料')
+
+  // 产能窗口：60 秒产出归因
+  const state = createFactoryState('standard')
+  const furnace = addBuilding(state, 'stoneFurnace', 2)!
+  assert.ok(furnace, '石炉应当可以建造')
+  assignRecipe(state, furnace.id, 'ironPlate', 2)
+  state.stock.ironOre = 10000
+
+  for (let i = 0; i < 60; i++) {
+    const report = tickFactory(state, ctx(i), 1)
+    productionWindow.add(state, report, 1)
+  }
+  const ironRate = productionWindow.rateOf('ironPlate')
+  assert.ok(ironRate > 0.2, `60 秒后铁板实际产能应大于 0.2/s，实际 ${ironRate}`)
+
+  // 诊断行
+  const rows = recipeDiagnostics(state)
+  const ironRow = rows.find(r => r.recipeId === 'ironPlate')!
+  assert.ok(ironRow, '铁板应有诊断行')
+  assert.equal(ironRow.slots, 2, '铁板占 2 槽')
+  assert.ok(ironRow.theoretical > 0, '理论产能为正')
+  assert.ok(ironRow.actual > 0, '实际产能为正')
+
+  // 缺失项：断料缺铁矿石
+  state.stock.ironOre = 0
+  tickFactory(state, ctx(120), 1)
+  const missing = recipeMissing(state, 'ironPlate', 'starved')
+  assert.ok(missing.includes('铁矿石'), `断料缺失项应含铁矿石，实际 ${missing.join('、')}`)
+}
+
+console.log('工厂引擎冒烟通过：自举链路、电力满足率、研究推进、库存上限、波次结算、诊断面板')

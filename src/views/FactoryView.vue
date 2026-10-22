@@ -51,6 +51,9 @@
       </Card>
     </div>
 
+    <!-- 诊断面板 -->
+    <FactoryDiagnostics />
+
     <!-- 建筑分组 -->
     <div v-for="group in groups" :key="group.name" class="mb-5">
       <div class="mb-2 flex items-center gap-2">
@@ -112,6 +115,7 @@
   import MaterialToken from '@/components/factory/MaterialToken.vue'
   import FactoryIcon from '@/components/factory/FactoryIcon.vue'
   import InstancePanel from '@/components/factory/InstancePanel.vue'
+  import FactoryDiagnostics from '@/components/factory/FactoryDiagnostics.vue'
   import { useFactoryStore } from '@/stores/factoryStore'
   import { BUILDINGS, BUILDING_GROUP } from '@/config/factory/buildings'
   import { TECH_MAP } from '@/config/factory/techs'

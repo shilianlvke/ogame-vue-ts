@@ -22,6 +22,7 @@ const router = createRouter({
     { path: '/research', redirect: { path: '/base', query: { tab: 'research' } } },
     { path: '/shipyard', redirect: { path: '/base', query: { tab: 'shipyard' } } },
     { path: '/defense', redirect: { path: '/base', query: { tab: 'defense' } } },
+    { path: '/market', redirect: { path: '/base', query: { tab: 'market' } } },
     { path: '/fleet', name: 'fleet', component: () => import('@/views/FleetView.vue') },
     { path: '/officers', name: 'officers', component: () => import('@/views/OfficersView.vue') },
     { path: '/battle-simulator', name: 'battle-simulator', component: () => import('@/views/BattleSimulatorView.vue') },

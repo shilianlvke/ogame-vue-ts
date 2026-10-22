@@ -103,6 +103,7 @@ export default {
     tech: 'Технологии',
     combat: 'Бой',
     outpost: 'Аванпост',
+    market: 'Рынок',
     research: 'Исследования',
     shipyard: 'Верфь',
     defense: 'Оборона',
