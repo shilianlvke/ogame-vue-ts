@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import pkg from '../../package.json'
 import { encryptData, decryptData } from '@/utils/crypto'
 import { saveStorage } from '@/services/saveStorage'
-import type { BuildingId, MaterialId, ModuleType, PlanetFactory, TechId } from '@/types/factory'
+import type { BuildingId, InfiniteResearchId, MaterialId, ModuleType, PlanetFactory, TechId } from '@/types/factory'
 import {
   addBuilding,
   assignRecipe,
@@ -17,6 +17,7 @@ import {
   type FactoryContext
 } from '@/logic/factory/engine'
 import { ORE_PRESETS } from '@/config/factory/balance'
+  import { INFINITE_RESEARCH, TECH_MAP } from '@/config/factory/techs'
 import type { OrePreset } from '@/config/factory/balance'
 
 interface FactoryState {
@@ -115,6 +116,41 @@ export const useFactoryStore = defineStore('factory', {
       const inst = this.factory.buildings.find(b => b.id === instanceId)
       if (!inst) return
       inst.coalMode = !inst.coalMode
+    },
+
+    /** 开始研究：绑定到第一个空闲实验室槽位 */
+    startResearch(techId: TechId): boolean {
+      const tech = TECH_MAP[techId]
+      if (!tech || this.factory.techs.includes(techId)) return false
+      if (!tech.requires.every(r => this.factory.techs.includes(r))) return false
+      for (const inst of this.factory.buildings) {
+        if (inst.type !== 'lab' || !inst.enabled) continue
+        const index = inst.slots.findIndex(s => !s.techId)
+        if (index >= 0) {
+          this.bindTech(inst.id, index, techId)
+          return true
+        }
+      }
+      return false
+    },
+
+    cancelResearch(instanceId: string, slotIndex: number) {
+      return this.bindTech(instanceId, slotIndex, null)
+    },
+
+    /** 无限研究升级：消耗全部六种科技包 */
+    buyInfinite(id: InfiniteResearchId): boolean {
+      const meta = INFINITE_RESEARCH.find(x => x.id === id)
+      if (!meta) return false
+      const level = this.factory.infiniteResearch[id]
+      const cost = Math.round(meta.baseCost * Math.pow(meta.growth, level))
+      const packs: MaterialId[] = ['automationPack', 'logisticPack', 'chemicalPack', 'militaryPack', 'productionPack', 'utilityPack']
+      for (const p of packs) {
+        if ((this.factory.stock[p] ?? 0) < cost) return false
+      }
+      for (const p of packs) this.factory.stock[p] = (this.factory.stock[p] ?? 0) - cost
+      this.factory.infiniteResearch[id] = level + 1
+      return true
     },
 
     /** 存档迁移 */
