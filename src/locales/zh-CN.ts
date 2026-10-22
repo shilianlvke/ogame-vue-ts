@@ -108,6 +108,7 @@ export default {
     factory: '生产',
     tech: '科技',
     combat: '前线',
+    outpost: '前哨',
     research: '研究',
     shipyard: '船坞',
     defense: '防御',

@@ -102,6 +102,7 @@ export default {
     factory: 'Производство',
     tech: 'Технологии',
     combat: 'Бой',
+    outpost: 'Аванпост',
     research: 'Исследования',
     shipyard: 'Верфь',
     defense: 'Оборона',

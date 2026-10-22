@@ -19,6 +19,8 @@ import {
 import { ORE_PRESETS, WAVE_COOLDOWN_MINUTES } from '@/config/factory/balance'
   import { applyDrops, baseDrops, createBattle, maxWave, rewardFactor, stepBattle, waveHp, type ActiveBattle, type WaveDrops } from '@/logic/factory/waves'
   import { INFINITE_RESEARCH, TECH_MAP } from '@/config/factory/techs'
+  import { SHIP_COSTS } from '@/config/factory/balance'
+  import { createOutpost, MAX_OUTPOSTS, tickOutpostCapped, type Outpost } from '@/logic/factory/outposts'
 import type { OrePreset } from '@/config/factory/balance'
 
 interface WaveState {
@@ -37,6 +39,8 @@ interface FactoryState {
   /** 自动结算开关 */
   running: boolean
   wave: WaveState
+  ships: Record<string, number>
+  outposts: Outpost[]
 }
 
 export const useFactoryStore = defineStore('factory', {
@@ -45,7 +49,9 @@ export const useFactoryStore = defineStore('factory', {
     preset: 'standard',
     lastTickAt: 0,
     running: true,
-    wave: { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null }
+    wave: { clearCounts: {}, cooldownUntil: {}, dailyKey: '', battle: null, lastResult: null },
+    ships: {},
+    outposts: []
   }),
   getters: {
     /** 引擎上下文 */
@@ -64,6 +70,8 @@ export const useFactoryStore = defineStore('factory', {
       this.preset = preset
       this.factory = createFactoryState(preset)
       this.lastTickAt = 0
+      this.ships = {}
+      this.outposts = []
     },
 
     /** 推进结算，秒 */
@@ -83,6 +91,96 @@ export const useFactoryStore = defineStore('factory', {
         stepBattle(this.factory, this.wave.battle, step)
         if (this.wave.battle.finished) this.settleWave()
       }
+      // 前哨运输结算
+      for (const op of this.outposts) {
+        const result = tickOutpostCapped(op, step)
+        if (result.shipped > 0) {
+          const cur = this.factory.stock[op.ore] ?? 0
+          const cap = 5000 + this.factory.buildings.filter(b => b.type === 'warehouse' && b.enabled).reduce((a, b) => a + b.level, 0) * 5000
+          this.factory.stock[op.ore] = Math.min(cap, cur + result.shipped)
+        }
+      }
+    },
+
+    /** 舰船建造：装配机以 craft 类别生产零件后在此消耗 */
+    buildShip(name: string): boolean {
+      const def = SHIP_COSTS[name]
+      if (!def) return false
+      const parts: Partial<Record<MaterialId, number>> = {
+        hullFrame: def.hull,
+        thrusterAssembly: def.thruster,
+        weaponAssembly: def.weapon,
+        shieldAssembly: def.shield
+      }
+      for (const [k, v] of Object.entries(parts)) {
+        if ((this.factory.stock[k as MaterialId] ?? 0) < (v as number)) return false
+      }
+      for (const [k, v] of Object.entries(parts)) {
+        this.factory.stock[k as MaterialId] = (this.factory.stock[k as MaterialId] ?? 0) - (v as number)
+      }
+      this.ships[name] = (this.ships[name] ?? 0) + 1
+      return true
+    },
+
+    /** 建立前哨：消耗一艘殖民船 */
+    colonize(name: string, ore: MaterialId): boolean {
+      if (this.outposts.length >= MAX_OUTPOSTS) return false
+      if ((this.ships['殖民船'] ?? 0) < 1) return false
+      this.ships['殖民船'] = (this.ships['殖民船'] ?? 0) - 1
+      this.outposts.push(createOutpost(name, ore, this.preset))
+      return true
+    },
+
+    /** 前哨建筑：矿井 1 级 = 1 槽 */
+    buildOutpostMine(id: string, levels = 1): boolean {
+      const op = this.outposts.find(o => o.id === id)
+      if (!op) return false
+      const cost = { ironPlate: 20 * levels, stone: 10 * levels }
+      for (const [k, v] of Object.entries(cost)) {
+        if ((this.factory.stock[k as MaterialId] ?? 0) < (v as number)) return false
+      }
+      for (const [k, v] of Object.entries(cost)) {
+        this.factory.stock[k as MaterialId] = (this.factory.stock[k as MaterialId] ?? 0) - (v as number)
+      }
+      op.mineSlots += levels
+      return true
+    },
+
+    buildOutpostWarehouse(id: string): boolean {
+      const op = this.outposts.find(o => o.id === id)
+      if (!op) return false
+      const cost = { ironPlate: 50, stoneBrick: 20 }
+      for (const [k, v] of Object.entries(cost)) {
+        if ((this.factory.stock[k as MaterialId] ?? 0) < (v as number)) return false
+      }
+      for (const [k, v] of Object.entries(cost)) {
+        this.factory.stock[k as MaterialId] = (this.factory.stock[k as MaterialId] ?? 0) - (v as number)
+      }
+      op.warehouseLevel += 1
+      return true
+    },
+
+    buildOutpostSolar(id: string): boolean {
+      const op = this.outposts.find(o => o.id === id)
+      if (!op) return false
+      if ((this.factory.stock.solarPanel ?? 0) < 10) return false
+      this.factory.stock.solarPanel = (this.factory.stock.solarPanel ?? 0) - 10
+      op.solarLevel += 1
+      return true
+    },
+
+    /** 可用货舱容量 */
+    totalCargo(): number {
+      return (this.ships['小型货船'] ?? 0) * 600 + (this.ships['大型货船'] ?? 0) * 2500
+    },
+
+    assignCargo(id: string, cargo: number): boolean {
+      const op = this.outposts.find(o => o.id === id)
+      if (!op) return false
+      const used = this.outposts.filter(o => o.id !== id).reduce((a, o) => a + o.cargo, 0)
+      const available = this.totalCargo() - used
+      op.cargo = Math.max(0, Math.min(cargo, available))
+      return true
     },
 
     build(type: BuildingId, level = 1) {
